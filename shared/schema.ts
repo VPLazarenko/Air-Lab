@@ -49,14 +49,13 @@ export const conversations = pgTable("conversations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const googleDriveDocuments = pgTable("google_drive_documents", {
+export const googleDocsDocuments = pgTable("google_docs_documents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
   assistantId: varchar("assistant_id").references(() => assistants.id).notNull(),
-  driveFileId: text("drive_file_id").notNull(),
+  docId: text("doc_id").notNull(),
   documentUrl: text("document_url").notNull(),
-  fileName: text("file_name").notNull(),
-  fileType: text("file_type").notNull(),
+  title: text("title").notNull(),
   content: text("content"),
   processedAt: timestamp("processed_at"),
   vectorStoreFileId: text("vector_store_file_id"),
@@ -88,11 +87,10 @@ export const insertConversationSchema = createInsertSchema(conversations).pick({
   messages: true,
 });
 
-export const insertGoogleDriveDocumentSchema = createInsertSchema(googleDriveDocuments).pick({
-  driveFileId: true,
+export const insertGoogleDocsDocumentSchema = createInsertSchema(googleDocsDocuments).pick({
+  docId: true,
   documentUrl: true,
-  fileName: true,
-  fileType: true,
+  title: true,
   content: true,
   status: true,
 });
@@ -103,5 +101,5 @@ export type InsertAssistant = z.infer<typeof insertAssistantSchema>;
 export type Assistant = typeof assistants.$inferSelect;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
 export type Conversation = typeof conversations.$inferSelect;
-export type InsertGoogleDriveDocument = z.infer<typeof insertGoogleDriveDocumentSchema>;
-export type GoogleDriveDocument = typeof googleDriveDocuments.$inferSelect;
+export type InsertGoogleDocsDocument = z.infer<typeof insertGoogleDocsDocumentSchema>;
+export type GoogleDocsDocument = typeof googleDocsDocuments.$inferSelect;

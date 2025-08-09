@@ -3,8 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openaiService } from "./openai";
 import { ObjectStorageService } from "./objectStorage";
-import { GoogleDriveService } from "./googleDrive";
-import { insertUserSchema, insertAssistantSchema, insertConversationSchema, insertGoogleDriveDocumentSchema } from "@shared/schema";
+import { GoogleDocsService } from "./googleDocs";
+import { insertUserSchema, insertAssistantSchema, insertConversationSchema, insertGoogleDocsDocumentSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -417,10 +417,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Google Drive integration routes
-  const googleDriveService = new GoogleDriveService();
+  // Google Docs integration routes
+  const googleDocsService = new GoogleDocsService();
 
-  // Add Google Drive document to assistant knowledge base
+  // Add Google Docs document to assistant knowledge base
   app.post("/api/assistants/:assistantId/google-drive", async (req, res) => {
     try {
       const assistantId = req.params.assistantId;
@@ -440,59 +440,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Assistant not found" });
       }
 
-      // Extract file ID from Google Drive URL
-      const fileId = googleDriveService.extractFileIdFromUrl(documentUrl);
-      if (!fileId) {
-        return res.status(400).json({ error: "Invalid Google Drive URL" });
+      // Extract document ID from Google Docs URL
+      const docId = googleDocsService.extractDocIdFromUrl(documentUrl);
+      if (!docId) {
+        return res.status(400).json({ error: "Invalid Google Docs URL. Please provide a valid Google Docs link." });
       }
 
-      // Check file access and get info
-      const fileInfo = await googleDriveService.getFileInfo(fileId);
-      if (!fileInfo) {
-        return res.status(404).json({ error: "Document not found or not accessible" });
+      // Check document access and get info
+      const docInfo = await googleDocsService.getDocInfo(docId);
+      if (!docInfo) {
+        return res.status(404).json({ error: "Document not found or not accessible. Please make sure the document is public or shared with you." });
       }
 
       // Create document record in database
-      const documentRecord = await storage.createGoogleDriveDocument({
-        driveFileId: fileId,
+      const documentRecord = await storage.createGoogleDocsDocument({
+        docId: docId,
         documentUrl: documentUrl,
-        fileName: fileInfo.name,
-        fileType: fileInfo.mimeType,
+        title: docInfo.title,
         status: "processing",
         userId,
         assistantId
       });
 
       // Process document in background
-      processGoogleDriveDocument(documentRecord.id, assistant, googleDriveService);
+      processGoogleDocsDocument(documentRecord.id, assistant, googleDocsService);
 
       res.json({
         success: true,
         documentId: documentRecord.id,
-        fileName: fileInfo.name,
+        title: docInfo.title,
         message: "Document added to processing queue"
       });
 
     } catch (error) {
-      console.error("Error adding Google Drive document:", error);
+      console.error("Error adding Google Docs document:", error);
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
-  // Get Google Drive documents for assistant
+  // Get Google Docs documents for assistant
   app.get("/api/assistants/:assistantId/google-drive", async (req, res) => {
     try {
-      const documents = await storage.getGoogleDriveDocumentsByAssistantId(req.params.assistantId);
+      const documents = await storage.getGoogleDocsDocumentsByAssistantId(req.params.assistantId);
       res.json(documents);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
-  // Delete Google Drive document
+  // Delete Google Docs document
   app.delete("/api/google-drive/:documentId", async (req, res) => {
     try {
-      const success = await storage.deleteGoogleDriveDocument(req.params.documentId);
+      const success = await storage.deleteGoogleDocsDocument(req.params.documentId);
       if (!success) {
         return res.status(404).json({ error: "Document not found" });
       }
@@ -503,18 +502,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Background processing function
-  async function processGoogleDriveDocument(documentId: string, assistant: any, driveService: GoogleDriveService) {
+  async function processGoogleDocsDocument(documentId: string, assistant: any, docsService: GoogleDocsService) {
     try {
-      const document = await storage.getGoogleDriveDocument(documentId);
+      const document = await storage.getGoogleDocsDocument(documentId);
       if (!document) return;
 
       // Update status to processing
-      await storage.updateGoogleDriveDocument(documentId, { status: "processing" });
+      await storage.updateGoogleDocsDocument(documentId, { status: "processing" });
 
       // Get document content
-      const content = await driveService.getDocumentContent(document.driveFileId);
+      const content = await docsService.getDocumentContent(document.docId);
       if (!content) {
-        await storage.updateGoogleDriveDocument(documentId, { 
+        await storage.updateGoogleDocsDocument(documentId, { 
           status: "error",
           errorMessage: "Could not extract content from document"
         });
@@ -522,7 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Update document with content
-      await storage.updateGoogleDriveDocument(documentId, { content });
+      await storage.updateGoogleDocsDocument(documentId, { content });
 
       // Upload to OpenAI as a file
       const apiKey = process.env.OPENAI_API_KEY;
@@ -531,7 +530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Create temporary file from content
         const buffer = Buffer.from(content, 'utf8');
-        const fileName = `${document.fileName}.txt`;
+        const fileName = `${document.title}.txt`;
         
         try {
           const openaiFile = await openaiService.uploadFile(buffer, fileName, 'assistants');
@@ -540,30 +539,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, [openaiFile.id]);
           
           // Update document record
-          await storage.updateGoogleDriveDocument(documentId, { 
+          await storage.updateGoogleDocsDocument(documentId, { 
             status: "completed",
             vectorStoreFileId: openaiFile.id,
             processedAt: new Date()
           });
           
-          console.log(`Successfully processed Google Drive document: ${document.fileName}`);
+          console.log(`Successfully processed Google Docs document: ${document.title}`);
         } catch (openaiError) {
           console.error("Error uploading to OpenAI:", openaiError);
-          await storage.updateGoogleDriveDocument(documentId, { 
+          await storage.updateGoogleDocsDocument(documentId, { 
             status: "error",
             errorMessage: `Failed to upload to OpenAI: ${openaiError instanceof Error ? openaiError.message : 'Unknown error'}`
           });
         }
       } else {
-        await storage.updateGoogleDriveDocument(documentId, { 
+        await storage.updateGoogleDocsDocument(documentId, { 
           status: "completed",
           processedAt: new Date()
         });
       }
 
     } catch (error) {
-      console.error(`Error processing Google Drive document ${documentId}:`, error);
-      await storage.updateGoogleDriveDocument(documentId, { 
+      console.error(`Error processing Google Docs document ${documentId}:`, error);
+      await storage.updateGoogleDocsDocument(documentId, { 
         status: "error",
         errorMessage: error instanceof Error ? error.message : 'Unknown error'
       });

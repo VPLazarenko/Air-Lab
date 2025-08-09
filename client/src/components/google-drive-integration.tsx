@@ -8,7 +8,7 @@ import { Loader2, Link, FileText, Trash2, CheckCircle, AlertCircle, Clock } from
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { GoogleDriveDocument } from "@shared/schema";
+import type { GoogleDocsDocument } from "@shared/schema";
 
 interface GoogleDriveIntegrationProps {
   assistantId: string;
@@ -20,8 +20,8 @@ export function GoogleDriveIntegration({ assistantId, userId }: GoogleDriveInteg
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch existing Google Drive documents
-  const { data: documents, isLoading } = useQuery<GoogleDriveDocument[]>({
+  // Fetch existing Google Docs documents
+  const { data: documents, isLoading } = useQuery<GoogleDocsDocument[]>({
     queryKey: ['/api/assistants', assistantId, 'google-drive'],
     refetchInterval: 2000, // Refresh every 2 seconds to show processing status
   });
@@ -50,7 +50,7 @@ export function GoogleDriveIntegration({ assistantId, userId }: GoogleDriveInteg
     onSuccess: () => {
       toast({
         title: "Документ добавлен",
-        description: "Google Drive документ добавлен в базу знаний и обрабатывается.",
+        description: "Google Docs документ добавлен в базу знаний и обрабатывается.",
       });
       setDocumentUrl("");
       queryClient.invalidateQueries({ queryKey: ['/api/assistants', assistantId, 'google-drive'] });
@@ -99,16 +99,16 @@ export function GoogleDriveIntegration({ assistantId, userId }: GoogleDriveInteg
     if (!documentUrl.trim()) {
       toast({
         title: "Ошибка",
-        description: "Введите ссылку на Google Drive документ",
+        description: "Введите ссылку на Google Docs документ",
         variant: "destructive",
       });
       return;
     }
 
-    if (!documentUrl.includes("drive.google.com")) {
+    if (!documentUrl.includes("docs.google.com")) {
       toast({
         title: "Ошибка",
-        description: "Введите корректную ссылку на Google Drive",
+        description: "Введите корректную ссылку на Google Docs документ",
         variant: "destructive",
       });
       return;
@@ -154,16 +154,16 @@ export function GoogleDriveIntegration({ assistantId, userId }: GoogleDriveInteg
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Link className="h-5 w-5" />
-          Интеграция с Google Drive
+          Интеграция с Google Docs
         </CardTitle>
         <CardDescription>
-          Добавьте Google Drive документы в базу знаний ассистента
+          Добавьте Google Docs документы в базу знаний ассистента
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="document-url">Ссылка на Google Drive документ</Label>
+            <Label htmlFor="document-url">Ссылка на Google Docs документ</Label>
             <Input
               id="document-url"
               value={documentUrl}
@@ -208,7 +208,7 @@ export function GoogleDriveIntegration({ assistantId, userId }: GoogleDriveInteg
                     <FileText className="h-4 w-4 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium truncate">{doc.fileName}</span>
+                        <span className="font-medium truncate">{doc.title}</span>
                         {getStatusIcon(doc.status)}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
