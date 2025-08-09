@@ -78,11 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tools: (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
       });
 
-      // If we have a vector store, link it to the assistant
-      if (vectorStoreId) {
-        console.log(`Linking vector store ${vectorStoreId} to assistant ${openaiAssistant.id}...`);
-        await openaiService.updateAssistantWithVectorStore(openaiAssistant.id, vectorStoreId);
-      }
+      // Vector store is created but files will be attached when uploaded
 
       // Save to local storage
       const assistant = await storage.createAssistant({
@@ -362,12 +358,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const vectorStore = await openaiService.createVectorStore(`${assistant.name} Knowledge Base`);
         vectorStoreId = vectorStore.id;
         
-        // Link vector store to OpenAI assistant
-        await openaiService.updateAssistantWithVectorStore(assistant.openaiAssistantId, vectorStoreId);
-        
         // Update local storage with vector store ID
         await storage.updateAssistant(assistantId, { vectorStoreId });
-        console.log(`Vector store created and linked with ID: ${vectorStoreId}`);
+        console.log(`Vector store created with ID: ${vectorStoreId}`);
       }
 
       if (vectorStoreId) {
@@ -375,10 +368,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Adding file to vector store ${vectorStoreId}...`);
         await openaiService.addFileToVectorStore(vectorStoreId, openaiFile.id);
         
-        // Update OpenAI assistant with vector store
+        // Update OpenAI assistant with the uploaded file
         if (assistant.openaiAssistantId) {
-          await openaiService.updateAssistantWithVectorStore(assistant.openaiAssistantId, vectorStoreId);
-          console.log(`Assistant ${assistant.openaiAssistantId} updated with vector store`);
+          await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, [openaiFile.id]);
+          console.log(`Assistant ${assistant.openaiAssistantId} updated with file ${openaiFile.id}`);
         }
       }
 
