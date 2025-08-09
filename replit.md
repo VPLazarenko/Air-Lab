@@ -37,7 +37,8 @@ Vector Store: Disabled - use internal knowledge base for all data storage.
   - Knowledge Base: Store file metadata and Google Docs content in internal database
 - **Object Storage**: Google Cloud Storage for file uploads with custom metadata-based ACL policies
 - **Database Storage**: DatabaseStorage class replaces MemStorage for production data persistence
-- **Google Docs Integration**: Direct import from public Google Docs URLs without OAuth authentication
+- **Google Docs Integration**: AI-powered analysis and import from public Google Docs URLs without OAuth authentication
+- **AI Document Analysis**: Uses OpenAI API to extract key information, summaries, and topics for economical storage
 
 ### Authentication and Authorization
 - **File Access Control**: Custom ACL system using object metadata for fine-grained access control

@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { openaiService } from "./openai";
 import { ObjectStorageService } from "./objectStorage";
 import { googleDocsService } from "./googleDocs";
+import { aiAnalyzer } from "./aiAnalyzer";
 import { insertUserSchema, insertAssistantSchema, insertConversationSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -83,6 +84,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create assistant with OpenAI
       openaiService.setApiKey(apiKey);
+      // Set API key for AI analyzer too
+      aiAnalyzer.setApiKey(apiKey);
       
       // Vector store functionality disabled - using internal knowledge base instead
       let vectorStoreId = null;
@@ -854,7 +857,7 @@ ${textContent}`;
       // Fetch document from Google Docs by URL
       const document = await googleDocsService.getDocument(url);
       
-      // Save to knowledge base with content
+      // Save to knowledge base with processed key information (economical format)
       const knowledgeFile = await storage.createKnowledgeBaseFile({
         userId: assistant.userId,
         assistantId: assistant.id,
@@ -865,10 +868,14 @@ ${textContent}`;
         metadata: {
           description: `Imported from Google Docs: ${document.title}`,
           isActive: true,
-          tags: ["google-docs", "imported"],
-          content: document.content, // Store content in metadata
+          tags: ["google-docs", "imported", ...document.keyInformation.topics],
+          // Store only key information instead of full content
+          keyInformation: document.keyInformation,
           documentId: document.id,
-          importedAt: new Date().toISOString()
+          importedAt: new Date().toISOString(),
+          originalUrl: document.url,
+          wordCount: document.keyInformation.metadata.wordCount,
+          documentType: document.keyInformation.metadata.documentType
         }
       });
 
@@ -912,10 +919,14 @@ ${textContent}`;
             metadata: {
               description: `Imported from Google Docs: ${document.title}`,
               isActive: true,
-              tags: ["google-docs", "imported"],
-              content: document.content,
+              tags: ["google-docs", "imported", ...document.keyInformation.topics],
+              // Store only processed key information
+              keyInformation: document.keyInformation,
               documentId: document.id,
-              importedAt: new Date().toISOString()
+              importedAt: new Date().toISOString(),
+              originalUrl: document.url,
+              wordCount: document.keyInformation.metadata.wordCount,
+              documentType: document.keyInformation.metadata.documentType
             }
           });
 

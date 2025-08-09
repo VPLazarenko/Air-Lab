@@ -1,3 +1,5 @@
+import { aiAnalyzer } from './aiAnalyzer';
+
 export class GoogleDocsService {
   constructor() {}
 
@@ -59,7 +61,7 @@ export class GoogleDocsService {
         throw new Error('Failed to fetch document content');
       }
       
-      const content = await textResponse.text();
+      const fullContent = await textResponse.text().then(text => text.trim());
 
       // Try to get document title from HTML export (more reliable for metadata)
       let title = `Document ${documentId}`;
@@ -75,12 +77,16 @@ export class GoogleDocsService {
       } catch {
         // If HTML fetch fails, keep default title
       }
+
+      // Extract key information using AI analysis instead of storing full content
+      const keyInfo = await aiAnalyzer.analyzeDocument(fullContent, title);
       
       return {
         id: documentId,
         title: title,
-        content: content.trim(),
-        lastModified: new Date().toISOString(), // We can't get exact modification time without API
+        content: fullContent, // Keep original for preview
+        keyInformation: keyInfo, // Processed summary for storage
+        lastModified: new Date().toISOString(),
         url: `https://docs.google.com/document/d/${documentId}`,
         exportUrl: this.getExportUrl(documentId, 'txt')
       };
@@ -88,6 +94,141 @@ export class GoogleDocsService {
       console.error('Error fetching Google Doc:', error);
       throw new Error(`Failed to fetch document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  // Extract key information from document content using AI analysis
+  async extractKeyInformation(content: string, title: string): Promise<{
+    summary: string;
+    keyPoints: string[];
+    topics: string[];
+    metadata: {
+      wordCount: number;
+      estimatedReadTime: number;
+      documentType: string;
+    };
+  }> {
+    try {
+      // Basic text analysis
+      const wordCount = content.split(/\s+/).length;
+      const estimatedReadTime = Math.ceil(wordCount / 200); // 200 words per minute
+
+      // Determine document type based on content patterns
+      let documentType = 'general';
+      if (content.toLowerCase().includes('meeting') || content.toLowerCase().includes('agenda')) {
+        documentType = 'meeting';
+      } else if (content.toLowerCase().includes('requirement') || content.toLowerCase().includes('specification')) {
+        documentType = 'specification';
+      } else if (content.toLowerCase().includes('report') || content.toLowerCase().includes('analysis')) {
+        documentType = 'report';
+      } else if (content.toLowerCase().includes('proposal') || content.toLowerCase().includes('plan')) {
+        documentType = 'plan';
+      }
+
+      // Extract key sentences (first and last paragraphs, sentences with keywords)
+      const paragraphs = content.split('\n\n').filter(p => p.trim().length > 20);
+      const keyParagraphs = [];
+      
+      if (paragraphs.length > 0) {
+        keyParagraphs.push(paragraphs[0]); // First paragraph
+        if (paragraphs.length > 1) {
+          keyParagraphs.push(paragraphs[paragraphs.length - 1]); // Last paragraph
+        }
+      }
+
+      // Extract sentences with important keywords
+      const importantKeywords = ['важно', 'главное', 'цель', 'задача', 'результат', 'выводы', 'решение', 
+                               'important', 'main', 'goal', 'objective', 'result', 'conclusion', 'decision',
+                               'ключевые', 'основные', 'принципы', 'требования', 'критерии'];
+      
+      const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      const keyContainingSentences = sentences.filter(sentence => 
+        importantKeywords.some(keyword => 
+          sentence.toLowerCase().includes(keyword.toLowerCase())
+        )
+      ).slice(0, 3); // Top 3 key sentences
+
+      // Create summary from key paragraphs and sentences
+      const summaryParts = [...keyParagraphs, ...keyContainingSentences];
+      const summary = summaryParts.join('\n').substring(0, 500) + '...';
+
+      // Extract potential topics/tags
+      const topics = this.extractTopics(content);
+
+      // Generate key points
+      const keyPoints = this.extractKeyPoints(content);
+
+      return {
+        summary,
+        keyPoints: keyPoints.slice(0, 5), // Top 5 key points
+        topics: topics.slice(0, 8), // Top 8 topics
+        metadata: {
+          wordCount,
+          estimatedReadTime,
+          documentType
+        }
+      };
+    } catch (error) {
+      console.error('Error extracting key information:', error);
+      // Fallback to basic extraction
+      return {
+        summary: content.substring(0, 300) + '...',
+        keyPoints: [title],
+        topics: ['document'],
+        metadata: {
+          wordCount: content.split(/\s+/).length,
+          estimatedReadTime: Math.ceil(content.split(/\s+/).length / 200),
+          documentType: 'general'
+        }
+      };
+    }
+  }
+
+  // Extract topics/tags from content
+  private extractTopics(content: string): string[] {
+    const text = content.toLowerCase();
+    const commonTopics = [
+      'проект', 'планирование', 'разработка', 'дизайн', 'техническое', 'документация',
+      'meeting', 'project', 'planning', 'development', 'design', 'technical', 'documentation',
+      'бизнес', 'стратегия', 'анализ', 'исследование', 'отчет', 'презентация',
+      'business', 'strategy', 'analysis', 'research', 'report', 'presentation',
+      'управление', 'процесс', 'workflow', 'задачи', 'цели', 'результаты',
+      'management', 'process', 'tasks', 'goals', 'results', 'requirements'
+    ];
+
+    return commonTopics.filter(topic => text.includes(topic));
+  }
+
+  // Extract key points from content
+  private extractKeyPoints(content: string): string[] {
+    const points = [];
+    
+    // Look for numbered lists
+    const numberedLists = content.match(/\d+[\.\)]\s+[^\n]+/g);
+    if (numberedLists) {
+      points.push(...numberedLists.slice(0, 3));
+    }
+
+    // Look for bullet points
+    const bulletPoints = content.match(/[-•*]\s+[^\n]+/g);
+    if (bulletPoints) {
+      points.push(...bulletPoints.slice(0, 3));
+    }
+
+    // Look for headers (lines that are shorter and might be titles)
+    const lines = content.split('\n').filter(line => line.trim().length > 5);
+    const potentialHeaders = lines.filter(line => 
+      line.length < 80 && 
+      line.length > 10 && 
+      !line.includes('.') && 
+      line.trim() === line.trim().toUpperCase() ||
+      line.includes(':')
+    );
+    
+    if (potentialHeaders.length > 0) {
+      points.push(...potentialHeaders.slice(0, 2));
+    }
+
+    return points.map(point => point.trim()).filter(point => point.length > 0);
   }
 
   // Validate and parse multiple document URLs

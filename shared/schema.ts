@@ -65,6 +65,23 @@ export const knowledgeBase = pgTable("knowledge_base", {
     description?: string;
     tags?: string[];
     isActive?: boolean;
+    keyInformation?: {
+      summary: string;
+      keyPoints: string[];
+      topics: string[];
+      metadata: {
+        wordCount: number;
+        estimatedReadTime: number;
+        documentType: string;
+        importance?: string;
+      };
+    };
+    content?: string;
+    documentId?: string;
+    importedAt?: string;
+    originalUrl?: string;
+    wordCount?: number;
+    documentType?: string;
   }>().default({}),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

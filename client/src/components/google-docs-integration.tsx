@@ -27,6 +27,17 @@ interface GoogleDoc {
   lastModified: string;
   url: string;
   content?: string;
+  keyInformation?: {
+    summary: string;
+    keyPoints: string[];
+    topics: string[];
+    metadata: {
+      wordCount: number;
+      estimatedReadTime: number;
+      documentType: string;
+      importance?: string;
+    };
+  };
 }
 
 export function GoogleDocsIntegration({ assistantId }: GoogleDocsIntegrationProps) {
@@ -187,7 +198,7 @@ export function GoogleDocsIntegration({ assistantId }: GoogleDocsIntegrationProp
             Google Docs Integration
           </CardTitle>
           <CardDescription>
-            Search, load, and import Google Docs into your assistant's knowledge base
+            Import Google Docs with AI-powered analysis and key information extraction for efficient storage
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -306,9 +317,51 @@ https://docs.google.com/document/d/...`}
                   </Button>
                 </div>
               </div>
-              <div className="max-h-40 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm">
-                <p className="whitespace-pre-wrap">{previewDocument.content?.substring(0, 500)}...</p>
-              </div>
+              {previewDocument.keyInformation && (
+                <div className="space-y-3">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
+                    <h5 className="text-sm font-medium mb-1">Summary</h5>
+                    <p className="text-xs text-gray-700 dark:text-gray-300">
+                      {previewDocument.keyInformation.summary}
+                    </p>
+                  </div>
+                  
+                  {previewDocument.keyInformation.keyPoints.length > 0 && (
+                    <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded">
+                      <h5 className="text-sm font-medium mb-1">Key Points</h5>
+                      <ul className="text-xs space-y-1">
+                        {previewDocument.keyInformation.keyPoints.map((point, index) => (
+                          <li key={index} className="text-gray-700 dark:text-gray-300">• {point}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-wrap gap-1">
+                    {previewDocument.keyInformation.topics.map((topic, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {topic}
+                      </Badge>
+                    ))}
+                    <Badge variant="secondary" className="text-xs">
+                      {previewDocument.keyInformation.metadata.wordCount} words
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {previewDocument.keyInformation.metadata.estimatedReadTime} min read
+                    </Badge>
+                    <Badge 
+                      variant={previewDocument.keyInformation.metadata.importance === 'high' ? 'destructive' : 
+                               previewDocument.keyInformation.metadata.importance === 'low' ? 'outline' : 'default'} 
+                      className="text-xs"
+                    >
+                      {previewDocument.keyInformation.metadata.importance || 'medium'} priority
+                    </Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      {previewDocument.keyInformation.metadata.documentType}
+                    </Badge>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
