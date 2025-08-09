@@ -59,6 +59,7 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
+      apiKey: null,
       createdAt: new Date(),
       settings: insertUser.settings as { defaultModel?: string; autoSave?: boolean; darkMode?: boolean; } || {}
     };
@@ -84,11 +85,15 @@ export class MemStorage implements IStorage {
     return Array.from(this.assistants.values()).filter(assistant => assistant.userId === userId);
   }
 
-  async createAssistant(assistant: InsertAssistant & { userId: string }): Promise<Assistant> {
+  async createAssistant(assistant: InsertAssistant & { userId: string; openaiAssistantId?: string }): Promise<Assistant> {
     const id = randomUUID();
     const newAssistant: Assistant = {
       ...assistant,
       id,
+      openaiAssistantId: assistant.openaiAssistantId || null,
+      description: assistant.description || null,
+      instructions: assistant.instructions || null,
+      temperature: assistant.temperature || null,
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: true,
@@ -134,9 +139,11 @@ export class MemStorage implements IStorage {
     const newConversation: Conversation = {
       ...conversation,
       id,
+      openaiThreadId: null,
+      title: conversation.title || null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      messages: conversation.messages || []
+      messages: (conversation.messages as Array<{ id: string; role: "user" | "assistant" | "system"; content: string; timestamp: string }>) || []
     };
     this.conversations.set(id, newConversation);
     return newConversation;
@@ -177,8 +184,9 @@ export class MemStorage implements IStorage {
     const newDocument: GoogleDocsDocument = {
       ...document,
       id,
+      status: document.status || 'completed',
+      content: document.content || null,
       processedAt: null,
-      vectorStoreFileId: null,
       errorMessage: null,
       createdAt: new Date(),
       updatedAt: new Date()

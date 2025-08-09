@@ -25,6 +25,7 @@ export class OpenAIService {
     model?: string;
     tools?: Array<{ type: "code_interpreter" | "file_search" }>;
     file_ids?: string[];
+    tool_resources?: any;
   }) {
     try {
       const assistant = await this.client.beta.assistants.create({
@@ -33,7 +34,7 @@ export class OpenAIService {
         instructions: params.instructions,
         model: params.model || DEFAULT_MODEL,
         tools: params.tools?.map(tool => ({ type: tool.type })) || [],
-        // Note: file_ids parameter may need to be updated based on current OpenAI API
+        tool_resources: params.tool_resources,
       });
 
       return assistant;
@@ -82,52 +83,18 @@ export class OpenAIService {
     }
   }
 
-  async createVectorStore(name: string) {
+  // Google Docs integration - assistant will query docs dynamically
+  async addGoogleDocContext(threadId: string, docContent: string, docTitle: string) {
     try {
-      // Create a real vector store using the beta API
-      console.log(`Creating vector store: ${name}`);
-      const vectorStore = await this.client.beta.vectorStores.create({
-        name: name,
+      // Add Google Doc content as context message to thread
+      await this.client.beta.threads.messages.create(threadId, {
+        role: "user",
+        content: `[Документ Google Docs: "${docTitle}"]\n\n${docContent}\n\n[Конец документа]`
       });
-      console.log(`Created vector store: ${vectorStore.id}`);
-      return vectorStore;
+      return true;
     } catch (error) {
-      console.error("Error creating vector store:", error);
-      throw new Error(`Failed to create vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  async addFileToVectorStore(vectorStoreId: string, fileId: string) {
-    try {
-      console.log(`Adding file ${fileId} to vector store ${vectorStoreId}`);
-      const vectorStoreFile = await this.client.beta.vectorStores.files.create(vectorStoreId, {
-        file_id: fileId,
-      });
-      console.log(`Successfully added file to vector store: ${vectorStoreFile.id}`);
-      return vectorStoreFile;
-    } catch (error) {
-      console.error("Error adding file to vector store:", error);
-      throw new Error(`Failed to add file to vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  async updateAssistantWithFiles(assistantId: string, fileIds: string[]) {
-    try {
-      console.log(`Updating assistant ${assistantId} with files: ${fileIds.join(', ')}`);
-      
-      // Enable file_search tool for the assistant
-      // Files will be attached during thread creation for conversations
-      const assistant = await this.client.beta.assistants.update(assistantId, {
-        tools: [{ type: "file_search" }]
-      });
-
-      console.log(`Successfully enabled file_search for assistant ${assistantId}`);
-      console.log(`Files ready for use: ${fileIds.join(', ')}`);
-      
-      return assistant;
-    } catch (error) {
-      console.error("Error updating assistant with files:", error);
-      throw new Error(`Failed to update assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("Error adding Google Doc context:", error);
+      throw new Error(`Failed to add Google Doc context: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

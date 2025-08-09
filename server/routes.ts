@@ -224,18 +224,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!threadId) {
         console.log("Creating new thread...");
         
-        // Get Google Docs files for this assistant to attach to the thread
-        const googleDocs = await storage.getGoogleDocsDocumentsByAssistantId(assistant.id);
-        const fileIds = googleDocs
-          .filter(doc => doc.status === 'completed' && doc.vectorStoreFileId)
-          .map(doc => doc.vectorStoreFileId)
-          .filter((id): id is string => id !== null && id !== undefined);
-        
-        console.log(`Found ${fileIds.length} processed files to attach to thread`);
-        
         const thread = await openaiService.createThread();
         threadId = thread.id;
         console.log("Created thread with ID:", threadId);
+        
+        // Add Google Docs context to thread
+        const googleDocs = await storage.getGoogleDocsDocumentsByAssistantId(assistant.id);
+        const completedDocs = googleDocs.filter(doc => doc.status === 'completed' && doc.content);
+        
+        console.log(`Found ${completedDocs.length} Google Docs to add as context`);
+        
+        for (const doc of completedDocs) {
+          if (doc.content) {
+            await openaiService.addGoogleDocContext(threadId, doc.content, doc.title);
+            console.log(`Added context for: ${doc.title}`);
+          }
+        }
+        
         await storage.updateConversation(req.params.id, { openaiThreadId: threadId });
       }
 
@@ -381,10 +386,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Adding file to vector store ${vectorStoreId}...`);
         await openaiService.addFileToVectorStore(vectorStoreId, openaiFile.id);
         
-        // Update OpenAI assistant with the uploaded file
+        // Link assistant to vector store so it can access files
         if (assistant.openaiAssistantId) {
-          await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, [openaiFile.id]);
-          console.log(`Assistant ${assistant.openaiAssistantId} updated with file ${openaiFile.id}`);
+          await openaiService.updateAssistantWithVectorStore(assistant.openaiAssistantId, vectorStoreId);
+          console.log(`Assistant ${assistant.openaiAssistantId} linked to vector store ${vectorStoreId}`);
         }
       }
 

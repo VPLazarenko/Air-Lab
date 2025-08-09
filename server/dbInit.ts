@@ -14,7 +14,7 @@ const DEMO_USER: InsertUser = {
 const DEMO_ASSISTANTS = [
   {
     name: "Документация",
-    instructions: "Ты - помощник по работе с документацией. Ты помогаешь пользователям находить информацию в документах и отвечать на вопросы по содержанию.",
+    instructions: "Ты — помощник по работе с документацией. Ты имеешь доступ к документам Google Docs через API системы. Когда пользователь задает вопросы о документах, используй их содержимое для ответов. Ты можешь помочь найти информацию в документах, ответить на вопросы по содержанию и объяснить сложные концепции простым языком. Всегда отвечай на русском языке. Если нужна информация из документов, она будет автоматически предоставлена в контексте беседы.",
     tools: [{ type: 'file_search', enabled: true }],
     userId: DEMO_USER_ID,
   },
@@ -52,7 +52,14 @@ export async function initializeDatabase() {
         console.log(`➕ Создание ассистента: ${assistantData.name}`);
         
         try {
-          // Create assistant in OpenAI first
+          // Set API key first
+          const apiKey = process.env.OPENAI_API_KEY;
+          if (!apiKey) {
+            throw new Error("OpenAI API key not configured");
+          }
+          openaiService.setApiKey(apiKey);
+
+          // Create assistant in OpenAI with file search capability
           const openaiAssistant = await openaiService.createAssistant({
             name: assistantData.name,
             instructions: assistantData.instructions || "",
@@ -89,6 +96,13 @@ export async function initializeDatabase() {
             console.log(`⚠️ OpenAI ассистент ${existingAssistant.openaiAssistantId} не найден, восстанавливаем...`);
             
             try {
+              // Set API key first
+              const apiKey = process.env.OPENAI_API_KEY;
+              if (!apiKey) {
+                throw new Error("OpenAI API key not configured");
+              }
+              openaiService.setApiKey(apiKey);
+
               // Recreate OpenAI assistant
               const newOpenaiAssistant = await openaiService.createAssistant({
                 name: existingAssistant.name,
@@ -140,6 +154,13 @@ export async function ensureDataIntegrity() {
         console.log(`⚠️ Ассистент ${assistant.name} без OpenAI ID, восстанавливаем...`);
         
         try {
+          // Set API key first
+          const apiKey = process.env.OPENAI_API_KEY;
+          if (!apiKey) {
+            throw new Error("OpenAI API key not configured");
+          }
+          openaiService.setApiKey(apiKey);
+
           const openaiAssistant = await openaiService.createAssistant({
             name: assistant.name,
             instructions: assistant.instructions || "",
