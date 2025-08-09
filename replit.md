@@ -27,17 +27,26 @@ Preferred communication style: Simple, everyday language.
 - **AI Integration**: OpenAI API for assistant creation and conversation management
 
 ### Data Storage Solutions
-- **Primary Database**: PostgreSQL with three main entities:
+- **Primary Database**: PostgreSQL with comprehensive data protection:
   - Users: Store user profiles, API keys, and preferences
-  - Assistants: Store assistant configurations, OpenAI IDs, and metadata
+  - Assistants: Store assistant configurations, OpenAI IDs, and metadata with automatic restoration
   - Conversations: Store chat history and thread management
+  - Google Docs Documents: Store indexed document metadata and content
 - **Object Storage**: Google Cloud Storage for file uploads with custom metadata-based ACL policies
+- **Data Protection**: Automatic database initialization with demo data and assistant recovery on startup
 - **In-Memory Storage**: Fallback MemStorage implementation for development/testing
 
 ### Authentication and Authorization
 - **File Access Control**: Custom ACL system using object metadata for fine-grained access control
 - **User Management**: Simple user creation and profile management without complex authentication flows
 - **API Key Management**: User-provided OpenAI API key storage and management
+
+### Data Integrity and Protection
+- **Automatic Database Initialization**: Creates demo user and sample assistants on each startup
+- **Assistant Recovery System**: Automatically restores OpenAI assistant connections if IDs are lost
+- **Data Persistence**: Comprehensive protection against accidental data deletion
+- **Startup Validation**: Verifies and repairs data integrity on application startup
+- **Backup Integration**: All assistants are automatically recreated in OpenAI if lost
 
 ## External Dependencies
 
