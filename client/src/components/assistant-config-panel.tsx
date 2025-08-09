@@ -26,7 +26,8 @@ import {
   Code, 
   File,
   Link,
-  Globe
+  Globe,
+  RefreshCw
 } from "lucide-react";
 
 interface AssistantConfigPanelProps {
@@ -139,6 +140,35 @@ export function AssistantConfigPanel({
     onError: (error) => {
       toast({
         title: "Export failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const syncFilesMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/assistants/${id}/sync-files`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Sync failed');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/assistants/${assistantId}/google-drive`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/assistants/${assistantId}`] });
+      toast({
+        title: "Файлы синхронизированы",
+        description: `Синхронизировано ${data.filesCount} файлов с OpenAI`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка синхронизации",
         description: error.message,
         variant: "destructive",
       });
@@ -484,15 +514,27 @@ export function AssistantConfigPanel({
           </Button>
           
           {assistantId && (
-            <Button
-              variant="outline"
-              onClick={handleExport}
-              disabled={exportAssistantMutation.isPending}
-              className="w-full"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export Configuration
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={() => syncFilesMutation.mutate(assistantId)}
+                disabled={syncFilesMutation.isPending}
+                className="w-full"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${syncFilesMutation.isPending ? 'animate-spin' : ''}`} />
+                Синхронизировать файлы с OpenAI
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={handleExport}
+                disabled={exportAssistantMutation.isPending}
+                className="w-full"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export Configuration
+              </Button>
+            </>
           )}
         </div>
 
