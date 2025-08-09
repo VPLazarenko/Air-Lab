@@ -158,7 +158,10 @@ export function GoogleDocsIntegration({ assistantId, userId }: GoogleDocsIntegra
           Интеграция с Google Docs
         </CardTitle>
         <CardDescription>
-          Добавьте Google Docs документы в базу знаний ассистента
+          Добавьте Google Docs документы в базу знаний ассистента. 
+          <span className="text-orange-600 dark:text-orange-400 font-medium">
+            Важно: документ должен быть публично доступен для чтения.
+          </span>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -172,6 +175,9 @@ export function GoogleDocsIntegration({ assistantId, userId }: GoogleDocsIntegra
               placeholder="https://docs.google.com/document/d/..."
               disabled={addDocumentMutation.isPending}
             />
+            <p className="text-xs text-muted-foreground">
+              Чтобы сделать документ доступным: Поделиться → Общий доступ → "Все, у кого есть ссылка" → Читатель
+            </p>
           </div>
           <Button 
             type="submit" 

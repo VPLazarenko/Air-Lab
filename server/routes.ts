@@ -507,12 +507,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update status to processing
       await storage.updateGoogleDocsDocument(documentId, { status: "processing" });
 
+      // Extract docId from URL
+      const docId = docsService.extractDocIdFromUrl(document.url);
+      if (!docId) {
+        await storage.updateGoogleDocsDocument(documentId, { 
+          status: "error",
+          errorMessage: "Invalid document URL"
+        });
+        return;
+      }
+
       // Get document content
-      const content = await docsService.getDocumentContent(document.docId);
+      const content = await docsService.getDocumentContent(docId);
       if (!content) {
         await storage.updateGoogleDocsDocument(documentId, { 
           status: "error",
-          errorMessage: "Could not extract content from document"
+          errorMessage: "Could not extract content from document. Make sure the document is publicly accessible."
         });
         return;
       }
