@@ -93,6 +93,7 @@ export class MemStorage implements IStorage {
       openaiAssistantId: assistant.openaiAssistantId || null,
       description: assistant.description || null,
       instructions: assistant.instructions || null,
+      model: assistant.model || 'gpt-4o',
       temperature: assistant.temperature || null,
       createdAt: new Date(),
       updatedAt: new Date(),

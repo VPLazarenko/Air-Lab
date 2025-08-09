@@ -59,17 +59,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create assistant with OpenAI
       openaiService.setApiKey(apiKey);
-      
-      // If we have file search enabled, create a vector store first
-      let vectorStoreId = null;
-      const hasFileSearch = (assistantData.tools || []).some((t: any) => t.enabled && t.type === "file_search");
-      
-      if (hasFileSearch) {
-        console.log("Creating vector store for assistant with file search...");
-        const vectorStore = await openaiService.createVectorStore(`${assistantData.name} Knowledge Base`);
-        vectorStoreId = vectorStore.id;
-        console.log(`Vector store created with ID: ${vectorStoreId}`);
-      }
 
       const openaiAssistant = await openaiService.createAssistant({
         name: assistantData.name,
@@ -79,15 +68,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tools: (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
       });
 
-      // Vector store is created but files will be attached when uploaded
-
-      // Save to local storage
-      const assistant = await storage.createAssistant(assistantData);
-      
-      // Update with OpenAI data
-      await storage.updateAssistant(assistant.id, {
+      // Save to local storage with OpenAI ID
+      const assistant = await storage.createAssistant({
+        ...assistantData,
         openaiAssistantId: openaiAssistant.id,
-        vectorStoreId: vectorStoreId,
       });
 
       res.json(assistant);
@@ -364,40 +348,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const fileBuffer = Buffer.from(await fileResponse.arrayBuffer());
 
-      // Upload to OpenAI
+      // Upload to OpenAI (files will be used directly in conversations)
       console.log(`Uploading file ${fileName} to OpenAI...`);
       const openaiFile = await openaiService.uploadFile(fileBuffer, fileName);
       console.log(`File uploaded to OpenAI with ID: ${openaiFile.id}`);
 
-      // Create or get vector store for this assistant
-      let vectorStoreId = assistant.vectorStoreId;
-      if (!vectorStoreId && assistant.openaiAssistantId) {
-        console.log(`Creating vector store for assistant ${assistant.name}...`);
-        const vectorStore = await openaiService.createVectorStore(`${assistant.name} Knowledge Base`);
-        vectorStoreId = vectorStore.id;
-        
-        // Update local storage with vector store ID
-        await storage.updateAssistant(assistantId, { vectorStoreId });
-        console.log(`Vector store created with ID: ${vectorStoreId}`);
-      }
-
-      if (vectorStoreId) {
-        // Add file to vector store
-        console.log(`Adding file to vector store ${vectorStoreId}...`);
-        await openaiService.addFileToVectorStore(vectorStoreId, openaiFile.id);
-        
-        // Link assistant to vector store so it can access files
-        if (assistant.openaiAssistantId) {
-          await openaiService.updateAssistantWithVectorStore(assistant.openaiAssistantId, vectorStoreId);
-          console.log(`Assistant ${assistant.openaiAssistantId} linked to vector store ${vectorStoreId}`);
-        }
-      }
-
       res.json({ 
         success: true, 
         fileId: openaiFile.id,
-        vectorStoreId,
-        message: "File uploaded to assistant's knowledge base successfully" 
+        message: "File uploaded successfully and will be available in conversations" 
       });
 
     } catch (error) {
@@ -513,39 +472,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get all processed Google Docs files
       const processedDocs = await storage.getGoogleDocsDocumentsByAssistantId(assistantId);
-      const fileIds = processedDocs
-        .filter(doc => doc.status === 'completed' && doc.fileId)
-        .map(doc => doc.fileId!)
-        .filter(Boolean);
+      const completedDocs = processedDocs.filter(doc => doc.status === 'completed' && doc.content);
 
-      if (fileIds.length === 0) {
-        return res.json({ message: "No files to update", fileCount: 0 });
-      }
-
-      // Initialize OpenAI service
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ error: "OpenAI API key not configured" });
-      }
-      
-      openaiService.setApiKey(apiKey);
-
-      // Update assistant with files if it has OpenAI ID
-      if (assistant.openaiAssistantId) {
-        try {
-          await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, fileIds);
-          res.json({ 
-            message: "Assistant files updated successfully", 
-            fileCount: fileIds.length,
-            fileIds: fileIds
-          });
-        } catch (error) {
-          console.error("Error updating assistant files:", error);
-          res.status(500).json({ error: "Failed to update assistant files" });
-        }
-      } else {
-        res.status(400).json({ error: "Assistant has no OpenAI ID" });
-      }
+      res.json({ 
+        message: "Google Docs content will be automatically added to conversations", 
+        documentCount: completedDocs.length,
+        documents: completedDocs.map(doc => ({ id: doc.id, title: doc.title, status: doc.status }))
+      });
     } catch (error) {
       console.error("Error updating assistant files:", error);
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -599,13 +532,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const openaiFile = await openaiService.uploadFile(buffer, fileName, 'assistants');
           
-          // Update assistant with the new file
-          await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, [openaiFile.id]);
-          
-          // Update document record
+          // Update document record - file content will be used directly in conversations
           await storage.updateGoogleDocsDocument(documentId, { 
             status: "completed",
-            vectorStoreFileId: openaiFile.id,
             processedAt: new Date()
           });
           
