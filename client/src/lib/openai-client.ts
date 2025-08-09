@@ -132,4 +132,12 @@ export const openaiClient = {
     const response = await apiRequest("POST", "/api/objects/upload");
     return await response.json() as { uploadURL: string };
   },
+
+  async uploadFileToAssistant(assistantId: string, fileUrl: string, fileName: string) {
+    const response = await apiRequest("POST", `/api/assistants/${assistantId}/files`, {
+      fileUrl,
+      fileName,
+    });
+    return await response.json();
+  },
 };

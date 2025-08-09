@@ -60,16 +60,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       openaiService.setApiKey(apiKey);
       const openaiAssistant = await openaiService.createAssistant({
         name: assistantData.name,
-        description: assistantData.description,
+        description: assistantData.description || undefined,
         instructions: assistantData.instructions || "",
         model: assistantData.model,
-        tools: (assistantData.tools || []).filter(t => t.enabled).map(t => ({ type: t.type as "code_interpreter" | "retrieval" | "function" })),
+        tools: (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
       });
 
       // Save to local storage
       const assistant = await storage.createAssistant({
         ...assistantData,
-        // openaiAssistantId: openaiAssistant.id, // This field may not exist in the schema
+        openaiAssistantId: openaiAssistant.id,
       });
 
       res.json(assistant);
@@ -295,6 +295,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error downloading file:", error);
       res.status(404).json({ error: "File not found" });
+    }
+  });
+
+  // Upload file to assistant's knowledge base
+  app.post("/api/assistants/:assistantId/files", async (req, res) => {
+    try {
+      const { assistantId } = req.params;
+      const { fileUrl, fileName } = req.body;
+
+      if (!fileUrl || !fileName) {
+        return res.status(400).json({ error: "File URL and name are required" });
+      }
+
+      // Get assistant
+      const assistant = await storage.getAssistant(assistantId);
+      if (!assistant) {
+        return res.status(404).json({ error: "Assistant not found" });
+      }
+
+      // Use OpenAI API key from environment
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "OpenAI API key not configured on server" });
+      }
+
+      openaiService.setApiKey(apiKey);
+
+      // Download file from storage
+      const objectStorageService = new ObjectStorageService();
+      const fileResponse = await fetch(fileUrl);
+      if (!fileResponse.ok) {
+        throw new Error("Failed to download file from storage");
+      }
+      
+      const fileBuffer = Buffer.from(await fileResponse.arrayBuffer());
+
+      // Upload to OpenAI
+      console.log(`Uploading file ${fileName} to OpenAI...`);
+      const openaiFile = await openaiService.uploadFile(fileBuffer, fileName);
+      console.log(`File uploaded to OpenAI with ID: ${openaiFile.id}`);
+
+      // Create or get vector store for this assistant
+      let vectorStoreId = assistant.vectorStoreId;
+      if (!vectorStoreId && assistant.openaiAssistantId) {
+        console.log(`Creating vector store for assistant ${assistant.name}...`);
+        const vectorStore = await openaiService.createVectorStore(`${assistant.name} Knowledge Base`);
+        vectorStoreId = vectorStore.id;
+        
+        // Update assistant with vector store
+        await storage.updateAssistant(assistantId, { vectorStoreId });
+        console.log(`Vector store created with ID: ${vectorStoreId}`);
+      }
+
+      if (vectorStoreId) {
+        // Add file to vector store
+        console.log(`Adding file to vector store ${vectorStoreId}...`);
+        await openaiService.addFileToVectorStore(vectorStoreId, openaiFile.id);
+        
+        // Update OpenAI assistant with vector store
+        if (assistant.openaiAssistantId) {
+          await openaiService.updateAssistantWithVectorStore(assistant.openaiAssistantId, vectorStoreId);
+          console.log(`Assistant ${assistant.openaiAssistantId} updated with vector store`);
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        fileId: openaiFile.id,
+        vectorStoreId,
+        message: "File uploaded to assistant's knowledge base successfully" 
+      });
+
+    } catch (error) {
+      console.error("Error uploading file to assistant:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 

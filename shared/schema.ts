@@ -20,6 +20,7 @@ export const assistants = pgTable("assistants", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
   openaiAssistantId: text("openai_assistant_id"),
+  vectorStoreId: text("vector_store_id"),
   name: text("name").notNull(),
   description: text("description"),
   instructions: text("instructions"),

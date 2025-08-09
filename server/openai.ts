@@ -67,6 +67,63 @@ export class OpenAIService {
     }
   }
 
+  // File and Vector Store management  
+  async uploadFile(fileBuffer: Buffer, filename: string, purpose = "assistants" as const) {
+    try {
+      const file = new File([fileBuffer], filename);
+      const uploadedFile = await this.client.files.create({
+        file: file,
+        purpose: purpose,
+      });
+      return uploadedFile;
+    } catch (error) {
+      console.error("Error uploading file to OpenAI:", error);
+      throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async createVectorStore(name: string) {
+    try {
+      // Simplified - just create vector store, add files separately
+      const vectorStore = await this.client.beta.vectorStores.create({
+        name: name,
+      });
+      return vectorStore;
+    } catch (error) {
+      console.error("Error creating vector store:", error);
+      throw new Error(`Failed to create vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async addFileToVectorStore(vectorStoreId: string, fileId: string) {
+    try {
+      // Use the correct API endpoint for adding files
+      const vectorStoreFile = await this.client.beta.vectorStores.files.create(vectorStoreId, {
+        file_id: fileId,
+      });
+      return vectorStoreFile;
+    } catch (error) {
+      console.error("Error adding file to vector store:", error);
+      throw new Error(`Failed to add file to vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async updateAssistantWithVectorStore(assistantId: string, vectorStoreId: string) {
+    try {
+      const assistant = await this.client.beta.assistants.update(assistantId, {
+        tool_resources: {
+          file_search: {
+            vector_store_ids: [vectorStoreId],
+          },
+        },
+      });
+      return assistant;
+    } catch (error) {
+      console.error("Error updating assistant with vector store:", error);
+      throw new Error(`Failed to update assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   async deleteAssistant(assistantId: string) {
     try {
       await this.client.beta.assistants.delete(assistantId);
@@ -162,19 +219,7 @@ export class OpenAIService {
     }
   }
 
-  async uploadFile(file: Buffer, filename: string, purpose: "assistants" = "assistants") {
-    try {
-      const uploadedFile = await this.client.files.create({
-        file: new File([file], filename),
-        purpose: purpose,
-      });
 
-      return uploadedFile;
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
 
   async chatCompletion(messages: Array<{ role: string; content: string }>, model?: string, temperature?: number) {
     try {

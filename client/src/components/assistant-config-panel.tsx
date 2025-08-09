@@ -197,7 +197,7 @@ export function AssistantConfigPanel({
     }
   };
 
-  const handleFileComplete = (result: any) => {
+  const handleFileComplete = async (result: any) => {
     if (result.successful && result.successful.length > 0) {
       const uploadedFile = result.successful[0];
       const newFile = {
@@ -206,15 +206,44 @@ export function AssistantConfigPanel({
         path: uploadedFile.uploadURL,
       };
       
+      // Add to local config first
       setConfig(prev => ({
         ...prev,
         files: [...prev.files, newFile]
       }));
 
-      toast({
-        title: "File uploaded",
-        description: `${uploadedFile.name} has been added to the knowledge base.`,
-      });
+      // If assistant exists, upload file to OpenAI knowledge base
+      if (assistant?.id) {
+        try {
+          toast({
+            title: "Processing file",
+            description: `Adding ${uploadedFile.name} to assistant's knowledge base...`,
+          });
+
+          await openaiClient.uploadFileToAssistant(
+            assistant.id, 
+            uploadedFile.uploadURL, 
+            uploadedFile.name
+          );
+
+          toast({
+            title: "File processed",
+            description: `${uploadedFile.name} has been added to the assistant's knowledge base and is ready for analysis.`,
+          });
+        } catch (error) {
+          console.error("Failed to upload file to assistant:", error);
+          toast({
+            title: "Upload warning",
+            description: `File uploaded but couldn't be added to knowledge base. You may need to recreate the assistant.`,
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "File uploaded",
+          description: `${uploadedFile.name} will be added to knowledge base when assistant is saved.`,
+        });
+      }
     }
   };
 
