@@ -200,6 +200,15 @@ export function GoogleDocsIntegration({ assistantId }: GoogleDocsIntegrationProp
           <CardDescription>
             Import Google Docs with AI-powered analysis and key information extraction for efficient storage
           </CardDescription>
+          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs">
+            <p className="font-medium mb-1">Для тестирования вставьте эту ссылку:</p>
+            <code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-xs break-all">
+              https://docs.google.com/document/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
+            </code>
+            <p className="mt-1 text-gray-600 dark:text-gray-400">
+              Это публичный Google Docs документ для демонстрации возможностей AI анализа
+            </p>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Single Document URL */}
@@ -208,7 +217,7 @@ export function GoogleDocsIntegration({ assistantId }: GoogleDocsIntegrationProp
             <div className="flex gap-2">
               <Input
                 id="documentUrl"
-                placeholder="Paste Google Docs URL here..."
+                placeholder="https://docs.google.com/document/d/..."
                 value={documentUrl}
                 onChange={(e) => setDocumentUrl(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handlePreview()}
@@ -235,7 +244,12 @@ export function GoogleDocsIntegration({ assistantId }: GoogleDocsIntegrationProp
             </div>
             {documentUrl && !isValidGoogleDocsUrl(documentUrl) && (
               <p className="text-sm text-red-600 dark:text-red-400">
-                Please enter a valid Google Docs URL
+                Введите правильную ссылку на Google Docs (должна содержать docs.google.com/document/d/)
+              </p>
+            )}
+            {!documentUrl && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Используйте тестовую ссылку выше или вставьте свою публичную ссылку на Google Docs
               </p>
             )}
           </div>
