@@ -84,10 +84,13 @@ export class OpenAIService {
 
   async createVectorStore(name: string) {
     try {
-      // Create a simple vector store using the Files API
+      // Create a real vector store using the beta API
       console.log(`Creating vector store: ${name}`);
-      // For now, we'll use a simple approach - just track file IDs
-      return { id: `vs_${Date.now()}`, name: name };
+      const vectorStore = await this.client.beta.vectorStores.create({
+        name: name,
+      });
+      console.log(`Created vector store: ${vectorStore.id}`);
+      return vectorStore;
     } catch (error) {
       console.error("Error creating vector store:", error);
       throw new Error(`Failed to create vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -96,9 +99,12 @@ export class OpenAIService {
 
   async addFileToVectorStore(vectorStoreId: string, fileId: string) {
     try {
-      // For now, just return success - files are attached via tool_resources
       console.log(`Adding file ${fileId} to vector store ${vectorStoreId}`);
-      return { id: `file_${Date.now()}`, file_id: fileId };
+      const vectorStoreFile = await this.client.beta.vectorStores.files.create(vectorStoreId, {
+        file_id: fileId,
+      });
+      console.log(`Successfully added file to vector store: ${vectorStoreFile.id}`);
+      return vectorStoreFile;
     } catch (error) {
       console.error("Error adding file to vector store:", error);
       throw new Error(`Failed to add file to vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -107,19 +113,20 @@ export class OpenAIService {
 
   async updateAssistantWithFiles(assistantId: string, fileIds: string[]) {
     try {
-      // First, enable file_search tool for the assistant
+      console.log(`Updating assistant ${assistantId} with files: ${fileIds.join(', ')}`);
+      
+      // Enable file_search tool for the assistant
+      // Files will be attached during thread creation for conversations
       const assistant = await this.client.beta.assistants.update(assistantId, {
         tools: [{ type: "file_search" }]
       });
 
       console.log(`Successfully enabled file_search for assistant ${assistantId}`);
-      console.log(`File IDs to process: ${fileIds.join(', ')}`);
+      console.log(`Files ready for use: ${fileIds.join(', ')}`);
       
-      // Note: In modern OpenAI API, files are typically attached through vector stores
-      // or during conversation creation rather than directly to assistants
       return assistant;
     } catch (error) {
-      console.error("Error updating assistant with file_search tool:", error);
+      console.error("Error updating assistant with files:", error);
       throw new Error(`Failed to update assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -136,7 +143,10 @@ export class OpenAIService {
 
   async createThread() {
     try {
+      // Create a simple thread without file attachments
+      // Files will be attached through messages instead
       const thread = await this.client.beta.threads.create();
+      console.log(`Thread created: ${thread.id}`);
       return thread;
     } catch (error) {
       console.error("Error creating thread:", error);

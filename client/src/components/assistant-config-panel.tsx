@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { openaiClient } from "@/lib/openai-client";
 import type { Assistant } from "@/lib/openai-client";
@@ -25,7 +25,8 @@ import {
   FileText, 
   Code, 
   File,
-  Link
+  Link,
+  Globe
 } from "lucide-react";
 
 interface AssistantConfigPanelProps {
@@ -58,6 +59,12 @@ export function AssistantConfigPanel({
   });
 
   const { toast } = useToast();
+
+  // Получаем Google Docs документы для отображения в файл менеджере
+  const { data: googleDocs } = useQuery({
+    queryKey: [`/api/assistants/${assistantId}/google-drive`],
+    enabled: !!assistantId,
+  });
 
   useEffect(() => {
     if (assistant) {
@@ -396,13 +403,15 @@ export function AssistantConfigPanel({
               </div>
               
               {/* Uploaded Files List */}
-              {config.files.length > 0 && (
+              {(config.files.length > 0 || (googleDocs && googleDocs.length > 0)) && (
                 <div className="space-y-2">
+                  {/* Regular uploaded files */}
                   {config.files.map((file) => (
                     <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
                       <div className="flex items-center space-x-2">
                         {getFileIcon(file.name)}
                         <span className="text-sm truncate">{file.name}</span>
+                        <Badge variant="outline" className="text-xs">File</Badge>
                       </div>
                       <Button
                         variant="ghost"
@@ -412,6 +421,33 @@ export function AssistantConfigPanel({
                       >
                         <X className="w-3 h-3" />
                       </Button>
+                    </div>
+                  ))}
+                  
+                  {/* Google Docs files */}
+                  {googleDocs?.map((doc: any) => (
+                    <div key={doc.id} className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                      <div className="flex items-center space-x-2">
+                        <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <span className="text-sm truncate">{doc.title}</span>
+                        <Badge 
+                          variant={doc.status === 'completed' ? 'default' : doc.status === 'error' ? 'destructive' : 'secondary'} 
+                          className="text-xs"
+                        >
+                          {doc.status === 'completed' ? 'Готов' : doc.status === 'error' ? 'Ошибка' : 'Обработка'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(doc.documentUrl, '_blank')}
+                          className="h-6 w-6 p-0 text-gray-400 hover:text-blue-500"
+                          title="Открыть документ"
+                        >
+                          <Link className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

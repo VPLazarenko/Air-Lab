@@ -223,6 +223,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!threadId) {
         console.log("Creating new thread...");
+        
+        // Get Google Docs files for this assistant to attach to the thread
+        const googleDocs = await storage.getGoogleDocsDocumentsByAssistantId(assistant.id);
+        const fileIds = googleDocs
+          .filter(doc => doc.status === 'completed' && doc.vectorStoreFileId)
+          .map(doc => doc.vectorStoreFileId)
+          .filter((id): id is string => id !== null && id !== undefined);
+        
+        console.log(`Found ${fileIds.length} processed files to attach to thread`);
+        
         const thread = await openaiService.createThread();
         threadId = thread.id;
         console.log("Created thread with ID:", threadId);
@@ -484,6 +494,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documents = await storage.getGoogleDocsDocumentsByAssistantId(req.params.assistantId);
       res.json(documents);
     } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.post("/api/assistants/:assistantId/update-files", async (req, res) => {
+    try {
+      const assistantId = req.params.assistantId;
+      const assistant = await storage.getAssistant(assistantId);
+      if (!assistant) {
+        return res.status(404).json({ error: "Assistant not found" });
+      }
+
+      // Get all processed Google Docs files
+      const processedDocs = await storage.getGoogleDocsDocumentsByAssistantId(assistantId);
+      const fileIds = processedDocs
+        .filter(doc => doc.status === 'completed' && doc.fileId)
+        .map(doc => doc.fileId!)
+        .filter(Boolean);
+
+      if (fileIds.length === 0) {
+        return res.json({ message: "No files to update", fileCount: 0 });
+      }
+
+      // Initialize OpenAI service
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "OpenAI API key not configured" });
+      }
+      
+      openaiService.setApiKey(apiKey);
+
+      // Update assistant with files if it has OpenAI ID
+      if (assistant.openaiAssistantId) {
+        try {
+          await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, fileIds);
+          res.json({ 
+            message: "Assistant files updated successfully", 
+            fileCount: fileIds.length,
+            fileIds: fileIds
+          });
+        } catch (error) {
+          console.error("Error updating assistant files:", error);
+          res.status(500).json({ error: "Failed to update assistant files" });
+        }
+      } else {
+        res.status(400).json({ error: "Assistant has no OpenAI ID" });
+      }
+    } catch (error) {
+      console.error("Error updating assistant files:", error);
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
