@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Dashboard from "@/pages/dashboard.tsx";
 import Playground from "@/pages/playground.tsx";
+import FileManager from "@/pages/file-manager.tsx";
 import NotFound from "@/pages/not-found.tsx";
 
 function Router() {
@@ -13,6 +14,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/playground" component={Playground} />
       <Route path="/playground/:assistantId" component={Playground} />
+      <Route path="/files" component={FileManager} />
       <Route component={NotFound} />
     </Switch>
   );

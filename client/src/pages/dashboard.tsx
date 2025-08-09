@@ -131,10 +131,12 @@ export default function Dashboard() {
               </div>
             </Link>
             
-            <div className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors opacity-50 cursor-not-allowed">
-              <Folder className="w-4 h-4" />
-              <span>File Manager</span>
-            </div>
+            <Link href="/files">
+              <div className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <Folder className="w-4 h-4" />
+                <span>File Manager</span>
+              </div>
+            </Link>
 
             <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 mt-6">
               Assistants ({assistants.length})

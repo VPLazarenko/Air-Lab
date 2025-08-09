@@ -140,4 +140,17 @@ export const openaiClient = {
     });
     return await response.json();
   },
+
+  async getGoogleDriveDocuments(assistantId: string) {
+    const response = await apiRequest("GET", `/api/assistants/${assistantId}/google-drive`);
+    return await response.json();
+  },
+
+  async addGoogleDriveDocument(assistantId: string, documentUrl: string, userId: string) {
+    const response = await apiRequest("POST", `/api/assistants/${assistantId}/google-drive`, {
+      documentUrl,
+      userId,
+    });
+    return await response.json();
+  },
 };
