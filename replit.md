@@ -7,6 +7,8 @@ This is a full-stack web application for creating, managing, and interacting wit
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Google Docs Integration: Use simple public document links instead of complex OAuth authentication.
+Vector Store: Disabled - use internal knowledge base for all data storage.
 
 ## System Architecture
 
@@ -30,11 +32,12 @@ Preferred communication style: Simple, everyday language.
 ### Data Storage Solutions
 - **Primary Database**: PostgreSQL with four main entities:
   - Users: Store user profiles, API keys, and preferences  
-  - Assistants: Store assistant configurations, OpenAI IDs, and vector store references
+  - Assistants: Store assistant configurations, OpenAI IDs (vector store functionality disabled)
   - Conversations: Store chat history and thread management
-  - Knowledge Base: Store file metadata, OpenAI file IDs, and vector store associations
+  - Knowledge Base: Store file metadata and Google Docs content in internal database
 - **Object Storage**: Google Cloud Storage for file uploads with custom metadata-based ACL policies
 - **Database Storage**: DatabaseStorage class replaces MemStorage for production data persistence
+- **Google Docs Integration**: Direct import from public Google Docs URLs without OAuth authentication
 
 ### Authentication and Authorization
 - **File Access Control**: Custom ACL system using object metadata for fine-grained access control

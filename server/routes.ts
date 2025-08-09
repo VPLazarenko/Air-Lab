@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openaiService } from "./openai";
 import { ObjectStorageService } from "./objectStorage";
+import { googleDocsService } from "./googleDocs";
 import { insertUserSchema, insertAssistantSchema, insertConversationSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -83,21 +84,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create assistant with OpenAI
       openaiService.setApiKey(apiKey);
       
-      // Use provided vector store ID or create new one for file search
-      let vectorStoreId = assistantData.userProvidedVectorStoreId || null;
-      const hasFileSearch = (assistantData.tools || []).some((t: any) => t.enabled && t.type === "file_search");
-      
-      if (hasFileSearch && !vectorStoreId) {
-        console.log("Creating vector store for assistant with file search...");
-        const vectorStore = await openaiService.createVectorStore(`${assistantData.name} Knowledge Base`);
-        vectorStoreId = vectorStore.id;
-        console.log(`Vector store created with ID: ${vectorStoreId}`);
-      } else if (vectorStoreId) {
-        console.log(`Using provided vector store ID: ${vectorStoreId}`);
-      }
+      // Vector store functionality disabled - using internal knowledge base instead
+      let vectorStoreId = null;
+      console.log("Vector store functionality disabled, using internal knowledge base for file management");
 
-      // Create assistant with vector store if provided
-      const tools = (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" }));
+      // Create assistant with only code_interpreter tool (file_search disabled)
+      const tools = (assistantData.tools || []).filter((t: any) => t.enabled && t.type === "code_interpreter").map((t: any) => ({ type: t.type as "code_interpreter" }));
       
       const assistantConfig: any = {
         name: assistantData.name,
@@ -106,15 +98,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         model: assistantData.model,
         tools,
       };
-
-      // Add vector store if file_search is enabled and vector store ID is provided
-      if (vectorStoreId && tools.some(t => t.type === "file_search")) {
-        assistantConfig.tool_resources = {
-          file_search: {
-            vector_store_ids: [vectorStoreId]
-          }
-        };
-      }
 
       const openaiAssistant = await openaiService.createAssistant(assistantConfig);
 
@@ -820,6 +803,148 @@ ${textContent}`;
       res.setHeader('Content-Disposition', `attachment; filename="${assistant.name}-config.json"`);
       res.json(exportData);
     } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Google Docs integration routes - работа по открытым ссылкам
+  app.post("/api/google-docs/import", async (req, res) => {
+    try {
+      const { url } = req.body;
+      const document = await googleDocsService.getDocument(url);
+      res.json(document);
+    } catch (error) {
+      console.error("Error fetching Google Doc:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.post("/api/google-docs/validate", async (req, res) => {
+    try {
+      const { urls } = req.body;
+      const results = await googleDocsService.validateDocuments(urls);
+      res.json(results);
+    } catch (error) {
+      console.error("Error validating Google Docs:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.post("/api/google-docs/batch-import", async (req, res) => {
+    try {
+      const { urls } = req.body;
+      const documents = await googleDocsService.getMultipleDocuments(urls);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error batch importing Google Docs:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Import Google Doc to assistant's knowledge base by URL
+  app.post("/api/assistants/:id/import-google-doc", async (req, res) => {
+    try {
+      const { url } = req.body;
+      const assistant = await storage.getAssistant(req.params.id);
+      
+      if (!assistant) {
+        return res.status(404).json({ error: "Assistant not found" });
+      }
+
+      // Fetch document from Google Docs by URL
+      const document = await googleDocsService.getDocument(url);
+      
+      // Save to knowledge base with content
+      const knowledgeFile = await storage.createKnowledgeBaseFile({
+        userId: assistant.userId,
+        assistantId: assistant.id,
+        fileName: `${document.title}.txt`,
+        originalName: document.title,
+        fileType: "text/plain",
+        storagePath: document.url,
+        metadata: {
+          description: `Imported from Google Docs: ${document.title}`,
+          isActive: true,
+          tags: ["google-docs", "imported"],
+          content: document.content, // Store content in metadata
+          documentId: document.id,
+          importedAt: new Date().toISOString()
+        }
+      });
+
+      res.json({
+        message: "Google Doc imported successfully",
+        file: knowledgeFile,
+        document: {
+          title: document.title,
+          id: document.id,
+          url: document.url,
+          content: document.content.substring(0, 200) + '...' // Preview
+        }
+      });
+    } catch (error) {
+      console.error("Error importing Google Doc:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Batch import multiple Google Docs to assistant
+  app.post("/api/assistants/:id/batch-import-google-docs", async (req, res) => {
+    try {
+      const { urls } = req.body;
+      const assistant = await storage.getAssistant(req.params.id);
+      
+      if (!assistant) {
+        return res.status(404).json({ error: "Assistant not found" });
+      }
+
+      const results = [];
+      for (const url of urls) {
+        try {
+          const document = await googleDocsService.getDocument(url);
+          const knowledgeFile = await storage.createKnowledgeBaseFile({
+            userId: assistant.userId,
+            assistantId: assistant.id,
+            fileName: `${document.title}.txt`,
+            originalName: document.title,
+            fileType: "text/plain",
+            storagePath: document.url,
+            metadata: {
+              description: `Imported from Google Docs: ${document.title}`,
+              isActive: true,
+              tags: ["google-docs", "imported"],
+              content: document.content,
+              documentId: document.id,
+              importedAt: new Date().toISOString()
+            }
+          });
+
+          results.push({
+            success: true,
+            url,
+            document: {
+              title: document.title,
+              id: document.id,
+              url: document.url
+            },
+            file: knowledgeFile
+          });
+        } catch (error) {
+          results.push({
+            success: false,
+            url,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+        }
+      }
+
+      const successCount = results.filter(r => r.success).length;
+      res.json({
+        message: `Imported ${successCount} of ${urls.length} documents`,
+        results
+      });
+    } catch (error) {
+      console.error("Error batch importing Google Docs:", error);
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });

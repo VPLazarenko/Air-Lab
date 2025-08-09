@@ -15,6 +15,7 @@ import { queryClient } from "@/lib/queryClient";
 import { openaiClient } from "@/lib/openai-client";
 import type { Assistant } from "@/lib/openai-client";
 import { ObjectUploader } from "@/components/ObjectUploader";
+import { GoogleDocsIntegration } from "@/components/google-docs-integration";
 import { 
   Save, 
   Download, 
@@ -402,7 +403,7 @@ export function AssistantConfigPanel({
           
           {/* Uploaded Files List */}
           {config.files.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-2 mb-4">
               {config.files.map((file) => (
                 <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
                   <div className="flex items-center space-x-2">
@@ -420,6 +421,11 @@ export function AssistantConfigPanel({
                 </div>
               ))}
             </div>
+          )}
+
+          {/* Google Docs Integration */}
+          {assistantId && (
+            <GoogleDocsIntegration assistantId={assistantId} />
           )}
         </div>
 
