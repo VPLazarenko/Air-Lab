@@ -117,7 +117,14 @@ export class OpenAIService {
           
           try {
             console.log(`Attempt ${attempts}: Checking run status...`);
-            const currentRun = await this.client.beta.threads.runs.retrieve(threadId, run.id);
+            console.log(`DEBUG: threadId="${threadId}" (type: ${typeof threadId}), runId="${run.id}" (type: ${typeof run.id})`);
+            
+            // Try different approach - make sure parameters are strings and not undefined
+            const safeThreadId = String(threadId);
+            const safeRunId = String(run.id);
+            
+            console.log(`Safe parameters: threadId="${safeThreadId}", runId="${safeRunId}"`);
+            const currentRun = await this.client.beta.threads.runs.retrieve(safeThreadId, safeRunId);
             console.log(`Run ${currentRun.id} status: ${currentRun.status}`);
             
             if (currentRun.status === "completed") {
