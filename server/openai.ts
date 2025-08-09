@@ -32,7 +32,7 @@ export class OpenAIService {
         description: params.description,
         instructions: params.instructions,
         model: params.model || DEFAULT_MODEL,
-        tools: params.tools?.map(tool => ({ type: tool.type })) || [],
+        tools: [], // Vector store disabled - using internal knowledge base
         // Note: file_ids parameter may need to be updated based on current OpenAI API
       });
 
@@ -57,7 +57,7 @@ export class OpenAIService {
         description: params.description,
         instructions: params.instructions,
         model: params.model,
-        tools: params.tools?.map(tool => ({ type: tool.type })) || [],
+        tools: [], // Vector store disabled - using internal knowledge base
       });
 
       return assistant;
@@ -82,55 +82,17 @@ export class OpenAIService {
     }
   }
 
+  // Vector store functionality completely disabled
   async createVectorStore(name: string) {
-    try {
-      const vectorStore = await this.client.beta.vectorStores.create({
-        name: name
-      });
-      console.log(`Created vector store: ${vectorStore.id}`);
-      return vectorStore;
-    } catch (error) {
-      console.error("Error creating vector store:", error);
-      throw new Error(`Failed to create vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    throw new Error("Vector store functionality is disabled. Use internal knowledge base instead.");
   }
 
   async uploadAndPollFiles(vectorStoreId: string, files: Buffer[], filenames: string[]) {
-    try {
-      // Create File objects for batch upload
-      const fileObjects = files.map((buffer, index) => 
-        new File([buffer], filenames[index])
-      );
-
-      // Use batch upload with polling - this is the recommended method per OpenAI docs
-      const fileBatch = await this.client.beta.vectorStores.fileBatches.uploadAndPoll(
-        vectorStoreId,
-        {
-          files: fileObjects
-        }
-      );
-
-      console.log(`Batch upload completed. Status: ${fileBatch.status}`);
-      console.log(`File counts:`, fileBatch.file_counts);
-
-      return fileBatch;
-    } catch (error) {
-      console.error("Error uploading files batch:", error);
-      throw new Error(`Failed to upload files batch: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    throw new Error("Vector store functionality is disabled. Use internal knowledge base instead.");
   }
 
   async addFileToVectorStore(vectorStoreId: string, fileId: string) {
-    try {
-      const vectorStoreFile = await this.client.beta.vectorStores.files.create(vectorStoreId, {
-        file_id: fileId
-      });
-      console.log(`Successfully added file ${fileId} to vector store ${vectorStoreId}`);
-      return vectorStoreFile;
-    } catch (error) {
-      console.error("Error adding file to vector store:", error);
-      throw new Error(`Failed to add file to vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    throw new Error("Vector store functionality is disabled. Use internal knowledge base instead.");
   }
 
   async listVectorStoreFiles(vectorStoreId: string) {

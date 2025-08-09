@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 
-const DEMO_USER_ID = "demo-user-1";
+const DEMO_USER_ID = "84ac8242-6c19-42a0-825b-caa01572e5e6";
 
 export default function Playground() {
   const params = useParams();

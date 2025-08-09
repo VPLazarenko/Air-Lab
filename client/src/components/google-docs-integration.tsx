@@ -195,20 +195,11 @@ export function GoogleDocsIntegration({ assistantId }: GoogleDocsIntegrationProp
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
-            Google Docs Integration
+            Документы
           </CardTitle>
           <CardDescription>
-            Import Google Docs with AI-powered analysis and key information extraction for efficient storage
+            Добавление документов в базу знаний ассистента
           </CardDescription>
-          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs">
-            <p className="font-medium mb-1">Для тестирования вставьте эту ссылку:</p>
-            <code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-xs break-all">
-              https://docs.google.com/document/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
-            </code>
-            <p className="mt-1 text-gray-600 dark:text-gray-400">
-              Это публичный Google Docs документ для демонстрации возможностей AI анализа
-            </p>
-          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Single Document URL */}
@@ -249,7 +240,7 @@ export function GoogleDocsIntegration({ assistantId }: GoogleDocsIntegrationProp
             )}
             {!documentUrl && (
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Используйте тестовую ссылку выше или вставьте свою публичную ссылку на Google Docs
+                Вставьте публичную ссылку на документ
               </p>
             )}
           </div>

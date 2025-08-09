@@ -278,7 +278,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send message and get response
       console.log("Sending message to thread:", threadId);
-      await openaiService.sendMessage(threadId, message);
+      
+      // Get knowledge base documents for context (if available)
+      const knowledgeFiles = await storage.getKnowledgeBaseFilesByAssistantId(conversation.assistantId);
+      let enhancedMessage = message;
+      
+      if (knowledgeFiles.length > 0) {
+        let knowledgeContext = "\n\nDOCUMENTS IN KNOWLEDGE BASE:\n";
+        knowledgeFiles.forEach((file, index) => {
+          if (file.metadata?.keyInformation) {
+            const info = file.metadata.keyInformation;
+            knowledgeContext += `\n${index + 1}. "${file.originalName}"\n`;
+            knowledgeContext += `   Summary: ${info.summary}\n`;
+            if (info.keyPoints.length > 0) {
+              knowledgeContext += `   Key Points: ${info.keyPoints.slice(0, 3).join("; ")}\n`;
+            }
+          }
+        });
+        enhancedMessage = `${message}${knowledgeContext}`;
+      }
+      
+      await openaiService.sendMessage(threadId, enhancedMessage);
       
       let response;
       if (assistant.openaiAssistantId) {
@@ -638,12 +658,8 @@ ${textContent}`;
       const uploadedFile = await openaiService.uploadFile(fileBuffer, fileName);
       console.log(`Analyzed Google Docs content uploaded with ID: ${uploadedFile.id}`);
 
-      // Step 2: Add file to default vector store
-      const DEFAULT_VECTOR_STORE_ID = "vs_6871906566a48191aa3376db251c9d0d";
-      console.log(`Adding analyzed Google Docs content to vector store ${DEFAULT_VECTOR_STORE_ID}...`);
-      
-      const vectorStoreFile = await openaiService.addFileToVectorStore(DEFAULT_VECTOR_STORE_ID, uploadedFile.id);
-      console.log(`Analyzed Google Docs content added to vector store successfully`);
+      // Vector store disabled - using internal knowledge base only
+      console.log(`Saving Google Docs content to internal knowledge base only...`);
 
       // Save to knowledge base linked to specific assistant
       const knowledgeFile = await storage.createKnowledgeBaseFile({
@@ -654,7 +670,7 @@ ${textContent}`;
         fileSize: fileBuffer.length.toString(),
         fileType: 'google_docs',
         openaiFileId: uploadedFile.id,
-        vectorStoreId: DEFAULT_VECTOR_STORE_ID,
+        vectorStoreId: null, // Vector store disabled
         storagePath: `https://docs.google.com/document/d/${documentId}`,
         metadata: { 
           description: `AI-analyzed Google Docs content for ${assistant.name}: ${documentId}`,
@@ -667,7 +683,6 @@ ${textContent}`;
         success: true,
         message: `Google Docs ${documentId} analyzed and added to ${assistant.name}'s knowledge base`,
         file: uploadedFile,
-        vectorStoreFile,
         knowledgeFile,
         assistant: { id: assistant.id, name: assistant.name },
         analysis: {
