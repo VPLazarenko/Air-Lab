@@ -38,11 +38,13 @@ export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private assistants: Map<string, Assistant>;
   private conversations: Map<string, Conversation>;
+  private knowledgeBase: Map<string, KnowledgeBase>;
 
   constructor() {
     this.users = new Map();
     this.assistants = new Map();
     this.conversations = new Map();
+    this.knowledgeBase = new Map();
   }
 
   // User operations
@@ -59,6 +61,7 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
+      apiKey: null,
       createdAt: new Date(),
       settings: insertUser.settings as { defaultModel?: string; autoSave?: boolean; darkMode?: boolean; } || {}
     };
@@ -89,6 +92,13 @@ export class MemStorage implements IStorage {
     const newAssistant: Assistant = {
       ...assistant,
       id,
+      openaiAssistantId: assistant.openaiAssistantId || null,
+      vectorStoreId: assistant.vectorStoreId || null,
+      userProvidedVectorStoreId: assistant.userProvidedVectorStoreId || null,
+      description: assistant.description || null,
+      instructions: assistant.instructions || null,
+      model: assistant.model || "gpt-4o",
+      temperature: assistant.temperature ?? 0.7,
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: true,
@@ -134,9 +144,11 @@ export class MemStorage implements IStorage {
     const newConversation: Conversation = {
       ...conversation,
       id,
+      openaiThreadId: null,
+      title: conversation.title || null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      messages: conversation.messages || []
+      messages: (conversation.messages as Array<{ id: string; role: "user" | "assistant" | "system"; content: string; timestamp: string; }>) || []
     };
     this.conversations.set(id, newConversation);
     return newConversation;
@@ -157,6 +169,55 @@ export class MemStorage implements IStorage {
 
   async deleteConversation(id: string): Promise<boolean> {
     return this.conversations.delete(id);
+  }
+
+  // Knowledge Base operations
+  async getKnowledgeBaseFile(id: string): Promise<KnowledgeBase | undefined> {
+    return this.knowledgeBase.get(id);
+  }
+
+  async getKnowledgeBaseFilesByUserId(userId: string): Promise<KnowledgeBase[]> {
+    return Array.from(this.knowledgeBase.values()).filter(file => file.userId === userId);
+  }
+
+  async getKnowledgeBaseFilesByAssistantId(assistantId: string): Promise<KnowledgeBase[]> {
+    return Array.from(this.knowledgeBase.values()).filter(file => file.assistantId === assistantId);
+  }
+
+  async createKnowledgeBaseFile(file: InsertKnowledgeBase & { userId: string }): Promise<KnowledgeBase> {
+    const id = randomUUID();
+    const newFile: KnowledgeBase = {
+      ...file,
+      id,
+      assistantId: file.assistantId || null,
+      vectorStoreId: file.vectorStoreId || null,
+      fileSize: file.fileSize || null,
+      fileType: file.fileType || null,
+      openaiFileId: file.openaiFileId || null,
+      storagePath: file.storagePath || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      metadata: (file.metadata as { description?: string; tags?: string[]; isActive?: boolean; }) || {}
+    };
+    this.knowledgeBase.set(id, newFile);
+    return newFile;
+  }
+
+  async updateKnowledgeBaseFile(id: string, updates: Partial<KnowledgeBase>): Promise<KnowledgeBase | undefined> {
+    const file = this.knowledgeBase.get(id);
+    if (!file) return undefined;
+
+    const updatedFile = { 
+      ...file, 
+      ...updates, 
+      updatedAt: new Date() 
+    };
+    this.knowledgeBase.set(id, updatedFile);
+    return updatedFile;
+  }
+
+  async deleteKnowledgeBaseFile(id: string): Promise<boolean> {
+    return this.knowledgeBase.delete(id);
   }
 }
 
@@ -218,7 +279,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAssistant(id: string): Promise<boolean> {
     const result = await db.delete(assistants).where(eq(assistants.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Conversation operations
@@ -254,7 +315,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteConversation(id: string): Promise<boolean> {
     const result = await db.delete(conversations).where(eq(conversations.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Knowledge Base operations
@@ -294,7 +355,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteKnowledgeBaseFile(id: string): Promise<boolean> {
     const result = await db.delete(knowledgeBase).where(eq(knowledgeBase.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 }
 
