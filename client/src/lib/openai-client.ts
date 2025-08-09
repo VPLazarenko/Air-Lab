@@ -20,7 +20,6 @@ export interface User {
   id: string;
   username: string;
   email: string;
-  apiKey?: string;
   settings: {
     defaultModel?: string;
     autoSave?: boolean;
@@ -46,7 +45,7 @@ export interface Conversation {
 
 export const openaiClient = {
   // User operations
-  async createUser(userData: { username: string; email: string; apiKey?: string; settings?: any }) {
+  async createUser(userData: { username: string; email: string; settings?: any }) {
     const response = await apiRequest("POST", "/api/users", userData);
     return await response.json() as User;
   },

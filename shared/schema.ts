@@ -51,7 +51,6 @@ export const conversations = pgTable("conversations", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
-  apiKey: true,
   settings: true,
 });
 

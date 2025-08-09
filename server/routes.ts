@@ -50,19 +50,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: z.string()
       }).parse(req.body);
 
-      // Get user's API key
-      const user = await storage.getUser(assistantData.userId);
-      console.log("Creating assistant for user:", assistantData.userId);
-      console.log("User found:", !!user);
-      console.log("User API key exists:", !!user?.apiKey);
-      console.log("User API key starts with sk-:", user?.apiKey?.startsWith('sk-'));
-      
-      if (!user?.apiKey) {
-        return res.status(400).json({ error: "OpenAI API key not configured. Please go to Settings and add your API key." });
+      // Use OpenAI API key from environment
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "OpenAI API key not configured on server" });
       }
 
       // Create assistant with OpenAI
-      openaiService.setApiKey(user.apiKey);
+      openaiService.setApiKey(apiKey);
       const openaiAssistant = await openaiService.createAssistant({
         name: assistantData.name,
         description: assistantData.description,
@@ -112,16 +107,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Assistant not found" });
       }
 
-      const user = await storage.getUser(assistant.userId);
-      if (!user?.apiKey) {
-        return res.status(400).json({ error: "OpenAI API key not configured" });
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "OpenAI API key not configured on server" });
       }
 
       const updates = req.body;
 
       // Update with OpenAI if assistant exists there
       if (assistant.openaiAssistantId) {
-        openaiService.setApiKey(user.apiKey);
+        openaiService.setApiKey(apiKey);
         await openaiService.updateAssistant(assistant.openaiAssistantId, {
           name: updates.name,
           description: updates.description,
@@ -147,11 +142,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Assistant not found" });
       }
 
-      const user = await storage.getUser(assistant.userId);
+      const apiKey = process.env.OPENAI_API_KEY;
       
       // Delete from OpenAI if it exists there
-      if (assistant.openaiAssistantId && user?.apiKey) {
-        openaiService.setApiKey(user.apiKey);
+      if (assistant.openaiAssistantId && apiKey) {
+        openaiService.setApiKey(apiKey);
         await openaiService.deleteAssistant(assistant.openaiAssistantId);
       }
 
@@ -195,12 +190,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Assistant not found" });
       }
 
-      const user = await storage.getUser(conversation.userId);
-      if (!user?.apiKey) {
-        return res.status(400).json({ error: "OpenAI API key not configured" });
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "OpenAI API key not configured on server" });
       }
 
-      openaiService.setApiKey(user.apiKey);
+      openaiService.setApiKey(apiKey);
 
       // Create thread if doesn't exist
       let threadId = conversation.openaiThreadId;

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,7 +9,6 @@ import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { openaiClient } from "@/lib/openai-client";
 import type { User } from "@/lib/openai-client";
-import { Eye, EyeOff } from "lucide-react";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -20,18 +18,15 @@ interface SettingsModalProps {
 
 export function SettingsModal({ isOpen, onClose, user }: SettingsModalProps) {
   const [settings, setSettings] = useState({
-    apiKey: "",
     defaultModel: "gpt-4o",
     autoSave: true,
     darkMode: false,
   });
-  const [showApiKey, setShowApiKey] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
       setSettings({
-        apiKey: user.apiKey || "",
         defaultModel: user.settings?.defaultModel || "gpt-4o",
         autoSave: user.settings?.autoSave ?? true,
         darkMode: user.settings?.darkMode ?? false,
@@ -40,7 +35,7 @@ export function SettingsModal({ isOpen, onClose, user }: SettingsModalProps) {
   }, [user]);
 
   const updateUserMutation = useMutation({
-    mutationFn: (data: { apiKey: string; settings: any }) => 
+    mutationFn: (data: { settings: any }) => 
       openaiClient.updateUser(user!.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/users', user!.id] });
@@ -63,7 +58,6 @@ export function SettingsModal({ isOpen, onClose, user }: SettingsModalProps) {
     if (!user) return;
 
     updateUserMutation.mutate({
-      apiKey: settings.apiKey,
       settings: {
         defaultModel: settings.defaultModel,
         autoSave: settings.autoSave,
@@ -84,32 +78,6 @@ export function SettingsModal({ isOpen, onClose, user }: SettingsModalProps) {
         </DialogHeader>
         
         <div className="space-y-4 py-4">
-          <div>
-            <Label htmlFor="apiKey">OpenAI API Key</Label>
-            <div className="relative">
-              <Input
-                id="apiKey"
-                type={showApiKey ? "text" : "password"}
-                placeholder="sk-..."
-                value={settings.apiKey}
-                onChange={(e) => updateSetting('apiKey', e.target.value)}
-                className="pr-10"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() => setShowApiKey(!showApiKey)}
-              >
-                {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Your API key is stored locally and never shared
-            </p>
-          </div>
-          
           <div>
             <Label htmlFor="defaultModel">Default Model</Label>
             <Select value={settings.defaultModel} onValueChange={(value) => updateSetting('defaultModel', value)}>
@@ -144,6 +112,12 @@ export function SettingsModal({ isOpen, onClose, user }: SettingsModalProps) {
             <Label htmlFor="darkMode" className="text-sm">
               Dark mode
             </Label>
+          </div>
+
+          <div className="pt-2 border-t">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              OpenAI API key is configured on the server
+            </p>
           </div>
         </div>
         
