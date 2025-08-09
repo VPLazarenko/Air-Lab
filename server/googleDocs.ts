@@ -44,9 +44,7 @@ export class GoogleDocsService {
   async getDocInfo(docId: string): Promise<GoogleDocInfo | null> {
     try {
       const response = await this.docs.documents.get({
-        documentId: docId,
-        // Получаем только title для базовой информации
-        fields: 'title,documentId'
+        documentId: docId
       });
 
       return {
@@ -56,8 +54,8 @@ export class GoogleDocsService {
     } catch (error: any) {
       console.error(`Error fetching Google Doc info for ${docId}:`, error.message);
       
-      // Если документ недоступен, возвращаем null
-      if (error.code === 404 || error.code === 403) {
+      // Если документ недоступен или не найден, возвращаем null
+      if (error.code === 404 || error.code === 403 || error.status === 404 || error.status === 403) {
         return null;
       }
       
@@ -69,9 +67,7 @@ export class GoogleDocsService {
   async getDocumentContent(docId: string): Promise<string | null> {
     try {
       const response = await this.docs.documents.get({
-        documentId: docId,
-        // Получаем полное содержимое документа
-        includeTabsContent: true
+        documentId: docId
       });
 
       if (!response.data.body || !response.data.body.content) {
@@ -82,19 +78,40 @@ export class GoogleDocsService {
       let content = '';
       const extractTextFromContent = (elements: any[]) => {
         for (const element of elements) {
-          if (element.paragraph) {
-            for (const textElement of element.paragraph.elements || []) {
-              if (textElement.textRun) {
-                content += textElement.textRun.content || '';
+          if (element.paragraph && element.paragraph.elements) {
+            for (const paragraphElement of element.paragraph.elements) {
+              if (paragraphElement.textRun && paragraphElement.textRun.content) {
+                content += paragraphElement.textRun.content;
+              } else if (paragraphElement.autoText) {
+                content += '[AUTO_TEXT]';
+              } else if (paragraphElement.pageBreak) {
+                content += '\n[PAGE_BREAK]\n';
+              } else if (paragraphElement.columnBreak) {
+                content += '\n[COLUMN_BREAK]\n';
+              } else if (paragraphElement.horizontalRule) {
+                content += '\n---\n';
               }
             }
-          } else if (element.table) {
+            content += '\n'; // Добавляем перенос строки после параграфа
+          } else if (element.table && element.table.tableRows) {
             // Обработка таблиц
-            for (const row of element.table.tableRows || []) {
-              for (const cell of row.tableCells || []) {
-                extractTextFromContent(cell.content || []);
+            content += '\n[TABLE]\n';
+            for (const row of element.table.tableRows) {
+              if (row.tableCells) {
+                for (const cell of row.tableCells) {
+                  if (cell.content) {
+                    extractTextFromContent(cell.content);
+                    content += ' | '; // Разделитель ячеек
+                  }
+                }
+                content += '\n'; // Новая строка таблицы
               }
             }
+            content += '[/TABLE]\n';
+          } else if (element.sectionBreak) {
+            content += '\n[SECTION_BREAK]\n';
+          } else if (element.tableOfContents) {
+            content += '\n[TABLE_OF_CONTENTS]\n';
           }
         }
       };
@@ -102,12 +119,12 @@ export class GoogleDocsService {
       extractTextFromContent(response.data.body.content);
       
       // Очищаем и нормализуем текст
-      return content.trim();
+      return content.replace(/\n\s*\n/g, '\n').trim();
     } catch (error: any) {
       console.error(`Error fetching Google Doc content for ${docId}:`, error.message);
       
       // Если документ недоступен, возвращаем null
-      if (error.code === 404 || error.code === 403) {
+      if (error.code === 404 || error.code === 403 || error.status === 404 || error.status === 403) {
         return null;
       }
       
