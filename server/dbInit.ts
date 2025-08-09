@@ -65,7 +65,7 @@ export async function initializeDatabase() {
             instructions: assistantData.instructions,
             tools: assistantData.tools,
             userId: assistantData.userId,
-            openaiId: openaiAssistant.id,
+            openaiAssistantId: openaiAssistant.id,
           });
 
           console.log(`✅ Ассистент "${assistantData.name}" создан успешно`);
@@ -78,7 +78,12 @@ export async function initializeDatabase() {
         // Verify OpenAI assistant still exists
         if (existingAssistant.openaiAssistantId) {
           try {
-            await openaiService.getAssistantById(existingAssistant.openaiAssistantId);
+            // Try to retrieve assistant to verify it exists
+            const assistants = await openaiService.listAssistants();
+            const foundAssistant = assistants.find(a => a.id === existingAssistant.openaiAssistantId);
+            if (!foundAssistant) {
+              throw new Error('Assistant not found');
+            }
             console.log(`✓ OpenAI ассистент ${existingAssistant.openaiAssistantId} подтвержден`);
           } catch (error) {
             console.log(`⚠️ OpenAI ассистент ${existingAssistant.openaiAssistantId} не найден, восстанавливаем...`);
@@ -93,7 +98,7 @@ export async function initializeDatabase() {
 
               // Update database
               await storage.updateAssistant(existingAssistant.id, {
-                openaiId: newOpenaiAssistant.id,
+                openaiAssistantId: newOpenaiAssistant.id,
               });
 
               console.log(`✅ OpenAI ассистент восстановлен: ${newOpenaiAssistant.id}`);
@@ -142,7 +147,7 @@ export async function ensureDataIntegrity() {
           });
 
           await storage.updateAssistant(assistant.id, {
-            openaiId: openaiAssistant.id,
+            openaiAssistantId: openaiAssistant.id,
           });
 
           console.log(`✅ OpenAI ID восстановлен для ${assistant.name}: ${openaiAssistant.id}`);
