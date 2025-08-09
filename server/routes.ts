@@ -57,9 +57,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Assistant routes
   app.post("/api/assistants", async (req, res) => {
     try {
-      const assistantData = insertAssistantSchema.extend({
+      let assistantData = insertAssistantSchema.extend({
         userId: z.string()
       }).parse(req.body);
+
+      // Convert demo user ID to actual UUID
+      if (assistantData.userId === "demo-user-1") {
+        console.log("Converting demo-user-1 to actual UUID...");
+        const user = await storage.getUserByEmail("demo@example.com");
+        if (user) {
+          console.log("Found user:", user.id);
+          assistantData = { ...assistantData, userId: user.id };
+        } else {
+          console.log("User not found with email demo@example.com");
+        }
+      }
+      console.log("Final userId:", assistantData.userId);
 
       // Use OpenAI API key from environment
       const apiKey = process.env.OPENAI_API_KEY;
