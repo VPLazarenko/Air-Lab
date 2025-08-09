@@ -233,9 +233,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat/conversation routes
   app.post("/api/conversations", async (req, res) => {
     try {
-      const conversationData = insertConversationSchema.extend({
+      let conversationData = insertConversationSchema.extend({
         userId: z.string()
       }).parse(req.body);
+
+      // Convert demo user ID to actual UUID
+      if (conversationData.userId === "demo-user-1") {
+        const user = await storage.getUserByEmail("demo@example.com");
+        if (user) {
+          conversationData = { ...conversationData, userId: user.id };
+        }
+      }
 
       const conversation = await storage.createConversation(conversationData);
       res.json(conversation);
@@ -339,7 +347,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/conversations/user/:userId", async (req, res) => {
     try {
-      const conversations = await storage.getConversationsByUserId(req.params.userId);
+      let userId = req.params.userId;
+      if (userId === "demo-user-1") {
+        const user = await storage.getUserByEmail("demo@example.com");
+        if (user) {
+          userId = user.id;
+        }
+      }
+      const conversations = await storage.getConversationsByUserId(userId);
       res.json(conversations);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
