@@ -15,6 +15,8 @@ import { queryClient } from "@/lib/queryClient";
 import { openaiClient } from "@/lib/openai-client";
 import type { Assistant } from "@/lib/openai-client";
 import { ObjectUploader } from "@/components/ObjectUploader";
+import { GoogleDriveIntegration } from "@/components/google-drive-integration";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Save, 
   Download, 
@@ -22,7 +24,8 @@ import {
   X, 
   FileText, 
   Code, 
-  File
+  File,
+  Link
 } from "lucide-react";
 
 interface AssistantConfigPanelProps {
@@ -361,45 +364,74 @@ export function AssistantConfigPanel({
           </div>
         </div>
 
-        {/* Files */}
+        {/* Knowledge Base */}
         <div>
           <h3 className="font-semibold mb-3">Knowledge Base</h3>
           
-          <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center mb-3">
-            <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Drag & drop files here</p>
-            <ObjectUploader
-              maxNumberOfFiles={5}
-              maxFileSize={10485760} // 10MB
-              onGetUploadParameters={handleFileUpload}
-              onComplete={handleFileComplete}
-              buttonClassName="text-emerald-600 text-sm hover:underline"
-            >
-              Browse files
-            </ObjectUploader>
-          </div>
-          
-          {/* Uploaded Files List */}
-          {config.files.length > 0 && (
-            <div className="space-y-2">
-              {config.files.map((file) => (
-                <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                  <div className="flex items-center space-x-2">
-                    {getFileIcon(file.name)}
-                    <span className="text-sm truncate">{file.name}</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeFile(file.id)}
-                    className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
+          <Tabs defaultValue="files" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="files" className="flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                File Upload
+              </TabsTrigger>
+              <TabsTrigger value="google-drive" className="flex items-center gap-2">
+                <Link className="w-4 h-4" />
+                Google Drive
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="files" className="space-y-3">
+              <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
+                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Drag & drop files here</p>
+                <ObjectUploader
+                  maxNumberOfFiles={5}
+                  maxFileSize={10485760} // 10MB
+                  onGetUploadParameters={handleFileUpload}
+                  onComplete={handleFileComplete}
+                  buttonClassName="text-emerald-600 text-sm hover:underline"
+                >
+                  Browse files
+                </ObjectUploader>
+              </div>
+              
+              {/* Uploaded Files List */}
+              {config.files.length > 0 && (
+                <div className="space-y-2">
+                  {config.files.map((file) => (
+                    <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                      <div className="flex items-center space-x-2">
+                        {getFileIcon(file.name)}
+                        <span className="text-sm truncate">{file.name}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(file.id)}
+                        className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
+            </TabsContent>
+            
+            <TabsContent value="google-drive">
+              {assistantId ? (
+                <GoogleDriveIntegration
+                  assistantId={assistantId}
+                  userId={userId}
+                />
+              ) : (
+                <div className="text-center p-4 text-muted-foreground">
+                  <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Сохраните ассистента для добавления Google Drive документов</p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Actions */}

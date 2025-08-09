@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openaiService } from "./openai";
 import { ObjectStorageService } from "./objectStorage";
-import { insertUserSchema, insertAssistantSchema, insertConversationSchema } from "@shared/schema";
+import { GoogleDriveService } from "./googleDrive";
+import { insertUserSchema, insertAssistantSchema, insertConversationSchema, insertGoogleDriveDocumentSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -81,8 +82,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Vector store is created but files will be attached when uploaded
 
       // Save to local storage
-      const assistant = await storage.createAssistant({
-        ...assistantData,
+      const assistant = await storage.createAssistant(assistantData);
+      
+      // Update with OpenAI data
+      await storage.updateAssistant(assistant.id, {
         openaiAssistantId: openaiAssistant.id,
         vectorStoreId: vectorStoreId,
       });
@@ -413,6 +416,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
+
+  // Google Drive integration routes
+  const googleDriveService = new GoogleDriveService();
+
+  // Add Google Drive document to assistant knowledge base
+  app.post("/api/assistants/:assistantId/google-drive", async (req, res) => {
+    try {
+      const assistantId = req.params.assistantId;
+      const { userId, documentUrl } = req.body;
+      
+      if (!documentUrl) {
+        return res.status(400).json({ error: "Document URL is required" });
+      }
+
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+
+      // Validate assistant exists
+      const assistant = await storage.getAssistant(assistantId);
+      if (!assistant) {
+        return res.status(404).json({ error: "Assistant not found" });
+      }
+
+      // Extract file ID from Google Drive URL
+      const fileId = googleDriveService.extractFileIdFromUrl(documentUrl);
+      if (!fileId) {
+        return res.status(400).json({ error: "Invalid Google Drive URL" });
+      }
+
+      // Check file access and get info
+      const fileInfo = await googleDriveService.getFileInfo(fileId);
+      if (!fileInfo) {
+        return res.status(404).json({ error: "Document not found or not accessible" });
+      }
+
+      // Create document record in database
+      const documentRecord = await storage.createGoogleDriveDocument({
+        driveFileId: fileId,
+        documentUrl: documentUrl,
+        fileName: fileInfo.name,
+        fileType: fileInfo.mimeType,
+        status: "processing",
+        userId,
+        assistantId
+      });
+
+      // Process document in background
+      processGoogleDriveDocument(documentRecord.id, assistant, googleDriveService);
+
+      res.json({
+        success: true,
+        documentId: documentRecord.id,
+        fileName: fileInfo.name,
+        message: "Document added to processing queue"
+      });
+
+    } catch (error) {
+      console.error("Error adding Google Drive document:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Get Google Drive documents for assistant
+  app.get("/api/assistants/:assistantId/google-drive", async (req, res) => {
+    try {
+      const documents = await storage.getGoogleDriveDocumentsByAssistantId(req.params.assistantId);
+      res.json(documents);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Delete Google Drive document
+  app.delete("/api/google-drive/:documentId", async (req, res) => {
+    try {
+      const success = await storage.deleteGoogleDriveDocument(req.params.documentId);
+      if (!success) {
+        return res.status(404).json({ error: "Document not found" });
+      }
+      res.json({ success: true, message: "Document removed" });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Background processing function
+  async function processGoogleDriveDocument(documentId: string, assistant: any, driveService: GoogleDriveService) {
+    try {
+      const document = await storage.getGoogleDriveDocument(documentId);
+      if (!document) return;
+
+      // Update status to processing
+      await storage.updateGoogleDriveDocument(documentId, { status: "processing" });
+
+      // Get document content
+      const content = await driveService.getDocumentContent(document.driveFileId);
+      if (!content) {
+        await storage.updateGoogleDriveDocument(documentId, { 
+          status: "error",
+          errorMessage: "Could not extract content from document"
+        });
+        return;
+      }
+
+      // Update document with content
+      await storage.updateGoogleDriveDocument(documentId, { content });
+
+      // Upload to OpenAI as a file
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (apiKey && assistant.openaiAssistantId) {
+        openaiService.setApiKey(apiKey);
+        
+        // Create temporary file from content
+        const buffer = Buffer.from(content, 'utf8');
+        const fileName = `${document.fileName}.txt`;
+        
+        try {
+          const openaiFile = await openaiService.uploadFile(buffer, fileName, 'assistants');
+          
+          // Update assistant with the new file
+          await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, [openaiFile.id]);
+          
+          // Update document record
+          await storage.updateGoogleDriveDocument(documentId, { 
+            status: "completed",
+            vectorStoreFileId: openaiFile.id,
+            processedAt: new Date()
+          });
+          
+          console.log(`Successfully processed Google Drive document: ${document.fileName}`);
+        } catch (openaiError) {
+          console.error("Error uploading to OpenAI:", openaiError);
+          await storage.updateGoogleDriveDocument(documentId, { 
+            status: "error",
+            errorMessage: `Failed to upload to OpenAI: ${openaiError instanceof Error ? openaiError.message : 'Unknown error'}`
+          });
+        }
+      } else {
+        await storage.updateGoogleDriveDocument(documentId, { 
+          status: "completed",
+          processedAt: new Date()
+        });
+      }
+
+    } catch (error) {
+      console.error(`Error processing Google Drive document ${documentId}:`, error);
+      await storage.updateGoogleDriveDocument(documentId, { 
+        status: "error",
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
 
   const httpServer = createServer(app);
   return httpServer;

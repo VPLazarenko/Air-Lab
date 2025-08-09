@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation } from "@shared/schema";
+import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type GoogleDriveDocument, type InsertGoogleDriveDocument } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -22,17 +22,27 @@ export interface IStorage {
   createConversation(conversation: InsertConversation & { userId: string }): Promise<Conversation>;
   updateConversation(id: string, updates: Partial<Conversation>): Promise<Conversation | undefined>;
   deleteConversation(id: string): Promise<boolean>;
+
+  // Google Drive Document operations
+  getGoogleDriveDocument(id: string): Promise<GoogleDriveDocument | undefined>;
+  getGoogleDriveDocumentsByAssistantId(assistantId: string): Promise<GoogleDriveDocument[]>;
+  getGoogleDriveDocumentsByUserId(userId: string): Promise<GoogleDriveDocument[]>;
+  createGoogleDriveDocument(document: InsertGoogleDriveDocument & { userId: string; assistantId: string }): Promise<GoogleDriveDocument>;
+  updateGoogleDriveDocument(id: string, updates: Partial<GoogleDriveDocument>): Promise<GoogleDriveDocument | undefined>;
+  deleteGoogleDriveDocument(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private assistants: Map<string, Assistant>;
   private conversations: Map<string, Conversation>;
+  private googleDriveDocuments: Map<string, GoogleDriveDocument>;
 
   constructor() {
     this.users = new Map();
     this.assistants = new Map();
     this.conversations = new Map();
+    this.googleDriveDocuments = new Map();
   }
 
   // User operations
@@ -147,6 +157,51 @@ export class MemStorage implements IStorage {
 
   async deleteConversation(id: string): Promise<boolean> {
     return this.conversations.delete(id);
+  }
+
+  // Google Drive Document operations
+  async getGoogleDriveDocument(id: string): Promise<GoogleDriveDocument | undefined> {
+    return this.googleDriveDocuments.get(id);
+  }
+
+  async getGoogleDriveDocumentsByAssistantId(assistantId: string): Promise<GoogleDriveDocument[]> {
+    return Array.from(this.googleDriveDocuments.values()).filter(doc => doc.assistantId === assistantId);
+  }
+
+  async getGoogleDriveDocumentsByUserId(userId: string): Promise<GoogleDriveDocument[]> {
+    return Array.from(this.googleDriveDocuments.values()).filter(doc => doc.userId === userId);
+  }
+
+  async createGoogleDriveDocument(document: InsertGoogleDriveDocument & { userId: string; assistantId: string }): Promise<GoogleDriveDocument> {
+    const id = randomUUID();
+    const newDocument: GoogleDriveDocument = {
+      ...document,
+      id,
+      processedAt: null,
+      vectorStoreFileId: null,
+      errorMessage: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.googleDriveDocuments.set(id, newDocument);
+    return newDocument;
+  }
+
+  async updateGoogleDriveDocument(id: string, updates: Partial<GoogleDriveDocument>): Promise<GoogleDriveDocument | undefined> {
+    const document = this.googleDriveDocuments.get(id);
+    if (!document) return undefined;
+
+    const updatedDocument = { 
+      ...document, 
+      ...updates, 
+      updatedAt: new Date() 
+    };
+    this.googleDriveDocuments.set(id, updatedDocument);
+    return updatedDocument;
+  }
+
+  async deleteGoogleDriveDocument(id: string): Promise<boolean> {
+    return this.googleDriveDocuments.delete(id);
   }
 }
 
