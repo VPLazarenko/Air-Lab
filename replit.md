@@ -7,8 +7,6 @@ This is a full-stack web application for creating, managing, and interacting wit
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
-Google Docs Integration: Use simple public document links instead of complex OAuth authentication.
-Vector Store: Disabled - use internal knowledge base for all data storage.
 
 ## System Architecture
 
@@ -24,21 +22,17 @@ Vector Store: Disabled - use internal knowledge base for all data storage.
 - **Runtime**: Node.js with Express.js REST API
 - **Language**: TypeScript with ES modules
 - **Database ORM**: Drizzle ORM for type-safe database operations
-- **Database**: PostgreSQL with Neon Database (production-ready with DatabaseStorage)
+- **Database**: PostgreSQL (configured for Neon Database)
 - **File Storage**: Google Cloud Storage with custom ACL (Access Control List) system
-- **AI Integration**: OpenAI API for assistant creation, conversation management, and vector store integration
-- **Knowledge Management**: Full CRUD operations for file management with vector store integration
+- **AI Integration**: OpenAI API for assistant creation and conversation management
 
 ### Data Storage Solutions
-- **Primary Database**: PostgreSQL with four main entities:
-  - Users: Store user profiles, API keys, and preferences  
-  - Assistants: Store assistant configurations, OpenAI IDs (vector store functionality disabled)
+- **Primary Database**: PostgreSQL with three main entities:
+  - Users: Store user profiles, API keys, and preferences
+  - Assistants: Store assistant configurations, OpenAI IDs, and metadata
   - Conversations: Store chat history and thread management
-  - Knowledge Base: Store file metadata and Google Docs content in internal database
 - **Object Storage**: Google Cloud Storage for file uploads with custom metadata-based ACL policies
-- **Database Storage**: DatabaseStorage class replaces MemStorage for production data persistence
-- **Google Docs Integration**: AI-powered analysis and import from public Google Docs URLs without OAuth authentication
-- **AI Document Analysis**: Uses OpenAI API to extract key information, summaries, and topics for economical storage
+- **In-Memory Storage**: Fallback MemStorage implementation for development/testing
 
 ### Authentication and Authorization
 - **File Access Control**: Custom ACL system using object metadata for fine-grained access control

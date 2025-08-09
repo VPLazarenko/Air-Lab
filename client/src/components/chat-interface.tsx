@@ -4,7 +4,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ObjectUploader } from "@/components/ObjectUploader";
 import type { Conversation, Assistant } from "@/lib/openai-client";
 import { 
   Send, 
@@ -75,165 +74,174 @@ export function ChatInterface({ conversation, assistant, onSendMessage, isLoadin
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
-      {/* Messages Area with fixed height and proper scrolling */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="p-2 sm:p-4 space-y-4">
-            {!conversation?.messages?.length ? (
-              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-4">
-                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mb-4">
-                  <Bot className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">
-                  {assistant ? `Начните беседу с ${assistant.name}` : "Начните беседу"}
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400 max-w-md text-sm sm:text-base">
-                  {assistant?.description || "Задайте вопрос или опишите задачу, которую хотите решить"}
-                </p>
+    <div className="flex flex-col h-full">
+      {/* Messages Area */}
+      <ScrollArea className="flex-1 p-6">
+        <div className="space-y-4 max-w-4xl mx-auto">
+          {/* System Message */}
+          {assistant?.instructions && (
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                <Settings className="w-4 h-4 text-gray-600 dark:text-gray-300" />
               </div>
-            ) : (
-              <>
-                {conversation.messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex gap-2 sm:gap-3 ${
-                      msg.role === "user" ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    {msg.role === "assistant" && (
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                        <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                      </div>
-                    )}
-                    
-                    <div className={`max-w-[85%] sm:max-w-[75%] lg:max-w-2xl ${msg.role === "user" ? "order-first" : ""}`}>
-                      <Card className={`p-3 sm:p-4 ${
-                        msg.role === "user"
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white dark:bg-slate-800 border-gray-200 dark:border-gray-700"
-                      }`}>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-xs font-medium opacity-70">
-                                {msg.role === "user" ? "Вы" : assistant?.name || "Ассистент"}
-                              </span>
-                              <span className="text-xs opacity-50 hidden sm:inline">
-                                {formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true })}
-                              </span>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyMessage(msg.content)}
-                              className="h-6 w-6 p-0 opacity-50 hover:opacity-100"
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-                            {msg.content}
-                          </div>
-                        </div>
-                      </Card>
-                    </div>
-                    
-                    {msg.role === "user" && (
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                        <User className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                      </div>
-                    )}
+              <Card className="flex-1 p-3">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">System</div>
+                <p className="text-sm">{assistant.instructions}</p>
+              </Card>
+            </div>
+          )}
+
+          {/* Conversation Messages */}
+          {conversation?.messages.map((msg) => (
+            <div key={msg.id} className={`flex items-start space-x-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+              {msg.role === 'user' ? (
+                <>
+                  <div className="flex-1 max-w-3xl">
+                    <Card className="bg-emerald-600 text-white p-3 ml-auto">
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    </Card>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-right">
+                      {formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true })}
+                    </p>
                   </div>
-                ))}
-                
-                {/* Loading indicator */}
-                {isLoading && (
-                  <div className="flex gap-2 sm:gap-3 justify-start">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                      <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                    </div>
-                    <Card className="p-3 sm:p-4 bg-white dark:bg-slate-800 border-gray-200 dark:border-gray-700">
-                      <div className="flex items-center space-x-2">
-                        <div className="flex space-x-1">
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-8 h-8 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="flex-1 max-w-3xl">
+                    <Card className="p-4">
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                        {assistant?.name || 'Assistant'}
+                      </div>
+                      <div className="prose dark:prose-invert text-sm prose-sm max-w-none">
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      </div>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatDistanceToNow(new Date(msg.timestamp), { addSuffix: true })}
+                        </p>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyMessage(msg.content)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            disabled
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                          </Button>
                         </div>
-                        <span className="text-sm text-gray-500">Думаю...</span>
                       </div>
                     </Card>
                   </div>
-                )}
-                
-                <div ref={messagesEndRef} />
-              </>
-            )}
-          </div>
-        </ScrollArea>
-      </div>
+                </>
+              )}
+            </div>
+          ))}
 
-      {/* Input Area - Fixed at bottom */}
-      <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 p-2 sm:p-4">
-        <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3">
-          <div className="flex items-end gap-2 sm:gap-3">
-            <div className="flex-1">
-              <Textarea
-                ref={textareaRef}
-                value={message}
-                onChange={(e) => {
-                  setMessage(e.target.value);
-                  autoResize();
-                }}
-                onKeyDown={handleKeyDown}
-                placeholder={`Напишите сообщение для ${assistant?.name || 'ассистента'}...`}
-                className="min-h-[2.5rem] max-h-32 resize-none text-sm sm:text-base"
-                disabled={isLoading}
-              />
+          {/* Loading Message */}
+          {isLoading && (
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <Bot className="w-4 h-4 text-white" />
+              </div>
+              <Card className="p-4">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                  {assistant?.name || 'Assistant'}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="animate-pulse flex space-x-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  </div>
+                  <span className="text-sm text-gray-500">Thinking...</span>
+                </div>
+              </Card>
             </div>
-            
-            <div className="flex gap-1 sm:gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-10 w-10 p-0"
-                disabled={isLoading}
-              >
-                <Paperclip className="h-4 w-4" />
-              </Button>
-              
-              <Button
-                type="submit"
-                size="sm"
-                disabled={!message.trim() || isLoading}
-                className="h-10 w-10 sm:w-auto sm:px-4 bg-emerald-600 hover:bg-emerald-700"
-              >
-                <Send className="h-4 w-4" />
-                <span className="ml-2 hidden sm:inline">Отправить</span>
-              </Button>
+          )}
+
+          {/* Empty State */}
+          {!conversation?.messages.length && !isLoading && (
+            <div className="text-center py-12">
+              <Bot className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-lg font-medium mb-2">Ready to chat!</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                {assistant ? `Start a conversation with ${assistant.name}` : 'Configure your assistant and start chatting'}
+              </p>
             </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
+
+      {/* Input Area */}
+      <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+          <div className="relative">
+            <Textarea
+              ref={textareaRef}
+              placeholder="Type your message..."
+              value={message}
+              onChange={(e) => {
+                setMessage(e.target.value);
+                autoResize();
+              }}
+              onKeyDown={handleKeyDown}
+              className="pr-12 resize-none min-h-[60px]"
+              disabled={isLoading}
+            />
+            <Button
+              type="submit"
+              size="sm"
+              className="absolute bottom-3 right-3 h-8 w-8 p-0"
+              disabled={!message.trim() || isLoading}
+            >
+              <Send className="w-4 h-4" />
+            </Button>
           </div>
           
-          {/* Token counter and status */}
-          <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-            <div className="flex items-center space-x-2">
-              {tokenCount > 0 && (
-                <span>≈ {tokenCount} токенов</span>
-              )}
-              {assistant && (
-                <Badge variant="secondary" className="text-xs">
-                  {assistant.model}
-                </Badge>
-              )}
+          {/* Input Options */}
+          <div className="flex items-center justify-between mt-3 text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex items-center space-x-4">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs"
+                disabled
+              >
+                <Paperclip className="w-3 h-3 mr-1" />
+                Attach file
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs"
+                disabled
+              >
+                <Code className="w-3 h-3 mr-1" />
+                Code
+              </Button>
             </div>
-            
-            <div className="text-right">
-              {isLoading ? (
-                <span className="text-blue-500">Отправка...</span>
-              ) : (
-                <span>Enter для отправки</span>
-              )}
+            <div className="text-xs">
+              <Badge variant="secondary">
+                {tokenCount} / 4096 tokens
+              </Badge>
             </div>
           </div>
         </form>

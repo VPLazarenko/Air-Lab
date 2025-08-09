@@ -3,8 +3,6 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { openaiService } from "./openai";
 import { ObjectStorageService } from "./objectStorage";
-import { googleDocsService } from "./googleDocs";
-import { aiAnalyzer } from "./aiAnalyzer";
 import { insertUserSchema, insertAssistantSchema, insertConversationSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -22,18 +20,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:id", async (req, res) => {
     try {
-      let user;
-      if (req.params.id === "demo-user-1") {
-        // For demo user, find by username
-        user = await storage.getUserByEmail("demo@example.com");
-        if (user) {
-          // Return user with expected demo-user-1 ID for frontend compatibility
-          user = { ...user, id: "demo-user-1" };
-        }
-      } else {
-        user = await storage.getUser(req.params.id);
-      }
-      
+      const user = await storage.getUser(req.params.id);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -59,22 +46,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Assistant routes
   app.post("/api/assistants", async (req, res) => {
     try {
-      let assistantData = insertAssistantSchema.extend({
+      const assistantData = insertAssistantSchema.extend({
         userId: z.string()
       }).parse(req.body);
-
-      // Convert demo user ID to actual UUID
-      if (assistantData.userId === "demo-user-1") {
-        console.log("Converting demo-user-1 to actual UUID...");
-        const user = await storage.getUserByEmail("demo@example.com");
-        if (user) {
-          console.log("Found user:", user.id);
-          assistantData = { ...assistantData, userId: user.id };
-        } else {
-          console.log("User not found with email demo@example.com");
-        }
-      }
-      console.log("Final userId:", assistantData.userId);
 
       // Use OpenAI API key from environment
       const apiKey = process.env.OPENAI_API_KEY;
@@ -84,41 +58,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create assistant with OpenAI
       openaiService.setApiKey(apiKey);
-      // Set API key for AI analyzer too
-      aiAnalyzer.setApiKey(apiKey);
       
-      // Vector store functionality disabled - using internal knowledge base instead
+      // If we have file search enabled, create a vector store first
       let vectorStoreId = null;
-      console.log("Vector store functionality disabled, using internal knowledge base for file management");
-
-      // Create assistant with only code_interpreter tool (file_search disabled)
-      const tools = (assistantData.tools || []).filter((t: any) => t.enabled && t.type === "code_interpreter").map((t: any) => ({ type: t.type as "code_interpreter" }));
+      const hasFileSearch = (assistantData.tools || []).some((t: any) => t.enabled && t.type === "file_search");
       
-      const assistantConfig: any = {
+      if (hasFileSearch) {
+        console.log("Creating vector store for assistant with file search...");
+        const vectorStore = await openaiService.createVectorStore(`${assistantData.name} Knowledge Base`);
+        vectorStoreId = vectorStore.id;
+        console.log(`Vector store created with ID: ${vectorStoreId}`);
+      }
+
+      const openaiAssistant = await openaiService.createAssistant({
         name: assistantData.name,
         description: assistantData.description || undefined,
         instructions: assistantData.instructions || "",
         model: assistantData.model,
-        tools,
-      };
-
-      const openaiAssistant = await openaiService.createAssistant(assistantConfig);
+        tools: (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
+      });
 
       // Vector store is created but files will be attached when uploaded
 
       // Save to local storage
       const assistant = await storage.createAssistant({
-        name: assistantData.name,
-        description: assistantData.description,
-        instructions: assistantData.instructions,
-        model: assistantData.model,
-        temperature: assistantData.temperature,
-        tools: assistantData.tools,
-        files: assistantData.files,
-        userId: assistantData.userId,
+        ...assistantData,
         openaiAssistantId: openaiAssistant.id,
-        vectorStoreId: vectorStoreId || undefined,
-        userProvidedVectorStoreId: assistantData.userProvidedVectorStoreId,
+        vectorStoreId: vectorStoreId,
       });
 
       res.json(assistant);
@@ -130,15 +96,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/assistants/user/:userId", async (req, res) => {
     try {
-      let userId = req.params.userId;
-      if (userId === "demo-user-1") {
-        // Get real user ID for demo user
-        const user = await storage.getUserByEmail("demo@example.com");
-        if (user) {
-          userId = user.id;
-        }
-      }
-      const assistants = await storage.getAssistantsByUserId(userId);
+      const assistants = await storage.getAssistantsByUserId(req.params.userId);
       res.json(assistants);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -219,17 +177,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Chat/conversation routes
   app.post("/api/conversations", async (req, res) => {
     try {
-      let conversationData = insertConversationSchema.extend({
+      const conversationData = insertConversationSchema.extend({
         userId: z.string()
       }).parse(req.body);
-
-      // Convert demo user ID to actual UUID
-      if (conversationData.userId === "demo-user-1") {
-        const user = await storage.getUserByEmail("demo@example.com");
-        if (user) {
-          conversationData = { ...conversationData, userId: user.id };
-        }
-      }
 
       const conversation = await storage.createConversation(conversationData);
       res.json(conversation);
@@ -278,27 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send message and get response
       console.log("Sending message to thread:", threadId);
-      
-      // Get knowledge base documents for context (if available)
-      const knowledgeFiles = await storage.getKnowledgeBaseFilesByAssistantId(conversation.assistantId);
-      let enhancedMessage = message;
-      
-      if (knowledgeFiles.length > 0) {
-        let knowledgeContext = "\n\nDOCUMENTS IN KNOWLEDGE BASE:\n";
-        knowledgeFiles.forEach((file, index) => {
-          if (file.metadata?.keyInformation) {
-            const info = file.metadata.keyInformation;
-            knowledgeContext += `\n${index + 1}. "${file.originalName}"\n`;
-            knowledgeContext += `   Summary: ${info.summary}\n`;
-            if (info.keyPoints.length > 0) {
-              knowledgeContext += `   Key Points: ${info.keyPoints.slice(0, 3).join("; ")}\n`;
-            }
-          }
-        });
-        enhancedMessage = `${message}${knowledgeContext}`;
-      }
-      
-      await openaiService.sendMessage(threadId, enhancedMessage);
+      await openaiService.sendMessage(threadId, message);
       
       let response;
       if (assistant.openaiAssistantId) {
@@ -353,14 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/conversations/user/:userId", async (req, res) => {
     try {
-      let userId = req.params.userId;
-      if (userId === "demo-user-1") {
-        const user = await storage.getUserByEmail("demo@example.com");
-        if (user) {
-          userId = user.id;
-        }
-      }
-      const conversations = await storage.getConversationsByUserId(userId);
+      const conversations = await storage.getConversationsByUserId(req.params.userId);
       res.json(conversations);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -379,60 +302,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Knowledge Base routes
-  app.get("/api/knowledge-base/user/:userId", async (req, res) => {
-    try {
-      const files = await storage.getKnowledgeBaseFilesByUserId(req.params.userId);
-      res.json(files);
-    } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
-  app.get("/api/knowledge-base/assistant/:assistantId", async (req, res) => {
-    try {
-      const files = await storage.getKnowledgeBaseFilesByAssistantId(req.params.assistantId);
-      res.json(files);
-    } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
-  app.post("/api/knowledge-base", async (req, res) => {
-    try {
-      const { userId, assistantId, vectorStoreId, fileName, originalName, fileSize, fileType, openaiFileId, storagePath, metadata } = req.body;
-      
-      const file = await storage.createKnowledgeBaseFile({
-        userId,
-        assistantId,
-        vectorStoreId,
-        fileName,
-        originalName,
-        fileSize,
-        fileType,
-        openaiFileId,
-        storagePath,
-        metadata
-      });
-      
-      res.json(file);
-    } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
-  app.delete("/api/knowledge-base/:id", async (req, res) => {
-    try {
-      const success = await storage.deleteKnowledgeBaseFile(req.params.id);
-      if (!success) {
-        return res.status(404).json({ error: "Knowledge base file not found" });
-      }
-      res.json({ success: true });
-    } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
   app.get("/objects/:objectPath(*)", async (req, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
@@ -444,283 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upload file directly to default vector store using proper OpenAI SDK methods
-  app.post("/api/vector-store/upload", async (req, res) => {
-    try {
-      const { fileContent, fileName, userId } = req.body;
-
-      if (!fileContent || !fileName) {
-        return res.status(400).json({ error: "File content and name are required" });
-      }
-
-      // Convert demo user ID to actual UUID
-      let actualUserId = userId;
-      if (userId === "demo-user-1") {
-        const user = await storage.getUserByEmail("demo@example.com");
-        if (user) {
-          actualUserId = user.id;
-        }
-      }
-
-      // Use OpenAI API key from environment
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ error: "OpenAI API key not configured on server" });
-      }
-
-      openaiService.setApiKey(apiKey);
-
-      // Convert content to buffer
-      const fileBuffer = Buffer.from(fileContent, 'utf-8');
-      
-      console.log(`Uploading file ${fileName} directly to OpenAI...`);
-
-      // Step 1: Upload file to OpenAI Files API
-      const uploadedFile = await openaiService.uploadFile(fileBuffer, fileName);
-      console.log(`File uploaded with ID: ${uploadedFile.id}`);
-
-      // Step 2: Add file to default vector store
-      const DEFAULT_VECTOR_STORE_ID = "vs_6871906566a48191aa3376db251c9d0d";
-      console.log(`Adding file to vector store ${DEFAULT_VECTOR_STORE_ID}...`);
-      
-      const vectorStoreFile = await openaiService.addFileToVectorStore(DEFAULT_VECTOR_STORE_ID, uploadedFile.id);
-      console.log(`File added to vector store successfully`);
-
-      // Save to knowledge base
-      const knowledgeFile = await storage.createKnowledgeBaseFile({
-        userId: actualUserId,
-        fileName,
-        originalName: fileName,
-        fileSize: fileBuffer.length.toString(),
-        fileType: fileName.split('.').pop() || 'txt',
-        openaiFileId: uploadedFile.id,
-        vectorStoreId: DEFAULT_VECTOR_STORE_ID,
-        storagePath: '',
-        metadata: { 
-          description: `File uploaded to vector store`,
-          tags: [`direct-upload`, `vector-store`],
-          isActive: true
-        }
-      });
-
-      res.json({
-        success: true,
-        file: uploadedFile,
-        vectorStoreFile,
-        knowledgeFile,
-        vectorStoreId: DEFAULT_VECTOR_STORE_ID
-      });
-
-    } catch (error) {
-      console.error("Error uploading file to vector store:", error);
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
-  // Get files from default vector store
-  app.get("/api/vector-store/files", async (req, res) => {
-    try {
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ error: "OpenAI API key not configured on server" });
-      }
-
-      openaiService.setApiKey(apiKey);
-
-      const DEFAULT_VECTOR_STORE_ID = "vs_6871906566a48191aa3376db251c9d0d";
-      const files = await openaiService.listVectorStoreFiles(DEFAULT_VECTOR_STORE_ID);
-
-      res.json(files);
-    } catch (error) {
-      console.error("Error getting vector store files:", error);
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
-  // Add Google Docs content to specific assistant's knowledge base with analysis
-  app.post("/api/assistants/:assistantId/add-google-doc", async (req, res) => {
-    try {
-      const { assistantId } = req.params;
-      const { documentId, userId, title, analysisPrompt } = req.body;
-
-      if (!documentId) {
-        return res.status(400).json({ error: "Google Docs document ID is required" });
-      }
-
-      // Get assistant
-      const assistant = await storage.getAssistant(assistantId);
-      if (!assistant) {
-        return res.status(404).json({ error: "Assistant not found" });
-      }
-
-      // Convert demo user ID to actual UUID
-      let actualUserId = userId;
-      if (userId === "demo-user-1") {
-        const user = await storage.getUserByEmail("demo@example.com");
-        if (user) {
-          actualUserId = user.id;
-        }
-      }
-
-      // Use OpenAI API key from environment
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        return res.status(500).json({ error: "OpenAI API key not configured on server" });
-      }
-
-      openaiService.setApiKey(apiKey);
-
-      console.log(`Fetching Google Docs content: ${documentId} for assistant: ${assistant.name}`);
-
-      // Try to fetch Google Docs content via public export URL
-      const exportUrl = `https://docs.google.com/document/d/${documentId}/export?format=txt`;
-      
-      let textContent;
-      try {
-        const response = await fetch(exportUrl);
-        if (!response.ok) {
-          throw new Error(`Google Docs not publicly accessible: ${response.status}`);
-        }
-        textContent = await response.text();
-      } catch (fetchError) {
-        // If direct export fails, try HTML export and parse
-        try {
-          const htmlUrl = `https://docs.google.com/document/d/${documentId}/export?format=html`;
-          const htmlResponse = await fetch(htmlUrl);
-          if (!htmlResponse.ok) {
-            throw new Error(`Google Docs HTML export failed: ${htmlResponse.status}`);
-          }
-          const html = await htmlResponse.text();
-          
-          // Extract text content from HTML
-          textContent = html
-            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-            .replace(/<[^>]*>/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-        } catch (htmlError) {
-          throw new Error(`Unable to access Google Docs. Document may be private or ID incorrect. Please ensure document is publicly viewable or use "Anyone with the link" sharing.`);
-        }
-      }
-
-      if (!textContent || textContent.length < 100) {
-        throw new Error("Google Docs content is too short or empty");
-      }
-
-      // Analyze content using OpenAI for better understanding
-      const defaultAnalysisPrompt = `Analyze this Google Docs content and create a structured summary:
-      
-      Document ID: ${documentId}
-      Content Length: ${textContent.length} characters
-      
-      Please provide:
-      1. Main topic and purpose of the document
-      2. Key information, sections, and insights
-      3. Important facts, data, and conclusions
-      4. Structured summary for assistant knowledge base
-      5. Action items or next steps if any
-      
-      Content to analyze:
-      ${textContent.substring(0, 12000)}`;
-
-      console.log(`Analyzing Google Docs content using GPT-4...`);
-      
-      // Analyze content with OpenAI
-      const analysis = await openaiService.analyzeContent(analysisPrompt || defaultAnalysisPrompt);
-      
-      // Create enhanced content with both original and analysis
-      const enhancedContent = `# Google Docs Analysis: ${title || `Document ${documentId}`}
-
-## Source Information
-- Document ID: ${documentId}
-- Google Docs URL: https://docs.google.com/document/d/${documentId}
-- Analyzed: ${new Date().toISOString()}
-- Content Length: ${textContent.length} characters
-
-## AI Analysis Summary
-${analysis}
-
-## Original Document Content
-${textContent}`;
-
-      // Create filename from document ID and assistant
-      const fileName = title 
-        ? `${assistant.name}_${title.replace(/[^a-zA-Z0-9]/g, '_')}.txt`
-        : `${assistant.name}_google_doc_${documentId}_${Date.now()}.txt`;
-
-      // Convert enhanced content to buffer
-      const fileBuffer = Buffer.from(enhancedContent, 'utf-8');
-      
-      console.log(`Uploading analyzed Google Docs content as file: ${fileName}`);
-
-      // Step 1: Upload file to OpenAI Files API
-      const uploadedFile = await openaiService.uploadFile(fileBuffer, fileName);
-      console.log(`Analyzed Google Docs content uploaded with ID: ${uploadedFile.id}`);
-
-      // Vector store disabled - using internal knowledge base only
-      console.log(`Saving Google Docs content to internal knowledge base only...`);
-
-      // Save to knowledge base linked to specific assistant
-      const knowledgeFile = await storage.createKnowledgeBaseFile({
-        userId: actualUserId,
-        assistantId: assistantId,
-        fileName,
-        originalName: title || `Google Doc ${documentId}`,
-        fileSize: fileBuffer.length.toString(),
-        fileType: 'google_docs',
-        openaiFileId: uploadedFile.id,
-        vectorStoreId: null, // Vector store disabled
-        storagePath: `https://docs.google.com/document/d/${documentId}`,
-        metadata: { 
-          description: `AI-analyzed Google Docs content for ${assistant.name}: ${documentId}`,
-          tags: [`google-docs`, `analyzed`, `assistant:${assistant.name}`, `document:${documentId}`],
-          isActive: true
-        }
-      });
-
-      res.json({
-        success: true,
-        message: `Google Docs ${documentId} analyzed and added to ${assistant.name}'s knowledge base`,
-        file: uploadedFile,
-        knowledgeFile,
-        assistant: { id: assistant.id, name: assistant.name },
-        analysis: {
-          originalLength: textContent.length,
-          enhancedLength: enhancedContent.length,
-          documentId: documentId,
-          documentUrl: `https://docs.google.com/document/d/${documentId}`
-        }
-      });
-
-    } catch (error) {
-      console.error("Error adding Google Docs to assistant knowledge base:", error);
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
-  // Get knowledge files for a specific assistant
-  app.get("/api/assistants/:assistantId/knowledge-files", async (req, res) => {
-    try {
-      const { assistantId } = req.params;
-      
-      // Get assistant to verify it exists
-      const assistant = await storage.getAssistant(assistantId);
-      if (!assistant) {
-        return res.status(404).json({ error: "Assistant not found" });
-      }
-
-      // Get knowledge files for this assistant
-      const knowledgeFiles = await storage.getAssistantKnowledgeFiles(assistantId);
-      
-      res.json(knowledgeFiles);
-    } catch (error) {
-      console.error("Error getting assistant knowledge files:", error);
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
-  // Upload file to assistant's knowledge base (legacy endpoint)
+  // Upload file to assistant's knowledge base
   app.post("/api/assistants/:assistantId/files", async (req, res) => {
     try {
       const { assistantId } = req.params;
@@ -775,14 +368,10 @@ ${textContent}`;
         console.log(`Adding file to vector store ${vectorStoreId}...`);
         await openaiService.addFileToVectorStore(vectorStoreId, openaiFile.id);
         
-        // No need to update assistant - files in vector store are automatically accessible
-        console.log(`File ${openaiFile.id} is now available in vector store ${vectorStoreId} for assistant ${assistant.openaiAssistantId}`);
-        
-        // Verify the assistant has the vector store linked
-        if (assistant.openaiAssistantId && !assistant.vectorStoreId) {
-          await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, [], vectorStoreId);
-          await storage.updateAssistant(assistantId, { vectorStoreId });
-          console.log(`Assistant ${assistant.openaiAssistantId} linked to vector store ${vectorStoreId}`);
+        // Update OpenAI assistant with the uploaded file
+        if (assistant.openaiAssistantId) {
+          await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, [openaiFile.id]);
+          console.log(`Assistant ${assistant.openaiAssistantId} updated with file ${openaiFile.id}`);
         }
       }
 
@@ -821,156 +410,6 @@ ${textContent}`;
       res.setHeader('Content-Disposition', `attachment; filename="${assistant.name}-config.json"`);
       res.json(exportData);
     } catch (error) {
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
-  // Google Docs integration routes - работа по открытым ссылкам
-  app.post("/api/google-docs/import", async (req, res) => {
-    try {
-      const { url } = req.body;
-      const document = await googleDocsService.getDocument(url);
-      res.json(document);
-    } catch (error) {
-      console.error("Error fetching Google Doc:", error);
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
-  app.post("/api/google-docs/validate", async (req, res) => {
-    try {
-      const { urls } = req.body;
-      const results = await googleDocsService.validateDocuments(urls);
-      res.json(results);
-    } catch (error) {
-      console.error("Error validating Google Docs:", error);
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
-  app.post("/api/google-docs/batch-import", async (req, res) => {
-    try {
-      const { urls } = req.body;
-      const documents = await googleDocsService.getMultipleDocuments(urls);
-      res.json(documents);
-    } catch (error) {
-      console.error("Error batch importing Google Docs:", error);
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
-  // Import Google Doc to assistant's knowledge base by URL
-  app.post("/api/assistants/:id/import-google-doc", async (req, res) => {
-    try {
-      const { url } = req.body;
-      const assistant = await storage.getAssistant(req.params.id);
-      
-      if (!assistant) {
-        return res.status(404).json({ error: "Assistant not found" });
-      }
-
-      // Fetch document from Google Docs by URL
-      const document = await googleDocsService.getDocument(url);
-      
-      // Save to knowledge base with processed key information (economical format)
-      const knowledgeFile = await storage.createKnowledgeBaseFile({
-        userId: assistant.userId,
-        assistantId: assistant.id,
-        fileName: `${document.title}.txt`,
-        originalName: document.title,
-        fileType: "text/plain",
-        storagePath: document.url,
-        metadata: {
-          description: `Imported from Google Docs: ${document.title}`,
-          isActive: true,
-          tags: ["google-docs", "imported", ...document.keyInformation.topics],
-          // Store only key information instead of full content
-          keyInformation: document.keyInformation,
-          documentId: document.id,
-          importedAt: new Date().toISOString(),
-          originalUrl: document.url,
-          wordCount: document.keyInformation.metadata.wordCount,
-          documentType: document.keyInformation.metadata.documentType
-        }
-      });
-
-      res.json({
-        message: "Google Doc imported successfully",
-        file: knowledgeFile,
-        document: {
-          title: document.title,
-          id: document.id,
-          url: document.url,
-          content: document.content.substring(0, 200) + '...' // Preview
-        }
-      });
-    } catch (error) {
-      console.error("Error importing Google Doc:", error);
-      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  });
-
-  // Batch import multiple Google Docs to assistant
-  app.post("/api/assistants/:id/batch-import-google-docs", async (req, res) => {
-    try {
-      const { urls } = req.body;
-      const assistant = await storage.getAssistant(req.params.id);
-      
-      if (!assistant) {
-        return res.status(404).json({ error: "Assistant not found" });
-      }
-
-      const results = [];
-      for (const url of urls) {
-        try {
-          const document = await googleDocsService.getDocument(url);
-          const knowledgeFile = await storage.createKnowledgeBaseFile({
-            userId: assistant.userId,
-            assistantId: assistant.id,
-            fileName: `${document.title}.txt`,
-            originalName: document.title,
-            fileType: "text/plain",
-            storagePath: document.url,
-            metadata: {
-              description: `Imported from Google Docs: ${document.title}`,
-              isActive: true,
-              tags: ["google-docs", "imported", ...document.keyInformation.topics],
-              // Store only processed key information
-              keyInformation: document.keyInformation,
-              documentId: document.id,
-              importedAt: new Date().toISOString(),
-              originalUrl: document.url,
-              wordCount: document.keyInformation.metadata.wordCount,
-              documentType: document.keyInformation.metadata.documentType
-            }
-          });
-
-          results.push({
-            success: true,
-            url,
-            document: {
-              title: document.title,
-              id: document.id,
-              url: document.url
-            },
-            file: knowledgeFile
-          });
-        } catch (error) {
-          results.push({
-            success: false,
-            url,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          });
-        }
-      }
-
-      const successCount = results.filter(r => r.success).length;
-      res.json({
-        message: `Imported ${successCount} of ${urls.length} documents`,
-        results
-      });
-    } catch (error) {
-      console.error("Error batch importing Google Docs:", error);
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });

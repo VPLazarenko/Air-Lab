@@ -1,7 +1,5 @@
-import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type KnowledgeBase, type InsertKnowledgeBase, users, assistants, conversations, knowledgeBase } from "@shared/schema";
+import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { db } from "./db";
-import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -24,27 +22,17 @@ export interface IStorage {
   createConversation(conversation: InsertConversation & { userId: string }): Promise<Conversation>;
   updateConversation(id: string, updates: Partial<Conversation>): Promise<Conversation | undefined>;
   deleteConversation(id: string): Promise<boolean>;
-
-  // Knowledge Base operations
-  getKnowledgeBaseFile(id: string): Promise<KnowledgeBase | undefined>;
-  getKnowledgeBaseFilesByUserId(userId: string): Promise<KnowledgeBase[]>;
-  getKnowledgeBaseFilesByAssistantId(assistantId: string): Promise<KnowledgeBase[]>;
-  createKnowledgeBaseFile(file: InsertKnowledgeBase & { userId: string }): Promise<KnowledgeBase>;
-  updateKnowledgeBaseFile(id: string, updates: Partial<KnowledgeBase>): Promise<KnowledgeBase | undefined>;
-  deleteKnowledgeBaseFile(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private assistants: Map<string, Assistant>;
   private conversations: Map<string, Conversation>;
-  private knowledgeBase: Map<string, KnowledgeBase>;
 
   constructor() {
     this.users = new Map();
     this.assistants = new Map();
     this.conversations = new Map();
-    this.knowledgeBase = new Map();
   }
 
   // User operations
@@ -61,7 +49,6 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
-      apiKey: null,
       createdAt: new Date(),
       settings: insertUser.settings as { defaultModel?: string; autoSave?: boolean; darkMode?: boolean; } || {}
     };
@@ -92,13 +79,6 @@ export class MemStorage implements IStorage {
     const newAssistant: Assistant = {
       ...assistant,
       id,
-      openaiAssistantId: assistant.openaiAssistantId || null,
-      vectorStoreId: assistant.vectorStoreId || null,
-      userProvidedVectorStoreId: assistant.userProvidedVectorStoreId || null,
-      description: assistant.description || null,
-      instructions: assistant.instructions || null,
-      model: assistant.model || "gpt-4o",
-      temperature: assistant.temperature ?? 0.7,
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: true,
@@ -144,11 +124,9 @@ export class MemStorage implements IStorage {
     const newConversation: Conversation = {
       ...conversation,
       id,
-      openaiThreadId: null,
-      title: conversation.title || null,
       createdAt: new Date(),
       updatedAt: new Date(),
-      messages: (conversation.messages as Array<{ id: string; role: "user" | "assistant" | "system"; content: string; timestamp: string; }>) || []
+      messages: conversation.messages || []
     };
     this.conversations.set(id, newConversation);
     return newConversation;
@@ -170,193 +148,6 @@ export class MemStorage implements IStorage {
   async deleteConversation(id: string): Promise<boolean> {
     return this.conversations.delete(id);
   }
-
-  // Knowledge Base operations
-  async getKnowledgeBaseFile(id: string): Promise<KnowledgeBase | undefined> {
-    return this.knowledgeBase.get(id);
-  }
-
-  async getKnowledgeBaseFilesByUserId(userId: string): Promise<KnowledgeBase[]> {
-    return Array.from(this.knowledgeBase.values()).filter(file => file.userId === userId);
-  }
-
-  async getKnowledgeBaseFilesByAssistantId(assistantId: string): Promise<KnowledgeBase[]> {
-    return Array.from(this.knowledgeBase.values()).filter(file => file.assistantId === assistantId);
-  }
-
-  async createKnowledgeBaseFile(file: InsertKnowledgeBase & { userId: string }): Promise<KnowledgeBase> {
-    const id = randomUUID();
-    const newFile: KnowledgeBase = {
-      ...file,
-      id,
-      assistantId: file.assistantId || null,
-      vectorStoreId: file.vectorStoreId || null,
-      fileSize: file.fileSize || null,
-      fileType: file.fileType || null,
-      openaiFileId: file.openaiFileId || null,
-      storagePath: file.storagePath || null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      metadata: (file.metadata as { description?: string; tags?: string[]; isActive?: boolean; }) || {}
-    };
-    this.knowledgeBase.set(id, newFile);
-    return newFile;
-  }
-
-  async updateKnowledgeBaseFile(id: string, updates: Partial<KnowledgeBase>): Promise<KnowledgeBase | undefined> {
-    const file = this.knowledgeBase.get(id);
-    if (!file) return undefined;
-
-    const updatedFile = { 
-      ...file, 
-      ...updates, 
-      updatedAt: new Date() 
-    };
-    this.knowledgeBase.set(id, updatedFile);
-    return updatedFile;
-  }
-
-  async deleteKnowledgeBaseFile(id: string): Promise<boolean> {
-    return this.knowledgeBase.delete(id);
-  }
 }
 
-export class DatabaseStorage implements IStorage {
-  // User operations
-  async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values([insertUser])
-      .returning();
-    return user;
-  }
-
-  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
-    const [user] = await db
-      .update(users)
-      .set(updates)
-      .where(eq(users.id, id))
-      .returning();
-    return user || undefined;
-  }
-
-  // Assistant operations
-  async getAssistant(id: string): Promise<Assistant | undefined> {
-    const [assistant] = await db.select().from(assistants).where(eq(assistants.id, id));
-    return assistant || undefined;
-  }
-
-  async getAssistantsByUserId(userId: string): Promise<Assistant[]> {
-    return await db.select().from(assistants).where(eq(assistants.userId, userId));
-  }
-
-  async createAssistant(assistant: InsertAssistant & { userId: string }): Promise<Assistant> {
-    const [newAssistant] = await db
-      .insert(assistants)
-      .values([assistant])
-      .returning();
-    return newAssistant;
-  }
-
-  async updateAssistant(id: string, updates: Partial<Assistant>): Promise<Assistant | undefined> {
-    const [assistant] = await db
-      .update(assistants)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(assistants.id, id))
-      .returning();
-    return assistant || undefined;
-  }
-
-  async deleteAssistant(id: string): Promise<boolean> {
-    const result = await db.delete(assistants).where(eq(assistants.id, id));
-    return (result.rowCount ?? 0) > 0;
-  }
-
-  // Conversation operations
-  async getConversation(id: string): Promise<Conversation | undefined> {
-    const [conversation] = await db.select().from(conversations).where(eq(conversations.id, id));
-    return conversation || undefined;
-  }
-
-  async getConversationsByUserId(userId: string): Promise<Conversation[]> {
-    return await db.select().from(conversations).where(eq(conversations.userId, userId));
-  }
-
-  async getConversationsByAssistantId(assistantId: string): Promise<Conversation[]> {
-    return await db.select().from(conversations).where(eq(conversations.assistantId, assistantId));
-  }
-
-  async createConversation(conversation: InsertConversation & { userId: string }): Promise<Conversation> {
-    const [newConversation] = await db
-      .insert(conversations)
-      .values([conversation])
-      .returning();
-    return newConversation;
-  }
-
-  async updateConversation(id: string, updates: Partial<Conversation>): Promise<Conversation | undefined> {
-    const [conversation] = await db
-      .update(conversations)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(conversations.id, id))
-      .returning();
-    return conversation || undefined;
-  }
-
-  async deleteConversation(id: string): Promise<boolean> {
-    const result = await db.delete(conversations).where(eq(conversations.id, id));
-    return (result.rowCount ?? 0) > 0;
-  }
-
-  // Knowledge Base operations
-  async getKnowledgeBaseFile(id: string): Promise<KnowledgeBase | undefined> {
-    const [file] = await db.select().from(knowledgeBase).where(eq(knowledgeBase.id, id));
-    return file || undefined;
-  }
-
-  async getKnowledgeBaseFilesByUserId(userId: string): Promise<KnowledgeBase[]> {
-    return await db.select().from(knowledgeBase).where(eq(knowledgeBase.userId, userId));
-  }
-
-  async getKnowledgeBaseFilesByAssistantId(assistantId: string): Promise<KnowledgeBase[]> {
-    return await db.select().from(knowledgeBase).where(eq(knowledgeBase.assistantId, assistantId));
-  }
-
-  async getAssistantKnowledgeFiles(assistantId: string): Promise<KnowledgeBase[]> {
-    return await db.select().from(knowledgeBase).where(eq(knowledgeBase.assistantId, assistantId));
-  }
-
-  async createKnowledgeBaseFile(file: InsertKnowledgeBase & { userId: string }): Promise<KnowledgeBase> {
-    const [newFile] = await db
-      .insert(knowledgeBase)
-      .values([file])
-      .returning();
-    return newFile;
-  }
-
-  async updateKnowledgeBaseFile(id: string, updates: Partial<KnowledgeBase>): Promise<KnowledgeBase | undefined> {
-    const [file] = await db
-      .update(knowledgeBase)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(knowledgeBase.id, id))
-      .returning();
-    return file || undefined;
-  }
-
-  async deleteKnowledgeBaseFile(id: string): Promise<boolean> {
-    const result = await db.delete(knowledgeBase).where(eq(knowledgeBase.id, id));
-    return (result.rowCount ?? 0) > 0;
-  }
-}
-
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();

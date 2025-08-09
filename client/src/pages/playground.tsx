@@ -15,19 +15,11 @@ import {
   Share, 
   ArrowLeft,
   Moon,
-  Sun,
-  Plus,
-  Play,
-  Folder,
-  GraduationCap,
-  PenTool,
-  BarChart3,
-  User as UserIcon,
-  Menu
+  Sun
 } from "lucide-react";
 import { Link } from "wouter";
 
-const DEMO_USER_ID = "84ac8242-6c19-42a0-825b-caa01572e5e6";
+const DEMO_USER_ID = "demo-user-1";
 
 export default function Playground() {
   const params = useParams();
@@ -35,7 +27,6 @@ export default function Playground() {
   const assistantId = params.assistantId;
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('darkMode') === 'true' || 
@@ -56,13 +47,6 @@ export default function Playground() {
     queryKey: ['/api/assistants', assistantId],
     queryFn: () => openaiClient.getAssistant(assistantId!),
     enabled: !!assistantId,
-  });
-
-  // Get all assistants for sidebar
-  const { data: assistants = [], refetch: refetchAssistants } = useQuery({
-    queryKey: ['/api/assistants/user', DEMO_USER_ID],
-    queryFn: () => openaiClient.getAssistantsByUserId(DEMO_USER_ID),
-    enabled: !!user,
   });
 
   // Get conversations for this assistant
@@ -158,27 +142,10 @@ export default function Playground() {
 
   const handleAssistantSave = () => {
     refetchAssistant();
-    refetchAssistants(); // Update sidebar list
     toast({
       title: "Assistant saved",
       description: "Your assistant configuration has been saved successfully.",
     });
-  };
-
-  const getAssistantIcon = (assistant: Assistant) => {
-    const name = assistant.name.toLowerCase();
-    if (name.includes('code')) return <GraduationCap className="w-3 h-3 text-white" />;
-    if (name.includes('write') || name.includes('content')) return <PenTool className="w-3 h-3 text-white" />;
-    if (name.includes('data') || name.includes('analyst')) return <BarChart3 className="w-3 h-3 text-white" />;
-    return <Bot className="w-3 h-3 text-white" />;
-  };
-
-  const getAssistantColor = (assistant: Assistant) => {
-    const name = assistant.name.toLowerCase();
-    if (name.includes('code')) return 'bg-blue-500';
-    if (name.includes('write') || name.includes('content')) return 'bg-purple-500';
-    if (name.includes('data') || name.includes('analyst')) return 'bg-orange-500';
-    return 'bg-gray-500';
   };
 
   const handleShare = () => {
@@ -202,184 +169,43 @@ export default function Playground() {
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
-      {/* Mobile Menu Overlay */}
-      {showMobileMenu && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="fixed inset-0 bg-black/20" onClick={() => setShowMobileMenu(false)} />
-          <div className="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transform transition-transform">
-            {/* Mobile Header */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Меню</h2>
-              <Button variant="ghost" size="sm" onClick={() => setShowMobileMenu(false)}>
-                ✕
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        {/* Top Bar */}
+        <div className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6">
+          <div className="flex items-center space-x-4">
+            <Link href="/">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
               </Button>
-            </div>
+            </Link>
             
-            {/* Navigation */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-4">
-                <Link href="/playground" onClick={() => setShowMobileMenu(false)}>
-                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Создать ассистента
-                  </Button>
-                </Link>
-                
-                <div className="space-y-2">
-                  {assistants.map((asst) => (
-                    <Link key={asst.id} href={`/playground/${asst.id}`} onClick={() => setShowMobileMenu(false)}>
-                      <div className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${asst.id === assistantId ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
-                        <div className={`w-6 h-6 ${getAssistantColor(asst)} rounded-full flex items-center justify-center`}>
-                          {getAssistantIcon(asst)}
-                        </div>
-                        <span className="text-sm truncate">{asst.name}</span>
-                      </div>
-                    </Link>
-                  ))}
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+                <Bot className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">
+                  {assistant?.name || 'New Assistant'}
+                </h2>
+                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                  <span>Model:</span>
+                  <span className="font-medium">{assistant?.model || 'GPT-4o'}</span>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:flex w-80 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-              <Bot className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold">AI Assistant Platform</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Управление ассистентами</p>
             </div>
           </div>
           
-          <Link href="/playground">
-            <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              Создать ассистента
-            </Button>
-          </Link>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto">
-          <nav className="p-4 space-y-2">
-            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-              Рабочая область
-            </div>
-            
-            <Link href="/">
-              <div className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${!assistantId ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
-                <Play className="w-4 h-4" />
-                <span>Playground</span>
-              </div>
-            </Link>
-            
-            <div className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors opacity-50 cursor-not-allowed">
-              <Folder className="w-4 h-4" />
-              <span>База знаний</span>
-            </div>
-
-            <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 mt-6">
-              Ассистенты ({assistants.length})
-            </div>
-            
-            <div className="space-y-1">
-              {assistants.map((asst) => (
-                <Link key={asst.id} href={`/playground/${asst.id}`}>
-                  <div className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors cursor-pointer ${asst.id === assistantId ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-6 h-6 ${getAssistantColor(asst)} rounded-full flex items-center justify-center`}>
-                        {getAssistantIcon(asst)}
-                      </div>
-                      <span className="text-sm truncate">{asst.name}</span>
-                    </div>
-                    <div className={`w-2 h-2 rounded-full ${asst.isActive ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
-                  </div>
-                </Link>
-              ))}
-              
-              {assistants.length === 0 && (
-                <div className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
-                  <Bot className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Пока нет ассистентов</p>
-                  <p className="text-xs">Создайте первого ассистента для начала работы</p>
-                </div>
-              )}
-            </div>
-          </nav>
-        </div>
-
-        {/* User Settings */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                <UserIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">{user?.username || 'Demo User'}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleDarkMode}
-                className="p-1"
-              >
-                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowSettings(true)}
-                className="p-1"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Bar */}
-        <div className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 lg:px-6">
           <div className="flex items-center space-x-3">
-            {/* Mobile menu button */}
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden p-2"
-              onClick={() => setShowMobileMenu(true)}
+              onClick={toggleDarkMode}
             >
-              <Menu className="w-5 h-5" />
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
             
-            <div className={`w-8 h-8 ${assistant ? getAssistantColor(assistant) : 'bg-emerald-600'} rounded-lg flex items-center justify-center`}>
-              {assistant ? getAssistantIcon(assistant) : <Bot className="w-4 h-4 text-white" />}
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-lg font-semibold truncate">
-                {assistant?.name || 'Новый ассистент'}
-              </h2>
-              <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                <span className="hidden sm:inline">Модель:</span>
-                <span className="font-medium">{assistant?.model || 'GPT-4o'}</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3">
             <Button
               variant="outline"
               size="sm"
@@ -387,15 +213,23 @@ export default function Playground() {
               disabled={!currentConversation}
             >
               <Share className="w-4 h-4 mr-2" />
-              Поделиться
+              Share
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSettings(true)}
+            >
+              <Settings className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
         {/* Main Playground Area */}
-        <div className="flex-1 flex min-h-0">
+        <div className="flex-1 flex">
           {/* Chat Area */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1">
             <ChatInterface
               conversation={currentConversation}
               assistant={assistant}
@@ -404,8 +238,8 @@ export default function Playground() {
             />
           </div>
 
-          {/* Configuration Panel - Hidden on mobile */}
-          <div className="hidden xl:block w-80 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-gray-700">
+          {/* Configuration Panel */}
+          <div className="w-80 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-gray-700">
             <AssistantConfigPanel
               assistant={assistant}
               assistantId={assistantId}

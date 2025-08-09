@@ -15,7 +15,6 @@ import { queryClient } from "@/lib/queryClient";
 import { openaiClient } from "@/lib/openai-client";
 import type { Assistant } from "@/lib/openai-client";
 import { ObjectUploader } from "@/components/ObjectUploader";
-import { GoogleDocsIntegration } from "@/components/google-docs-integration";
 import { 
   Save, 
   Download, 
@@ -53,7 +52,6 @@ export function AssistantConfigPanel({
       { type: "web_search", enabled: false },
     ],
     files: [] as Array<{ id: string; name: string; path: string }>,
-    userProvidedVectorStoreId: "vs_6871906566a48191aa3376db251c9d0d" as string,
   });
 
   const { toast } = useToast();
@@ -68,7 +66,6 @@ export function AssistantConfigPanel({
         temperature: assistant.temperature,
         tools: assistant.tools.length > 0 ? assistant.tools : config.tools,
         files: assistant.files || [],
-        userProvidedVectorStoreId: (assistant as any).userProvidedVectorStoreId || "",
       });
     }
   }, [assistant]);
@@ -362,25 +359,6 @@ export function AssistantConfigPanel({
               </div>
             ))}
           </div>
-
-          {/* Vector Store ID поле - показывается когда включен file_search */}
-          {config.tools.some(t => t.type === 'file_search' && t.enabled) && (
-            <div className="mt-4 p-3 border rounded-lg bg-blue-50 dark:bg-blue-950/30">
-              <Label htmlFor="vectorStoreId" className="text-sm font-medium">
-                Vector Store ID (необязательно)
-              </Label>
-              <Input
-                id="vectorStoreId"
-                value={config.userProvidedVectorStoreId || "vs_6871906566a48191aa3376db251c9d0d"}
-                onChange={(e) => updateConfig('userProvidedVectorStoreId', e.target.value)}
-                placeholder="vs_6871906566a48191aa3376db251c9d0d"
-                className="mt-2"
-              />
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Введите ID существующего vector store из OpenAI. Если оставить пустым, будет создан автоматически.
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Files */}
@@ -403,7 +381,7 @@ export function AssistantConfigPanel({
           
           {/* Uploaded Files List */}
           {config.files.length > 0 && (
-            <div className="space-y-2 mb-4">
+            <div className="space-y-2">
               {config.files.map((file) => (
                 <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
                   <div className="flex items-center space-x-2">
@@ -421,11 +399,6 @@ export function AssistantConfigPanel({
                 </div>
               ))}
             </div>
-          )}
-
-          {/* Google Docs Integration */}
-          {assistantId && (
-            <GoogleDocsIntegration assistantId={assistantId} />
           )}
         </div>
 

@@ -21,7 +21,6 @@ export const assistants = pgTable("assistants", {
   userId: varchar("user_id").references(() => users.id).notNull(),
   openaiAssistantId: text("openai_assistant_id"),
   vectorStoreId: text("vector_store_id"),
-  userProvidedVectorStoreId: text("user_provided_vector_store_id"),
   name: text("name").notNull(),
   description: text("description"),
   instructions: text("instructions"),
@@ -50,55 +49,20 @@ export const conversations = pgTable("conversations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const knowledgeBase = pgTable("knowledge_base", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  assistantId: varchar("assistant_id").references(() => assistants.id),
-  vectorStoreId: text("vector_store_id"),
-  fileName: text("file_name").notNull(),
-  originalName: text("original_name").notNull(),
-  fileSize: text("file_size"),
-  fileType: text("file_type"),
-  openaiFileId: text("openai_file_id"),
-  storagePath: text("storage_path"),
-  metadata: json("metadata").$type<{
-    description?: string;
-    tags?: string[];
-    isActive?: boolean;
-    keyInformation?: {
-      summary: string;
-      keyPoints: string[];
-      topics: string[];
-      metadata: {
-        wordCount: number;
-        estimatedReadTime: number;
-        documentType: string;
-        importance?: string;
-      };
-    };
-    content?: string;
-    documentId?: string;
-    importedAt?: string;
-    originalUrl?: string;
-    wordCount?: number;
-    documentType?: string;
-  }>().default({}),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
   settings: true,
 });
 
-export const insertAssistantSchema = createInsertSchema(assistants).omit({
-  id: true,
-  userId: true,
-  createdAt: true,
-  updatedAt: true,
-  isActive: true,
+export const insertAssistantSchema = createInsertSchema(assistants).pick({
+  name: true,
+  description: true,
+  instructions: true,
+  model: true,
+  temperature: true,
+  tools: true,
+  files: true,
 });
 
 export const insertConversationSchema = createInsertSchema(conversations).pick({
@@ -107,23 +71,9 @@ export const insertConversationSchema = createInsertSchema(conversations).pick({
   messages: true,
 });
 
-export const insertKnowledgeBaseSchema = createInsertSchema(knowledgeBase).pick({
-  assistantId: true,
-  vectorStoreId: true,
-  fileName: true,
-  originalName: true,
-  fileSize: true,
-  fileType: true,
-  openaiFileId: true,
-  storagePath: true,
-  metadata: true,
-});
-
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertAssistant = z.infer<typeof insertAssistantSchema>;
 export type Assistant = typeof assistants.$inferSelect;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
 export type Conversation = typeof conversations.$inferSelect;
-export type InsertKnowledgeBase = z.infer<typeof insertKnowledgeBaseSchema>;
-export type KnowledgeBase = typeof knowledgeBase.$inferSelect;
