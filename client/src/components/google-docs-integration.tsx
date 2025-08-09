@@ -10,12 +10,12 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { GoogleDocsDocument } from "@shared/schema";
 
-interface GoogleDriveIntegrationProps {
+interface GoogleDocsIntegrationProps {
   assistantId: string;
   userId: string;
 }
 
-export function GoogleDriveIntegration({ assistantId, userId }: GoogleDriveIntegrationProps) {
+export function GoogleDocsIntegration({ assistantId, userId }: GoogleDocsIntegrationProps) {
   const [documentUrl, setDocumentUrl] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();

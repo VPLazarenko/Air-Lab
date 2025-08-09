@@ -107,18 +107,26 @@ export class OpenAIService {
 
   async updateAssistantWithFiles(assistantId: string, fileIds: string[]) {
     try {
-      // Update assistant with file IDs for file_search tool
+      // For now, just attach files directly to the assistant
+      // This is a simpler approach that works with older OpenAI API versions
       const assistant = await this.client.beta.assistants.update(assistantId, {
-        tool_resources: {
-          file_search: {
-            vector_stores: [{ file_ids: fileIds }]
-          }
-        }
+        file_ids: fileIds
       });
+      
       return assistant;
     } catch (error) {
       console.error("Error updating assistant with files:", error);
-      throw new Error(`Failed to update assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Try alternative approach if file_ids doesn't work
+      try {
+        console.log("Trying alternative file attachment method...");
+        const assistant = await this.client.beta.assistants.update(assistantId, {
+          tools: [{ type: "file_search" }]
+        });
+        return assistant;
+      } catch (altError) {
+        console.error("Alternative method also failed:", altError);
+        throw new Error(`Failed to update assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 

@@ -15,7 +15,7 @@ import { queryClient } from "@/lib/queryClient";
 import { openaiClient } from "@/lib/openai-client";
 import type { Assistant } from "@/lib/openai-client";
 import { ObjectUploader } from "@/components/ObjectUploader";
-import { GoogleDriveIntegration } from "@/components/google-drive-integration";
+import { GoogleDocsIntegration } from "@/components/google-docs-integration";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Save, 
@@ -374,9 +374,9 @@ export function AssistantConfigPanel({
                 <Upload className="w-4 h-4" />
                 File Upload
               </TabsTrigger>
-              <TabsTrigger value="google-drive" className="flex items-center gap-2">
+              <TabsTrigger value="google-docs" className="flex items-center gap-2">
                 <Link className="w-4 h-4" />
-                Google Drive
+                Google Docs
               </TabsTrigger>
             </TabsList>
             
@@ -418,16 +418,16 @@ export function AssistantConfigPanel({
               )}
             </TabsContent>
             
-            <TabsContent value="google-drive">
+            <TabsContent value="google-docs">
               {assistantId ? (
-                <GoogleDriveIntegration
+                <GoogleDocsIntegration
                   assistantId={assistantId}
                   userId={userId}
                 />
               ) : (
                 <div className="text-center p-4 text-muted-foreground">
                   <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Сохраните ассистента для добавления Google Drive документов</p>
+                  <p>Сохраните ассистента для добавления Google Docs документов</p>
                 </div>
               )}
             </TabsContent>

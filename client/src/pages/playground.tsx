@@ -8,7 +8,7 @@ import type { Assistant, Conversation } from "@/lib/openai-client";
 import { ChatInterface } from "@/components/chat-interface";
 import { AssistantConfigPanel } from "@/components/assistant-config-panel";
 import { SettingsModal } from "@/components/settings-modal";
-import { GoogleDriveIntegration } from "@/components/google-drive-integration";
+import { GoogleDocsIntegration } from "@/components/google-docs-integration";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Bot, 
