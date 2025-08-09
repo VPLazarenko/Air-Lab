@@ -112,18 +112,25 @@ export class OpenAIService {
       while (runStatus.status === "queued" || runStatus.status === "in_progress") {
         console.log("Polling run status:", runStatus.status);
         await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log("Retrieving run status for thread:", threadId, "run:", runStatus.id);
         runStatus = await this.client.beta.threads.runs.retrieve(threadId, runStatus.id);
       }
 
+      console.log("Final run status:", runStatus.status);
+      
       if (runStatus.status === "completed") {
+        console.log("Run completed, fetching messages from thread:", threadId);
         const messages = await this.client.beta.threads.messages.list(threadId);
+        console.log("Retrieved", messages.data.length, "messages");
         return messages.data[0]; // Return the latest message
       } else {
+        console.log("Run failed with status:", runStatus.status);
         throw new Error(`Run failed with status: ${runStatus.status}`);
       }
     } catch (error) {
       console.error("Error running assistant:", error);
-      throw new Error(`Failed to run assistant: ${error.message}`);
+      console.error("Error details:", error);
+      throw new Error(`Failed to run assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
