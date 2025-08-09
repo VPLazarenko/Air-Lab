@@ -69,7 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Save to local storage
       const assistant = await storage.createAssistant({
         ...assistantData,
-        openaiAssistantId: openaiAssistant.id,
+        // openaiAssistantId: openaiAssistant.id, // This field may not exist in the schema
       });
 
       res.json(assistant);
@@ -225,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { role: "system", content: assistant.instructions || "You are a helpful assistant." },
           { role: "user", content: message }
         ];
-        const content = await openaiService.chatCompletion(messages, assistant.model, assistant.temperature);
+        const content = await openaiService.chatCompletion(messages, assistant.model, assistant.temperature ?? 0.7);
         response = { content: [{ text: { value: content } }] };
       }
 
@@ -240,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const assistantMessage = {
         id: `msg_${Date.now()}_assistant`,
         role: "assistant" as const,
-        content: response.content?.[0]?.text?.value || "I apologize, but I couldn't generate a response.",
+        content: (response as any)?.content?.[0]?.text?.value || "I apologize, but I couldn't generate a response.",
         timestamp: new Date().toISOString(),
       };
 
@@ -250,6 +250,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ userMessage, assistantMessage });
     } catch (error) {
       console.error("Error sending message:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.get("/api/conversations/:id", async (req, res) => {
+    try {
+      const conversation = await storage.getConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ error: "Conversation not found" });
+      }
+      res.json(conversation);
+    } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });

@@ -87,25 +87,21 @@ export default function Playground() {
   const sendMessageMutation = useMutation({
     mutationFn: ({ conversationId, message }: { conversationId: string; message: string }) =>
       openaiClient.sendMessage(conversationId, message),
-    onSuccess: (data, variables) => {
-      // Update local state immediately
+    onSuccess: async (data, variables) => {
+      // Immediately update local state with new messages
       if (currentConversation && currentConversation.id === variables.conversationId) {
-        // Refresh the current conversation to get updated messages
-        queryClient.invalidateQueries({ queryKey: ['/api/conversations', variables.conversationId] });
-        // Also refresh the conversations list
-        queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
-        
-        // Refetch the current conversation data
-        setTimeout(() => {
-          if (currentConversation) {
-            openaiClient.getConversation(currentConversation.id).then((updatedConversation: Conversation) => {
-              setCurrentConversation(updatedConversation);
-            });
-          }
-        }, 100);
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
+        try {
+          // Fetch updated conversation immediately
+          const updatedConversation = await openaiClient.getConversation(currentConversation.id);
+          setCurrentConversation(updatedConversation);
+        } catch (error) {
+          console.error("Failed to refresh conversation:", error);
+        }
       }
+      
+      // Invalidate queries to ensure cache is fresh
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations', variables.conversationId] });
     },
     onError: (error) => {
       toast({
