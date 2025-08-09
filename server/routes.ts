@@ -58,6 +58,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create assistant with OpenAI
       openaiService.setApiKey(apiKey);
+      
+      // If we have file search enabled, create a vector store first
+      let vectorStoreId = null;
+      const hasFileSearch = (assistantData.tools || []).some((t: any) => t.enabled && t.type === "file_search");
+      
+      if (hasFileSearch) {
+        console.log("Creating vector store for assistant with file search...");
+        const vectorStore = await openaiService.createVectorStore(`${assistantData.name} Knowledge Base`);
+        vectorStoreId = vectorStore.id;
+        console.log(`Vector store created with ID: ${vectorStoreId}`);
+      }
+
       const openaiAssistant = await openaiService.createAssistant({
         name: assistantData.name,
         description: assistantData.description || undefined,
@@ -66,10 +78,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tools: (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
       });
 
+      // If we have a vector store, link it to the assistant
+      if (vectorStoreId) {
+        console.log(`Linking vector store ${vectorStoreId} to assistant ${openaiAssistant.id}...`);
+        await openaiService.updateAssistantWithVectorStore(openaiAssistant.id, vectorStoreId);
+      }
+
       // Save to local storage
       const assistant = await storage.createAssistant({
         ...assistantData,
         openaiAssistantId: openaiAssistant.id,
+        vectorStoreId: vectorStoreId,
       });
 
       res.json(assistant);
@@ -122,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: updates.description,
           instructions: updates.instructions,
           model: updates.model,
-          tools: (updates.tools || []).filter((t: any) => t.enabled).map((t: any) => ({ type: t.type as "code_interpreter" | "retrieval" | "function" })),
+          tools: (updates.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
         });
       }
 
@@ -343,9 +362,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const vectorStore = await openaiService.createVectorStore(`${assistant.name} Knowledge Base`);
         vectorStoreId = vectorStore.id;
         
-        // Update assistant with vector store
+        // Link vector store to OpenAI assistant
+        await openaiService.updateAssistantWithVectorStore(assistant.openaiAssistantId, vectorStoreId);
+        
+        // Update local storage with vector store ID
         await storage.updateAssistant(assistantId, { vectorStoreId });
-        console.log(`Vector store created with ID: ${vectorStoreId}`);
+        console.log(`Vector store created and linked with ID: ${vectorStoreId}`);
       }
 
       if (vectorStoreId) {
