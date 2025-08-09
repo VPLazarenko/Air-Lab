@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ObjectUploader } from "@/components/ObjectUploader";
 import type { Conversation, Assistant } from "@/lib/openai-client";
 import { 
   Send, 
@@ -217,16 +218,33 @@ export function ChatInterface({ conversation, assistant, onSendMessage, isLoadin
           {/* Input Options */}
           <div className="flex items-center justify-between mt-3 text-sm text-gray-500 dark:text-gray-400">
             <div className="flex items-center space-x-4">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-6 text-xs"
-                disabled
+              <ObjectUploader
+                maxNumberOfFiles={3}
+                maxFileSize={10485760} // 10MB
+                onGetUploadParameters={async () => {
+                  try {
+                    const response = await fetch('/api/objects/upload', { method: 'POST' });
+                    const data = await response.json();
+                    return {
+                      method: 'PUT' as const,
+                      url: data.uploadURL,
+                    };
+                  } catch (error) {
+                    throw error;
+                  }
+                }}
+                onComplete={async (result: any) => {
+                  if (result.successful && result.successful.length > 0) {
+                    const uploadedFile = result.successful[0];
+                    console.log('File uploaded to chat:', uploadedFile.name);
+                    setMessage(prev => prev + `\n\n[Файл загружен: ${uploadedFile.name}]`);
+                  }
+                }}
+                buttonClassName="flex items-center h-6 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 px-2 py-1 rounded transition-colors"
               >
                 <Paperclip className="w-3 h-3 mr-1" />
                 Attach file
-              </Button>
+              </ObjectUploader>
               <Button
                 type="button"
                 variant="ghost"

@@ -100,7 +100,7 @@ export class OpenAIService {
       const response = await fetch(`https://api.openai.com/v1/vector_stores/${vectorStoreId}/files`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': `Bearer ${this.client.apiKey}`,
           'Content-Type': 'application/json',
           'OpenAI-Beta': 'assistants=v2'
         },

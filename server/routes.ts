@@ -98,7 +98,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Save to local storage
       const assistant = await storage.createAssistant({
-        ...assistantData,
+        name: assistantData.name,
+        description: assistantData.description,
+        instructions: assistantData.instructions,
+        model: assistantData.model,
+        temperature: assistantData.temperature,
+        tools: assistantData.tools,
+        files: assistantData.files,
+        userId: assistantData.userId,
         openaiAssistantId: openaiAssistant.id,
         vectorStoreId: vectorStoreId,
       });
@@ -314,6 +321,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ uploadURL });
     } catch (error) {
       console.error("Error getting upload URL:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Knowledge Base routes
+  app.get("/api/knowledge-base/user/:userId", async (req, res) => {
+    try {
+      const files = await storage.getKnowledgeBaseFilesByUserId(req.params.userId);
+      res.json(files);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.get("/api/knowledge-base/assistant/:assistantId", async (req, res) => {
+    try {
+      const files = await storage.getKnowledgeBaseFilesByAssistantId(req.params.assistantId);
+      res.json(files);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.post("/api/knowledge-base", async (req, res) => {
+    try {
+      const { userId, assistantId, vectorStoreId, fileName, originalName, fileSize, fileType, openaiFileId, storagePath, metadata } = req.body;
+      
+      const file = await storage.createKnowledgeBaseFile({
+        userId,
+        assistantId,
+        vectorStoreId,
+        fileName,
+        originalName,
+        fileSize,
+        fileType,
+        openaiFileId,
+        storagePath,
+        metadata
+      });
+      
+      res.json(file);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.delete("/api/knowledge-base/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteKnowledgeBaseFile(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Knowledge base file not found" });
+      }
+      res.json({ success: true });
+    } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });

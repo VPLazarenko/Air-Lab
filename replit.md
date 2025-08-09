@@ -22,17 +22,19 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express.js REST API
 - **Language**: TypeScript with ES modules
 - **Database ORM**: Drizzle ORM for type-safe database operations
-- **Database**: PostgreSQL (configured for Neon Database)
+- **Database**: PostgreSQL with Neon Database (production-ready with DatabaseStorage)
 - **File Storage**: Google Cloud Storage with custom ACL (Access Control List) system
-- **AI Integration**: OpenAI API for assistant creation and conversation management
+- **AI Integration**: OpenAI API for assistant creation, conversation management, and vector store integration
+- **Knowledge Management**: Full CRUD operations for file management with vector store integration
 
 ### Data Storage Solutions
-- **Primary Database**: PostgreSQL with three main entities:
-  - Users: Store user profiles, API keys, and preferences
-  - Assistants: Store assistant configurations, OpenAI IDs, and metadata
+- **Primary Database**: PostgreSQL with four main entities:
+  - Users: Store user profiles, API keys, and preferences  
+  - Assistants: Store assistant configurations, OpenAI IDs, and vector store references
   - Conversations: Store chat history and thread management
+  - Knowledge Base: Store file metadata, OpenAI file IDs, and vector store associations
 - **Object Storage**: Google Cloud Storage for file uploads with custom metadata-based ACL policies
-- **In-Memory Storage**: Fallback MemStorage implementation for development/testing
+- **Database Storage**: DatabaseStorage class replaces MemStorage for production data persistence
 
 ### Authentication and Authorization
 - **File Access Control**: Custom ACL system using object metadata for fine-grained access control
