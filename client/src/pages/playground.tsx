@@ -87,21 +87,18 @@ export default function Playground() {
   const sendMessageMutation = useMutation({
     mutationFn: ({ conversationId, message }: { conversationId: string; message: string }) =>
       openaiClient.sendMessage(conversationId, message),
-    onSuccess: async (data, variables) => {
-      // Immediately update local state with new messages
+    onSuccess: (data, variables) => {
+      // Update conversation state immediately with new messages
       if (currentConversation && currentConversation.id === variables.conversationId) {
-        try {
-          // Fetch updated conversation immediately
-          const updatedConversation = await openaiClient.getConversation(currentConversation.id);
-          setCurrentConversation(updatedConversation);
-        } catch (error) {
-          console.error("Failed to refresh conversation:", error);
-        }
+        const updatedConversation = {
+          ...currentConversation,
+          messages: [...(currentConversation.messages || []), data.userMessage, data.assistantMessage],
+        };
+        setCurrentConversation(updatedConversation);
       }
       
-      // Invalidate queries to ensure cache is fresh
+      // Invalidate queries for fresh data
       queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations', variables.conversationId] });
     },
     onError: (error) => {
       toast({

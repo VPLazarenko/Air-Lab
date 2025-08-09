@@ -43,7 +43,7 @@ export function ChatInterface({ conversation, assistant, onSendMessage, isLoadin
     e.preventDefault();
     if (!message.trim() || isLoading) return;
 
-    const messageToSend = message;
+    const messageToSend = message.trim();
     setMessage("");
     setTokenCount(0);
     
