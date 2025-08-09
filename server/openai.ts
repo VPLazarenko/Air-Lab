@@ -12,12 +12,18 @@ export class OpenAIService {
     });
   }
 
+  setApiKey(apiKey: string) {
+    this.client = new OpenAI({
+      apiKey: apiKey,
+    });
+  }
+
   async createAssistant(params: {
     name: string;
     description?: string;
     instructions: string;
     model?: string;
-    tools?: Array<{ type: string }>;
+    tools?: Array<{ type: "code_interpreter" | "retrieval" | "function" }>;
     file_ids?: string[];
   }) {
     try {
@@ -33,7 +39,7 @@ export class OpenAIService {
       return assistant;
     } catch (error) {
       console.error("Error creating assistant:", error);
-      throw new Error(`Failed to create assistant: ${error.message}`);
+      throw new Error(`Failed to create assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -42,7 +48,7 @@ export class OpenAIService {
     description?: string;
     instructions?: string;
     model?: string;
-    tools?: Array<{ type: string }>;
+    tools?: Array<{ type: "code_interpreter" | "retrieval" | "function" }>;
     file_ids?: string[];
   }) {
     try {
@@ -53,17 +59,17 @@ export class OpenAIService {
       return assistant;
     } catch (error) {
       console.error("Error updating assistant:", error);
-      throw new Error(`Failed to update assistant: ${error.message}`);
+      throw new Error(`Failed to update assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   async deleteAssistant(assistantId: string) {
     try {
-      await this.client.beta.assistants.del(assistantId);
+      await this.client.beta.assistants.delete(assistantId);
       return true;
     } catch (error) {
       console.error("Error deleting assistant:", error);
-      throw new Error(`Failed to delete assistant: ${error.message}`);
+      throw new Error(`Failed to delete assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -101,7 +107,7 @@ export class OpenAIService {
       let runStatus = run;
       while (runStatus.status === "queued" || runStatus.status === "in_progress") {
         await new Promise(resolve => setTimeout(resolve, 1000));
-        runStatus = await this.client.beta.threads.runs.retrieve(threadId, run.id);
+        runStatus = await this.client.beta.threads.runs.retrieve(threadId, runStatus.id);
       }
 
       if (runStatus.status === "completed") {

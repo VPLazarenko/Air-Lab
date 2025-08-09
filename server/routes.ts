@@ -52,8 +52,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user's API key
       const user = await storage.getUser(assistantData.userId);
+      console.log("Creating assistant for user:", assistantData.userId);
+      console.log("User found:", !!user);
+      console.log("User API key exists:", !!user?.apiKey);
+      console.log("User API key starts with sk-:", user?.apiKey?.startsWith('sk-'));
+      
       if (!user?.apiKey) {
-        return res.status(400).json({ error: "OpenAI API key not configured" });
+        return res.status(400).json({ error: "OpenAI API key not configured. Please go to Settings and add your API key." });
       }
 
       // Create assistant with OpenAI
@@ -63,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: assistantData.description,
         instructions: assistantData.instructions || "",
         model: assistantData.model,
-        tools: assistantData.tools?.filter(t => t.enabled).map(t => ({ type: t.type })) || [],
+        tools: (assistantData.tools || []).filter(t => t.enabled).map(t => ({ type: t.type as "code_interpreter" | "retrieval" | "function" })),
       });
 
       // Save to local storage
@@ -122,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: updates.description,
           instructions: updates.instructions,
           model: updates.model,
-          tools: updates.tools?.filter((t: any) => t.enabled).map((t: any) => ({ type: t.type })) || [],
+          tools: (updates.tools || []).filter((t: any) => t.enabled).map((t: any) => ({ type: t.type as "code_interpreter" | "retrieval" | "function" })),
         });
       }
 
@@ -236,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         timestamp: new Date().toISOString(),
       };
 
-      const updatedMessages = [...conversation.messages, userMessage, assistantMessage];
+      const updatedMessages = [...(conversation.messages || []), userMessage, assistantMessage];
       await storage.updateConversation(req.params.id, { messages: updatedMessages });
 
       res.json({ userMessage, assistantMessage });

@@ -50,7 +50,7 @@ export class MemStorage implements IStorage {
       ...insertUser,
       id,
       createdAt: new Date(),
-      settings: insertUser.settings || {}
+      settings: insertUser.settings as { defaultModel?: string; autoSave?: boolean; darkMode?: boolean; } || {}
     };
     this.users.set(id, user);
     return user;
@@ -82,8 +82,8 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       updatedAt: new Date(),
       isActive: true,
-      tools: assistant.tools || [],
-      files: assistant.files || []
+      tools: (assistant.tools as Array<{ type: string; enabled: boolean }>) || [],
+      files: (assistant.files as Array<{ id: string; name: string; path: string }>) || []
     };
     this.assistants.set(id, newAssistant);
     return newAssistant;
