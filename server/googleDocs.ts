@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+// Удалена зависимость от googleapis, используем fetch для работы с публичными документами
 
 export interface GoogleDocInfo {
   id: string;
@@ -7,19 +7,8 @@ export interface GoogleDocInfo {
 }
 
 export class GoogleDocsService {
-  private docs: any;
-
   constructor() {
-    // Используем Google API ключ для доступа к Google Docs API
-    const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) {
-      throw new Error('GOOGLE_API_KEY environment variable is required');
-    }
-    
-    this.docs = google.docs({ 
-      version: 'v1',
-      auth: apiKey
-    });
+    console.log('GoogleDocsService initialized for public document access');
   }
 
   // Извлекает ID документа из Google Docs URL
@@ -40,106 +29,68 @@ export class GoogleDocsService {
     return null;
   }
 
-  // Получает информацию о Google Doc документе
+  // Получает информацию о Google Doc документе через публичный экспорт
   async getDocInfo(docId: string): Promise<GoogleDocInfo | null> {
     try {
-      const response = await this.docs.documents.get({
-        documentId: docId
+      // Для публичных документов можем попробовать получить заголовок через HTTP запрос
+      const publicUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
+      
+      const response = await fetch(publicUrl, {
+        method: 'HEAD',
+        follow: 0 // Не следуем редиректам
       });
 
-      return {
-        id: response.data.documentId,
-        title: response.data.title || 'Untitled Document'
-      };
-    } catch (error: any) {
-      console.error(`Error fetching Google Doc info for ${docId}:`, error.message);
-      
-      // Если документ недоступен или не найден, возвращаем null
-      if (error.code === 404 || error.code === 403 || error.status === 404 || error.status === 403) {
+      if (response.status === 200) {
+        // Документ доступен публично
+        return {
+          id: docId,
+          title: `Google Docs Document ${docId}` // Базовое название, так как заголовок сложно извлечь без API
+        };
+      } else {
+        console.log(`Document ${docId} is not publicly accessible (status: ${response.status})`);
         return null;
       }
-      
-      throw error;
+    } catch (error: any) {
+      console.error(`Error checking Google Doc accessibility for ${docId}:`, error.message);
+      return null;
     }
   }
 
-  // Получает полное содержимое Google Doc документа
+  // Получает полное содержимое Google Doc документа через публичный экспорт
   async getDocumentContent(docId: string): Promise<string | null> {
     try {
-      const response = await this.docs.documents.get({
-        documentId: docId
-      });
-
-      if (!response.data.body || !response.data.body.content) {
+      // Используем публичный экспорт в текстовом формате
+      const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
+      
+      const response = await fetch(exportUrl);
+      
+      if (!response.ok) {
+        console.log(`Failed to fetch document content: ${response.status} ${response.statusText}`);
         return null;
       }
 
-      // Извлекаем текст из структуры документа
-      let content = '';
-      const extractTextFromContent = (elements: any[]) => {
-        for (const element of elements) {
-          if (element.paragraph && element.paragraph.elements) {
-            for (const paragraphElement of element.paragraph.elements) {
-              if (paragraphElement.textRun && paragraphElement.textRun.content) {
-                content += paragraphElement.textRun.content;
-              } else if (paragraphElement.autoText) {
-                content += '[AUTO_TEXT]';
-              } else if (paragraphElement.pageBreak) {
-                content += '\n[PAGE_BREAK]\n';
-              } else if (paragraphElement.columnBreak) {
-                content += '\n[COLUMN_BREAK]\n';
-              } else if (paragraphElement.horizontalRule) {
-                content += '\n---\n';
-              }
-            }
-            content += '\n'; // Добавляем перенос строки после параграфа
-          } else if (element.table && element.table.tableRows) {
-            // Обработка таблиц
-            content += '\n[TABLE]\n';
-            for (const row of element.table.tableRows) {
-              if (row.tableCells) {
-                for (const cell of row.tableCells) {
-                  if (cell.content) {
-                    extractTextFromContent(cell.content);
-                    content += ' | '; // Разделитель ячеек
-                  }
-                }
-                content += '\n'; // Новая строка таблицы
-              }
-            }
-            content += '[/TABLE]\n';
-          } else if (element.sectionBreak) {
-            content += '\n[SECTION_BREAK]\n';
-          } else if (element.tableOfContents) {
-            content += '\n[TABLE_OF_CONTENTS]\n';
-          }
-        }
-      };
-
-      extractTextFromContent(response.data.body.content);
+      const content = await response.text();
       
+      if (!content || content.trim().length === 0) {
+        console.log(`Document ${docId} appears to be empty`);
+        return null;
+      }
+
       // Очищаем и нормализуем текст
-      return content.replace(/\n\s*\n/g, '\n').trim();
+      return content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+      
     } catch (error: any) {
       console.error(`Error fetching Google Doc content for ${docId}:`, error.message);
-      
-      // Если документ недоступен, возвращаем null
-      if (error.code === 404 || error.code === 403 || error.status === 404 || error.status === 403) {
-        return null;
-      }
-      
-      throw error;
+      return null;
     }
   }
 
-  // Проверяет доступность документа
+  // Проверяет доступность документа через публичный экспорт
   async isDocumentAccessible(docId: string): Promise<boolean> {
     try {
-      await this.docs.documents.get({
-        documentId: docId,
-        fields: 'documentId'
-      });
-      return true;
+      const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt`;
+      const response = await fetch(exportUrl, { method: 'HEAD' });
+      return response.ok;
     } catch (error: any) {
       console.error(`Document ${docId} not accessible:`, error.message);
       return false;
