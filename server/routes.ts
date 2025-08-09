@@ -384,10 +384,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Adding file to vector store ${vectorStoreId}...`);
         await openaiService.addFileToVectorStore(vectorStoreId, openaiFile.id);
         
-        // Update OpenAI assistant with the uploaded file and vector store
-        if (assistant.openaiAssistantId) {
-          await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, [openaiFile.id], vectorStoreId);
-          console.log(`Assistant ${assistant.openaiAssistantId} updated with file ${openaiFile.id} in vector store ${vectorStoreId}`);
+        // No need to update assistant - files in vector store are automatically accessible
+        console.log(`File ${openaiFile.id} is now available in vector store ${vectorStoreId} for assistant ${assistant.openaiAssistantId}`);
+        
+        // Verify the assistant has the vector store linked
+        if (assistant.openaiAssistantId && !assistant.vectorStoreId) {
+          await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, [], vectorStoreId);
+          await storage.updateAssistant(assistantId, { vectorStoreId });
+          console.log(`Assistant ${assistant.openaiAssistantId} linked to vector store ${vectorStoreId}`);
         }
       }
 

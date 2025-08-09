@@ -96,9 +96,25 @@ export class OpenAIService {
 
   async addFileToVectorStore(vectorStoreId: string, fileId: string) {
     try {
-      // For now, just return success - files are attached via tool_resources
-      console.log(`Adding file ${fileId} to vector store ${vectorStoreId}`);
-      return { id: `file_${Date.now()}`, file_id: fileId };
+      // Add file to existing vector store using the real OpenAI API
+      const response = await fetch(`https://api.openai.com/v1/vector_stores/${vectorStoreId}/files`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'OpenAI-Beta': 'assistants=v2'
+        },
+        body: JSON.stringify({ file_id: fileId })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`HTTP ${response.status}: ${error}`);
+      }
+
+      const result = await response.json();
+      console.log(`Successfully added file ${fileId} to vector store ${vectorStoreId}`);
+      return result;
     } catch (error) {
       console.error("Error adding file to vector store:", error);
       throw new Error(`Failed to add file to vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
