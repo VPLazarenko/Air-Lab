@@ -76,15 +76,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
   settings: true,
 });
 
-export const insertAssistantSchema = createInsertSchema(assistants).pick({
-  name: true,
-  description: true,
-  instructions: true,
-  model: true,
-  temperature: true,
-  tools: true,
-  files: true,
-  userProvidedVectorStoreId: true,
+export const insertAssistantSchema = createInsertSchema(assistants).omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+  isActive: true,
 });
 
 export const insertConversationSchema = createInsertSchema(conversations).pick({

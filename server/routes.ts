@@ -20,7 +20,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/users/:id", async (req, res) => {
     try {
-      const user = await storage.getUser(req.params.id);
+      let user;
+      if (req.params.id === "demo-user-1") {
+        // For demo user, find by username
+        user = await storage.getUserByEmail("demo@example.com");
+        if (user) {
+          // Return user with expected demo-user-1 ID for frontend compatibility
+          user = { ...user, id: "demo-user-1" };
+        }
+      } else {
+        user = await storage.getUser(req.params.id);
+      }
+      
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -107,7 +118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         files: assistantData.files,
         userId: assistantData.userId,
         openaiAssistantId: openaiAssistant.id,
-        vectorStoreId: vectorStoreId,
+        vectorStoreId: vectorStoreId || undefined,
+        userProvidedVectorStoreId: assistantData.userProvidedVectorStoreId,
       });
 
       res.json(assistant);
@@ -119,7 +131,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/assistants/user/:userId", async (req, res) => {
     try {
-      const assistants = await storage.getAssistantsByUserId(req.params.userId);
+      let userId = req.params.userId;
+      if (userId === "demo-user-1") {
+        // Get real user ID for demo user
+        const user = await storage.getUserByEmail("demo@example.com");
+        if (user) {
+          userId = user.id;
+        }
+      }
+      const assistants = await storage.getAssistantsByUserId(userId);
       res.json(assistants);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
