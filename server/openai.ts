@@ -107,26 +107,42 @@ export class OpenAIService {
 
       console.log("Created run with ID:", run.id);
 
-      // Poll for completion
-      let runStatus = run;
-      while (runStatus.status === "queued" || runStatus.status === "in_progress") {
-        console.log("Polling run status:", runStatus.status);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log("Retrieving run status for thread:", threadId, "run:", runStatus.id);
-        runStatus = await this.client.beta.threads.runs.retrieve(threadId, runStatus.id);
-      }
-
-      console.log("Final run status:", runStatus.status);
-      
-      if (runStatus.status === "completed") {
-        console.log("Run completed, fetching messages from thread:", threadId);
-        const messages = await this.client.beta.threads.messages.list(threadId);
-        console.log("Retrieved", messages.data.length, "messages");
-        return messages.data[0]; // Return the latest message
-      } else {
-        console.log("Run failed with status:", runStatus.status);
-        throw new Error(`Run failed with status: ${runStatus.status}`);
-      }
+      // Use different approach - try with stream or wait for completion differently
+      return new Promise(async (resolve, reject) => {
+        let attempts = 0;
+        const maxAttempts = 30; // 30 seconds max
+        
+        const checkStatus = async () => {
+          attempts++;
+          
+          try {
+            console.log(`Attempt ${attempts}: Checking run status...`);
+            const currentRun = await this.client.beta.threads.runs.retrieve(threadId, run.id);
+            console.log(`Run ${currentRun.id} status: ${currentRun.status}`);
+            
+            if (currentRun.status === "completed") {
+              console.log("Run completed successfully");
+              const messages = await this.client.beta.threads.messages.list(threadId);
+              console.log("Retrieved", messages.data.length, "messages");
+              resolve(messages.data[0]);
+            } else if (currentRun.status === "failed" || currentRun.status === "cancelled" || currentRun.status === "expired") {
+              console.log("Run failed with status:", currentRun.status);
+              reject(new Error(`Run failed with status: ${currentRun.status}`));
+            } else if (attempts >= maxAttempts) {
+              console.log("Max attempts reached, run timed out");
+              reject(new Error("Run timed out"));
+            } else {
+              // Still running, check again in 1 second
+              setTimeout(checkStatus, 1000);
+            }
+          } catch (error) {
+            console.error(`Error on attempt ${attempts}:`, error);
+            reject(error);
+          }
+        };
+        
+        checkStatus();
+      });
     } catch (error) {
       console.error("Error running assistant:", error);
       console.error("Error details:", error);
