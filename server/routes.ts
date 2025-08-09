@@ -179,6 +179,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!message) {
         return res.status(400).json({ error: "Message is required" });
       }
+      
+      console.log("Processing message:", message, "for conversation:", req.params.id);
 
       const conversation = await storage.getConversation(req.params.id);
       if (!conversation) {
@@ -199,17 +201,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create thread if doesn't exist
       let threadId = conversation.openaiThreadId;
+      console.log("Current threadId:", threadId);
+      
       if (!threadId) {
+        console.log("Creating new thread...");
         const thread = await openaiService.createThread();
         threadId = thread.id;
+        console.log("Created thread with ID:", threadId);
         await storage.updateConversation(req.params.id, { openaiThreadId: threadId });
       }
 
       // Send message and get response
+      console.log("Sending message to thread:", threadId);
       await openaiService.sendMessage(threadId, message);
       
       let response;
       if (assistant.openaiAssistantId) {
+        console.log("Running assistant:", assistant.openaiAssistantId, "on thread:", threadId);
         response = await openaiService.runAssistant(threadId, assistant.openaiAssistantId);
       } else {
         // Fallback to chat completion

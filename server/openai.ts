@@ -99,13 +99,18 @@ export class OpenAIService {
 
   async runAssistant(threadId: string, assistantId: string) {
     try {
+      console.log("Creating run for thread:", threadId, "assistant:", assistantId);
+      
       const run = await this.client.beta.threads.runs.create(threadId, {
         assistant_id: assistantId,
       });
 
+      console.log("Created run with ID:", run.id);
+
       // Poll for completion
       let runStatus = run;
       while (runStatus.status === "queued" || runStatus.status === "in_progress") {
+        console.log("Polling run status:", runStatus.status);
         await new Promise(resolve => setTimeout(resolve, 1000));
         runStatus = await this.client.beta.threads.runs.retrieve(threadId, runStatus.id);
       }
