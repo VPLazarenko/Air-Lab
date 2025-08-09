@@ -105,16 +105,20 @@ export class OpenAIService {
     }
   }
 
-  async updateAssistantWithFiles(assistantId: string, fileIds: string[]) {
+  async updateAssistantWithFiles(assistantId: string, fileIds: string[], vectorStoreId?: string) {
     try {
-      // Update assistant with file IDs for file_search tool
-      const assistant = await this.client.beta.assistants.update(assistantId, {
+      // Update assistant with existing vector store
+      const updateData: any = {
         tool_resources: {
-          file_search: {
+          file_search: vectorStoreId ? {
+            vector_store_ids: [vectorStoreId]
+          } : {
             vector_stores: [{ file_ids: fileIds }]
           }
         }
-      });
+      };
+
+      const assistant = await this.client.beta.assistants.update(assistantId, updateData);
       return assistant;
     } catch (error) {
       console.error("Error updating assistant with files:", error);

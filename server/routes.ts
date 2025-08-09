@@ -59,24 +59,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create assistant with OpenAI
       openaiService.setApiKey(apiKey);
       
-      // If we have file search enabled, create a vector store first
-      let vectorStoreId = null;
+      // Use provided vector store ID or create new one for file search
+      let vectorStoreId = assistantData.userProvidedVectorStoreId || null;
       const hasFileSearch = (assistantData.tools || []).some((t: any) => t.enabled && t.type === "file_search");
       
-      if (hasFileSearch) {
+      if (hasFileSearch && !vectorStoreId) {
         console.log("Creating vector store for assistant with file search...");
         const vectorStore = await openaiService.createVectorStore(`${assistantData.name} Knowledge Base`);
         vectorStoreId = vectorStore.id;
         console.log(`Vector store created with ID: ${vectorStoreId}`);
+      } else if (vectorStoreId) {
+        console.log(`Using provided vector store ID: ${vectorStoreId}`);
       }
 
-      const openaiAssistant = await openaiService.createAssistant({
+      // Create assistant with vector store if provided
+      const tools = (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" }));
+      
+      const assistantConfig: any = {
         name: assistantData.name,
         description: assistantData.description || undefined,
         instructions: assistantData.instructions || "",
         model: assistantData.model,
-        tools: (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
-      });
+        tools,
+      };
+
+      // Add vector store if file_search is enabled and vector store ID is provided
+      if (vectorStoreId && tools.some(t => t.type === "file_search")) {
+        assistantConfig.tool_resources = {
+          file_search: {
+            vector_store_ids: [vectorStoreId]
+          }
+        };
+      }
+
+      const openaiAssistant = await openaiService.createAssistant(assistantConfig);
 
       // Vector store is created but files will be attached when uploaded
 
@@ -368,10 +384,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Adding file to vector store ${vectorStoreId}...`);
         await openaiService.addFileToVectorStore(vectorStoreId, openaiFile.id);
         
-        // Update OpenAI assistant with the uploaded file
+        // Update OpenAI assistant with the uploaded file and vector store
         if (assistant.openaiAssistantId) {
-          await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, [openaiFile.id]);
-          console.log(`Assistant ${assistant.openaiAssistantId} updated with file ${openaiFile.id}`);
+          await openaiService.updateAssistantWithFiles(assistant.openaiAssistantId, [openaiFile.id], vectorStoreId);
+          console.log(`Assistant ${assistant.openaiAssistantId} updated with file ${openaiFile.id} in vector store ${vectorStoreId}`);
         }
       }
 

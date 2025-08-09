@@ -52,6 +52,7 @@ export function AssistantConfigPanel({
       { type: "web_search", enabled: false },
     ],
     files: [] as Array<{ id: string; name: string; path: string }>,
+    userProvidedVectorStoreId: "vs_6871906566a48191aa3376db251c9d0d" as string,
   });
 
   const { toast } = useToast();
@@ -66,6 +67,7 @@ export function AssistantConfigPanel({
         temperature: assistant.temperature,
         tools: assistant.tools.length > 0 ? assistant.tools : config.tools,
         files: assistant.files || [],
+        userProvidedVectorStoreId: (assistant as any).userProvidedVectorStoreId || "",
       });
     }
   }, [assistant]);
@@ -359,6 +361,25 @@ export function AssistantConfigPanel({
               </div>
             ))}
           </div>
+
+          {/* Vector Store ID поле - показывается когда включен file_search */}
+          {config.tools.some(t => t.type === 'file_search' && t.enabled) && (
+            <div className="mt-4 p-3 border rounded-lg bg-blue-50 dark:bg-blue-950/30">
+              <Label htmlFor="vectorStoreId" className="text-sm font-medium">
+                Vector Store ID (необязательно)
+              </Label>
+              <Input
+                id="vectorStoreId"
+                value={config.userProvidedVectorStoreId || "vs_6871906566a48191aa3376db251c9d0d"}
+                onChange={(e) => updateConfig('userProvidedVectorStoreId', e.target.value)}
+                placeholder="vs_6871906566a48191aa3376db251c9d0d"
+                className="mt-2"
+              />
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                Введите ID существующего vector store из OpenAI. Если оставить пустым, будет создан автоматически.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Files */}
