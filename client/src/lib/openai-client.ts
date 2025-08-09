@@ -109,6 +109,11 @@ export const openaiClient = {
     return await response.json() as Conversation;
   },
 
+  async getConversation(conversationId: string) {
+    const response = await apiRequest("GET", `/api/conversations/${conversationId}`);
+    return await response.json() as Conversation;
+  },
+
   async sendMessage(conversationId: string, message: string) {
     const response = await apiRequest("POST", `/api/conversations/${conversationId}/messages`, { message });
     return await response.json() as {

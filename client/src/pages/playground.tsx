@@ -87,8 +87,25 @@ export default function Playground() {
   const sendMessageMutation = useMutation({
     mutationFn: ({ conversationId, message }: { conversationId: string; message: string }) =>
       openaiClient.sendMessage(conversationId, message),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
+    onSuccess: (data, variables) => {
+      // Update local state immediately
+      if (currentConversation && currentConversation.id === variables.conversationId) {
+        // Refresh the current conversation to get updated messages
+        queryClient.invalidateQueries({ queryKey: ['/api/conversations', variables.conversationId] });
+        // Also refresh the conversations list
+        queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
+        
+        // Refetch the current conversation data
+        setTimeout(() => {
+          if (currentConversation) {
+            openaiClient.getConversation(currentConversation.id).then((updatedConversation: Conversation) => {
+              setCurrentConversation(updatedConversation);
+            });
+          }
+        }, 100);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
+      }
     },
     onError: (error) => {
       toast({
@@ -99,7 +116,7 @@ export default function Playground() {
     },
   });
 
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message: string): Promise<void> => {
     if (!currentConversation) {
       if (!assistantId) {
         toast({
@@ -117,13 +134,14 @@ export default function Playground() {
       });
       
       // Send message to new conversation
-      return sendMessageMutation.mutateAsync({
+      await sendMessageMutation.mutateAsync({
         conversationId: conversation.id,
         message,
       });
+      return;
     }
 
-    return sendMessageMutation.mutateAsync({
+    await sendMessageMutation.mutateAsync({
       conversationId: currentConversation.id,
       message,
     });
