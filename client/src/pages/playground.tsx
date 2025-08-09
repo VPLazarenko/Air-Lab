@@ -22,7 +22,8 @@ import {
   GraduationCap,
   PenTool,
   BarChart3,
-  User as UserIcon
+  User as UserIcon,
+  Menu
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -34,6 +35,7 @@ export default function Playground() {
   const assistantId = params.assistantId;
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('darkMode') === 'true' || 
@@ -200,8 +202,49 @@ export default function Playground() {
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
-      {/* Sidebar */}
-      <div className="w-80 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+      {/* Mobile Menu Overlay */}
+      {showMobileMenu && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="fixed inset-0 bg-black/20" onClick={() => setShowMobileMenu(false)} />
+          <div className="fixed top-0 left-0 bottom-0 w-80 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transform transition-transform">
+            {/* Mobile Header */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Меню</h2>
+              <Button variant="ghost" size="sm" onClick={() => setShowMobileMenu(false)}>
+                ✕
+              </Button>
+            </div>
+            
+            {/* Navigation */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="space-y-4">
+                <Link href="/playground" onClick={() => setShowMobileMenu(false)}>
+                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Создать ассистента
+                  </Button>
+                </Link>
+                
+                <div className="space-y-2">
+                  {assistants.map((asst) => (
+                    <Link key={asst.id} href={`/playground/${asst.id}`} onClick={() => setShowMobileMenu(false)}>
+                      <div className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${asst.id === assistantId ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
+                        <div className={`w-6 h-6 ${getAssistantColor(asst)} rounded-full flex items-center justify-center`}>
+                          {getAssistantIcon(asst)}
+                        </div>
+                        <span className="text-sm truncate">{asst.name}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:flex w-80 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex-col">
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3 mb-4">
@@ -209,7 +252,7 @@ export default function Playground() {
               <Bot className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold">OpenAI Assistant Platform</h1>
+              <h1 className="text-lg font-semibold">AI Assistant Platform</h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">Управление ассистентами</p>
             </div>
           </div>
@@ -308,19 +351,29 @@ export default function Playground() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar */}
-        <div className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6">
+        <div className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 lg:px-6">
           <div className="flex items-center space-x-3">
+            {/* Mobile menu button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden p-2"
+              onClick={() => setShowMobileMenu(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            
             <div className={`w-8 h-8 ${assistant ? getAssistantColor(assistant) : 'bg-emerald-600'} rounded-lg flex items-center justify-center`}>
               {assistant ? getAssistantIcon(assistant) : <Bot className="w-4 h-4 text-white" />}
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg font-semibold truncate">
                 {assistant?.name || 'Новый ассистент'}
               </h2>
               <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                <span>Модель:</span>
+                <span className="hidden sm:inline">Модель:</span>
                 <span className="font-medium">{assistant?.model || 'GPT-4o'}</span>
               </div>
             </div>
@@ -340,9 +393,9 @@ export default function Playground() {
         </div>
 
         {/* Main Playground Area */}
-        <div className="flex-1 flex">
+        <div className="flex-1 flex min-h-0">
           {/* Chat Area */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <ChatInterface
               conversation={currentConversation}
               assistant={assistant}
@@ -351,8 +404,8 @@ export default function Playground() {
             />
           </div>
 
-          {/* Configuration Panel */}
-          <div className="w-80 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-gray-700">
+          {/* Configuration Panel - Hidden on mobile */}
+          <div className="hidden xl:block w-80 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-gray-700">
             <AssistantConfigPanel
               assistant={assistant}
               assistantId={assistantId}
