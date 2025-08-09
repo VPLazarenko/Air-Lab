@@ -1,5 +1,8 @@
 import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type GoogleDocsDocument, type InsertGoogleDocsDocument } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { users, assistants, conversations, googleDocsDocuments } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -214,4 +217,148 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const id = randomUUID();
+    const [user] = await db
+      .insert(users)
+      .values({ ...userData, id })
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
+  }
+
+  // Assistant operations
+  async getAssistant(id: string): Promise<Assistant | undefined> {
+    const [assistant] = await db.select().from(assistants).where(eq(assistants.id, id));
+    return assistant || undefined;
+  }
+
+  async getAssistantsByUserId(userId: string): Promise<Assistant[]> {
+    return await db.select().from(assistants).where(eq(assistants.userId, userId));
+  }
+
+  async createAssistant(assistantData: InsertAssistant & { userId: string }): Promise<Assistant> {
+    const id = randomUUID();
+    const [assistant] = await db
+      .insert(assistants)
+      .values({ ...assistantData, id })
+      .returning();
+    return assistant;
+  }
+
+  async updateAssistant(id: string, updates: Partial<Assistant>): Promise<Assistant | undefined> {
+    const [assistant] = await db
+      .update(assistants)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(assistants.id, id))
+      .returning();
+    return assistant || undefined;
+  }
+
+  async deleteAssistant(id: string): Promise<boolean> {
+    const result = await db.delete(assistants).where(eq(assistants.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Conversation operations
+  async getConversation(id: string): Promise<Conversation | undefined> {
+    const [conversation] = await db.select().from(conversations).where(eq(conversations.id, id));
+    return conversation || undefined;
+  }
+
+  async getConversationsByUserId(userId: string): Promise<Conversation[]> {
+    return await db.select().from(conversations).where(eq(conversations.userId, userId));
+  }
+
+  async getConversationsByAssistantId(assistantId: string): Promise<Conversation[]> {
+    return await db.select().from(conversations).where(eq(conversations.assistantId, assistantId));
+  }
+
+  async createConversation(conversationData: InsertConversation & { userId: string }): Promise<Conversation> {
+    const id = randomUUID();
+    const [conversation] = await db
+      .insert(conversations)
+      .values({ ...conversationData, id })
+      .returning();
+    return conversation;
+  }
+
+  async updateConversation(id: string, updates: Partial<Conversation>): Promise<Conversation | undefined> {
+    const [conversation] = await db
+      .update(conversations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(conversations.id, id))
+      .returning();
+    return conversation || undefined;
+  }
+
+  async deleteConversation(id: string): Promise<boolean> {
+    const result = await db.delete(conversations).where(eq(conversations.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Google Docs Document operations
+  async getGoogleDocsDocument(id: string): Promise<GoogleDocsDocument | undefined> {
+    const [document] = await db.select().from(googleDocsDocuments).where(eq(googleDocsDocuments.id, id));
+    return document || undefined;
+  }
+
+  async getGoogleDocsDocumentsByAssistantId(assistantId: string): Promise<GoogleDocsDocument[]> {
+    return await db.select().from(googleDocsDocuments).where(eq(googleDocsDocuments.assistantId, assistantId));
+  }
+
+  async getGoogleDocsDocumentsByUserId(userId: string): Promise<GoogleDocsDocument[]> {
+    return await db.select().from(googleDocsDocuments).where(eq(googleDocsDocuments.userId, userId));
+  }
+
+  async createGoogleDocsDocument(documentData: InsertGoogleDocsDocument & { userId: string; assistantId: string }): Promise<GoogleDocsDocument> {
+    const id = randomUUID();
+    const [document] = await db
+      .insert(googleDocsDocuments)
+      .values({ 
+        ...documentData, 
+        id,
+        status: documentData.status || 'completed',
+        processedAt: null,
+        errorMessage: null
+      })
+      .returning();
+    return document;
+  }
+
+  async updateGoogleDocsDocument(id: string, updates: Partial<GoogleDocsDocument>): Promise<GoogleDocsDocument | undefined> {
+    const [document] = await db
+      .update(googleDocsDocuments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(googleDocsDocuments.id, id))
+      .returning();
+    return document || undefined;
+  }
+
+  async deleteGoogleDocsDocument(id: string): Promise<boolean> {
+    const result = await db.delete(googleDocsDocuments).where(eq(googleDocsDocuments.id, id));
+    return result.rowCount > 0;
+  }
+}
+
+export const storage = new DatabaseStorage();

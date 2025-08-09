@@ -52,12 +52,11 @@ export const googleDocsDocuments = pgTable("google_docs_documents", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
   assistantId: varchar("assistant_id").references(() => assistants.id).notNull(),
-  docId: text("doc_id").notNull(),
-  documentUrl: text("document_url").notNull(),
-  title: text("title").notNull(),
+  title: varchar("title").notNull(),
+  url: varchar("url").notNull(),
   content: text("content"),
+  status: varchar("status").notNull().default("completed"), // completed, error
   processedAt: timestamp("processed_at"),
-  status: text("status").notNull().default("completed"), // completed, error
   errorMessage: text("error_message"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -86,9 +85,8 @@ export const insertConversationSchema = createInsertSchema(conversations).pick({
 });
 
 export const insertGoogleDocsDocumentSchema = createInsertSchema(googleDocsDocuments).pick({
-  docId: true,
-  documentUrl: true,
   title: true,
+  url: true,
   content: true,
   status: true,
 });

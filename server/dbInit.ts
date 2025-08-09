@@ -3,7 +3,7 @@ import { storage } from "./storage";
 import type { InsertAssistant, InsertUser } from "@shared/schema";
 
 // Demo data for initialization
-const DEMO_USER_ID = "demo-user-123";
+const DEMO_USER_ID = "84ac8242-6c19-42a0-825b-caa01572e5e6";
 
 const DEMO_USER: InsertUser = {
   username: "demo",
@@ -34,10 +34,18 @@ export async function initializeDatabase() {
     console.log("🔄 Инициализация базы данных...");
 
     // Check if demo user exists
-    const existingUser = await storage.getUser(DEMO_USER_ID);
+    let existingUser = await storage.getUser(DEMO_USER_ID);
     if (!existingUser) {
-      console.log("📝 Создание демо-пользователя...");
-      await storage.createUser(DEMO_USER);
+      // Also check by email to avoid duplicates
+      existingUser = await storage.getUserByEmail(DEMO_USER.email);
+      if (!existingUser) {
+        console.log("📝 Создание демо-пользователя...");
+        await storage.createUser(DEMO_USER);
+      } else {
+        console.log("📝 Демо-пользователь уже существует (по email)");
+      }
+    } else {
+      console.log("📝 Демо-пользователь уже существует");
     }
 
     // Check existing assistants
