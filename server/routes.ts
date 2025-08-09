@@ -428,9 +428,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create document record in database
       const documentRecord = await storage.createGoogleDocsDocument({
-        docId: docId,
-        documentUrl: documentUrl,
         title: docInfo.title,
+        url: documentUrl,
+        content: null,
         status: "processing",
         userId,
         assistantId
