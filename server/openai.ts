@@ -129,7 +129,7 @@ export class OpenAIService {
             }
             
             console.log(`Safe parameters: threadId="${threadId}", runId="${run.id}"`);
-            const currentRun = await this.client.beta.threads.runs.retrieve(threadId, run.id);
+            const currentRun = await this.client.beta.threads.runs.retrieve(run.id, { thread_id: threadId });
             console.log(`Run ${currentRun.id} status: ${currentRun.status}`);
             
             if (currentRun.status === "completed") {
