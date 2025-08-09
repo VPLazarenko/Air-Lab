@@ -23,7 +23,7 @@ export class OpenAIService {
     description?: string;
     instructions: string;
     model?: string;
-    tools?: Array<{ type: "code_interpreter" | "retrieval" | "function" }>;
+    tools?: Array<{ type: "code_interpreter" | "file_search" }>;
     file_ids?: string[];
   }) {
     try {
@@ -32,7 +32,7 @@ export class OpenAIService {
         description: params.description,
         instructions: params.instructions,
         model: params.model || DEFAULT_MODEL,
-        tools: params.tools || [],
+        tools: params.tools?.map(tool => ({ type: tool.type })) || [],
         // Note: file_ids parameter may need to be updated based on current OpenAI API
       });
 
@@ -48,12 +48,16 @@ export class OpenAIService {
     description?: string;
     instructions?: string;
     model?: string;
-    tools?: Array<{ type: "code_interpreter" | "retrieval" | "function" }>;
+    tools?: Array<{ type: "code_interpreter" | "file_search" }>;
     file_ids?: string[];
   }) {
     try {
       const assistant = await this.client.beta.assistants.update(assistantId, {
-        ...params,
+        name: params.name,
+        description: params.description,
+        instructions: params.instructions,
+        model: params.model,
+        tools: params.tools?.map(tool => ({ type: tool.type })) || [],
       });
 
       return assistant;
@@ -79,7 +83,7 @@ export class OpenAIService {
       return thread;
     } catch (error) {
       console.error("Error creating thread:", error);
-      throw new Error(`Failed to create thread: ${error.message}`);
+      throw new Error(`Failed to create thread: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -93,7 +97,7 @@ export class OpenAIService {
       return true;
     } catch (error) {
       console.error("Error sending message:", error);
-      throw new Error(`Failed to send message: ${error.message}`);
+      throw new Error(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -119,12 +123,13 @@ export class OpenAIService {
             console.log(`Attempt ${attempts}: Checking run status...`);
             console.log(`DEBUG: threadId="${threadId}" (type: ${typeof threadId}), runId="${run.id}" (type: ${typeof run.id})`);
             
-            // Try different approach - make sure parameters are strings and not undefined
-            const safeThreadId = String(threadId);
-            const safeRunId = String(run.id);
+            // Ensure parameters are valid strings
+            if (!threadId || !run.id) {
+              throw new Error('Missing threadId or runId');
+            }
             
-            console.log(`Safe parameters: threadId="${safeThreadId}", runId="${safeRunId}"`);
-            const currentRun = await this.client.beta.threads.runs.retrieve(safeThreadId, safeRunId);
+            console.log(`Safe parameters: threadId="${threadId}", runId="${run.id}"`);
+            const currentRun = await this.client.beta.threads.runs.retrieve(threadId, run.id);
             console.log(`Run ${currentRun.id} status: ${currentRun.status}`);
             
             if (currentRun.status === "completed") {
@@ -167,7 +172,7 @@ export class OpenAIService {
       return uploadedFile;
     } catch (error) {
       console.error("Error uploading file:", error);
-      throw new Error(`Failed to upload file: ${error.message}`);
+      throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -182,13 +187,11 @@ export class OpenAIService {
       return response.choices[0].message.content;
     } catch (error) {
       console.error("Error in chat completion:", error);
-      throw new Error(`Failed to get chat completion: ${error.message}`);
+      throw new Error(`Failed to get chat completion: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  setApiKey(apiKey: string) {
-    this.client = new OpenAI({ apiKey });
-  }
+
 }
 
 export const openaiService = new OpenAIService();
