@@ -64,6 +64,8 @@ export function AssistantConfigPanel({
   const { data: googleDocs } = useQuery({
     queryKey: [`/api/assistants/${assistantId}/google-drive`],
     enabled: !!assistantId,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
@@ -441,7 +443,7 @@ export function AssistantConfigPanel({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => window.open(doc.documentUrl, '_blank')}
+                          onClick={() => window.open(doc.url, '_blank')}
                           className="h-6 w-6 p-0 text-gray-400 hover:text-blue-500"
                           title="Открыть документ"
                         >

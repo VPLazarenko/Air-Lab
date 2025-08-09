@@ -23,7 +23,8 @@ export function GoogleDocsIntegration({ assistantId, userId }: GoogleDocsIntegra
   // Fetch existing Google Docs documents
   const { data: documents, isLoading } = useQuery<GoogleDocsDocument[]>({
     queryKey: ['/api/assistants', assistantId, 'google-drive'],
-    refetchInterval: 2000, // Refresh every 2 seconds to show processing status
+    refetchInterval: false, // Disable automatic refetch
+    refetchOnWindowFocus: false,
   });
 
   // Add Google Drive document mutation

@@ -67,7 +67,7 @@ export default function FileManager() {
       status: doc.status,
       assistantName: doc.assistantName,
       assistantId: doc.assistantId,
-      url: doc.documentUrl,
+      url: doc.url,
       createdAt: doc.createdAt,
       content: doc.content
     }))
