@@ -10,8 +10,16 @@ export class GoogleDocsService {
   private docs: any;
 
   constructor() {
-    // Используем публичный доступ к Google Docs через API
-    this.docs = google.docs({ version: 'v1' });
+    // Используем Google API ключ для доступа к Google Docs API
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+      throw new Error('GOOGLE_API_KEY environment variable is required');
+    }
+    
+    this.docs = google.docs({ 
+      version: 'v1',
+      auth: apiKey
+    });
   }
 
   // Извлекает ID документа из Google Docs URL
