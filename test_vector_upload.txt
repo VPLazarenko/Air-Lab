@@ -1,0 +1,17 @@
+ТЕСТОВЫЙ ФАЙЛ ДЛЯ VECTOR STORE
+
+Этот файл проверяет работу прямой загрузки в OpenAI vector store:
+
+ВАЖНАЯ ИНФОРМАЦИЯ О REACT HOOKS:
+- useState для состояния компонента: const [state, setState] = useState(initialValue)
+- useEffect для побочных эффектов: useEffect(() => {}, [deps])
+- useContext для контекста: const value = useContext(MyContext)
+- useMemo для мемоизации: const value = useMemo(() => calculation, [deps])
+
+СЕКРЕТНАЯ ФРАЗА ДЛЯ ТЕСТИРОВАНИЯ: "VECTOR_STORE_SUCCESS_2025"
+
+СПЕЦИАЛЬНЫЕ КОМАНДЫ DRIZZLE:
+- db.select().from(table).where(eq(table.column, value))
+- db.insert(table).values(data).returning()
+- db.update(table).set(updates).where(condition)
+- db.delete(table).where(condition)

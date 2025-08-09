@@ -84,40 +84,74 @@ export class OpenAIService {
 
   async createVectorStore(name: string) {
     try {
-      // Create a simple vector store using the Files API
-      console.log(`Creating vector store: ${name}`);
-      // For now, we'll use a simple approach - just track file IDs
-      return { id: `vs_${Date.now()}`, name: name };
+      const vectorStore = await this.client.beta.vectorStores.create({
+        name: name
+      });
+      console.log(`Created vector store: ${vectorStore.id}`);
+      return vectorStore;
     } catch (error) {
       console.error("Error creating vector store:", error);
       throw new Error(`Failed to create vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
+  async uploadAndPollFiles(vectorStoreId: string, files: Buffer[], filenames: string[]) {
+    try {
+      // Create File objects for batch upload
+      const fileObjects = files.map((buffer, index) => 
+        new File([buffer], filenames[index])
+      );
+
+      // Use batch upload with polling - this is the recommended method per OpenAI docs
+      const fileBatch = await this.client.beta.vectorStores.fileBatches.uploadAndPoll(
+        vectorStoreId,
+        {
+          files: fileObjects
+        }
+      );
+
+      console.log(`Batch upload completed. Status: ${fileBatch.status}`);
+      console.log(`File counts:`, fileBatch.file_counts);
+
+      return fileBatch;
+    } catch (error) {
+      console.error("Error uploading files batch:", error);
+      throw new Error(`Failed to upload files batch: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   async addFileToVectorStore(vectorStoreId: string, fileId: string) {
     try {
-      // Add file to existing vector store using the real OpenAI API
-      const response = await fetch(`https://api.openai.com/v1/vector_stores/${vectorStoreId}/files`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.client.apiKey}`,
-          'Content-Type': 'application/json',
-          'OpenAI-Beta': 'assistants=v2'
-        },
-        body: JSON.stringify({ file_id: fileId })
+      const vectorStoreFile = await this.client.beta.vectorStores.files.create(vectorStoreId, {
+        file_id: fileId
       });
-
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`HTTP ${response.status}: ${error}`);
-      }
-
-      const result = await response.json();
       console.log(`Successfully added file ${fileId} to vector store ${vectorStoreId}`);
-      return result;
+      return vectorStoreFile;
     } catch (error) {
       console.error("Error adding file to vector store:", error);
       throw new Error(`Failed to add file to vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async listVectorStoreFiles(vectorStoreId: string) {
+    try {
+      const files = await this.client.beta.vectorStores.files.list(vectorStoreId);
+      console.log(`Retrieved ${files.data?.length || 0} files from vector store ${vectorStoreId}`);
+      return files;
+    } catch (error) {
+      console.error("Error listing vector store files:", error);
+      throw new Error(`Failed to list vector store files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async getVectorStoreInfo(vectorStoreId: string) {
+    try {
+      const vectorStore = await this.client.beta.vectorStores.retrieve(vectorStoreId);
+      console.log(`Retrieved vector store info: ${vectorStore.name}`);
+      return vectorStore;
+    } catch (error) {
+      console.error("Error getting vector store info:", error);
+      throw new Error(`Failed to get vector store info: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

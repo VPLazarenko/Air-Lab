@@ -438,7 +438,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Upload file to assistant's knowledge base
+  // Upload file directly to default vector store using proper OpenAI SDK methods
+  app.post("/api/vector-store/upload", async (req, res) => {
+    try {
+      const { fileContent, fileName, userId } = req.body;
+
+      if (!fileContent || !fileName) {
+        return res.status(400).json({ error: "File content and name are required" });
+      }
+
+      // Convert demo user ID to actual UUID
+      let actualUserId = userId;
+      if (userId === "demo-user-1") {
+        const user = await storage.getUserByEmail("demo@example.com");
+        if (user) {
+          actualUserId = user.id;
+        }
+      }
+
+      // Use OpenAI API key from environment
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "OpenAI API key not configured on server" });
+      }
+
+      openaiService.setApiKey(apiKey);
+
+      // Convert content to buffer
+      const fileBuffer = Buffer.from(fileContent, 'utf-8');
+      
+      console.log(`Uploading file ${fileName} directly to OpenAI...`);
+
+      // Step 1: Upload file to OpenAI Files API
+      const uploadedFile = await openaiService.uploadFile(fileBuffer, fileName);
+      console.log(`File uploaded with ID: ${uploadedFile.id}`);
+
+      // Step 2: Add file to default vector store
+      const DEFAULT_VECTOR_STORE_ID = "vs_6871906566a48191aa3376db251c9d0d";
+      console.log(`Adding file to vector store ${DEFAULT_VECTOR_STORE_ID}...`);
+      
+      const vectorStoreFile = await openaiService.addFileToVectorStore(DEFAULT_VECTOR_STORE_ID, uploadedFile.id);
+      console.log(`File added to vector store successfully`);
+
+      // Save to knowledge base
+      const knowledgeFile = await storage.createKnowledgeBaseFile({
+        userId: actualUserId,
+        fileName,
+        originalName: fileName,
+        fileSize: fileBuffer.length.toString(),
+        fileType: fileName.split('.').pop() || 'txt',
+        openaiFileId: uploadedFile.id,
+        vectorStoreId: DEFAULT_VECTOR_STORE_ID,
+        storagePath: '',
+        metadata: { 
+          uploadedAt: new Date().toISOString(),
+          vectorStoreFileId: vectorStoreFile.id
+        }
+      });
+
+      res.json({
+        success: true,
+        file: uploadedFile,
+        vectorStoreFile,
+        knowledgeFile,
+        vectorStoreId: DEFAULT_VECTOR_STORE_ID
+      });
+
+    } catch (error) {
+      console.error("Error uploading file to vector store:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Get files from default vector store
+  app.get("/api/vector-store/files", async (req, res) => {
+    try {
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "OpenAI API key not configured on server" });
+      }
+
+      openaiService.setApiKey(apiKey);
+
+      const DEFAULT_VECTOR_STORE_ID = "vs_6871906566a48191aa3376db251c9d0d";
+      const files = await openaiService.listVectorStoreFiles(DEFAULT_VECTOR_STORE_ID);
+
+      res.json(files);
+    } catch (error) {
+      console.error("Error getting vector store files:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  // Upload file to assistant's knowledge base (legacy endpoint)
   app.post("/api/assistants/:assistantId/files", async (req, res) => {
     try {
       const { assistantId } = req.params;
