@@ -271,6 +271,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(knowledgeBase).where(eq(knowledgeBase.assistantId, assistantId));
   }
 
+  async getAssistantKnowledgeFiles(assistantId: string): Promise<KnowledgeBase[]> {
+    return await db.select().from(knowledgeBase).where(eq(knowledgeBase.assistantId, assistantId));
+  }
+
   async createKnowledgeBaseFile(file: InsertKnowledgeBase & { userId: string }): Promise<KnowledgeBase> {
     const [newFile] = await db
       .insert(knowledgeBase)

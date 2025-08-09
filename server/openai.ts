@@ -155,6 +155,31 @@ export class OpenAIService {
     }
   }
 
+  async analyzeContent(prompt: string) {
+    try {
+      const response = await this.client.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert content analyst. Create structured summaries of website content for knowledge base integration."
+          },
+          {
+            role: "user", 
+            content: prompt
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.3
+      });
+      
+      return response.choices[0]?.message?.content || "";
+    } catch (error) {
+      console.error("Error analyzing content:", error);
+      throw new Error(`Failed to analyze content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   async updateAssistantWithFiles(assistantId: string, fileIds: string[], vectorStoreId?: string) {
     try {
       // Update assistant with existing vector store
