@@ -11,6 +11,8 @@ import { SettingsModal } from "@/components/settings-modal";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { IntegrationModal } from "@/components/integrations/IntegrationModal";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/lib/i18n";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { useToast } from "@/hooks/use-toast";
 import { DownloadButton } from "@/components/download-button";
 import { ChatLogs } from "@/components/chat-logs";
@@ -53,6 +55,7 @@ export default function Dashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'assistants' | 'logs' | 'integrations'>('assistants');
   const { user: authUser, isAuthenticated, logout } = useAuth();
+  const { t } = useLanguage();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -146,16 +149,19 @@ export default function Dashboard() {
       `}>
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center space-x-3 mb-4">
-            <img 
-              src="/assets/logo.jpg"
-              alt="Air Lab Logo"
-              className="w-10 h-10 rounded-lg object-contain"
-            />
-            <div>
-              <h1 className="text-lg font-semibold">Air Lab. Assistant Builder</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">AI Platform by Initiology AI Systems</p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/assets/logo.jpg"
+                alt="Air Lab Logo"
+                className="w-10 h-10 rounded-lg object-contain"
+              />
+              <div>
+                <h1 className="text-lg font-semibold">{t.title}</h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t.subtitle}</p>
+              </div>
             </div>
+            <LanguageSwitcher />
           </div>
           
           <Button 
@@ -173,7 +179,7 @@ export default function Dashboard() {
             }}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Create Assistant
+            {t.createAssistant}
           </Button>
         </div>
 
@@ -187,26 +193,26 @@ export default function Dashboard() {
             <Link href="/">
               <div className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
                 <Bot className="w-4 h-4" />
-                <span>Dashboard</span>
+                <span>{t.dashboard}</span>
               </div>
             </Link>
             
             <Link href="/playground">
               <div className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                 <Play className="w-4 h-4" />
-                <span>Playground</span>
+                <span>{t.playground}</span>
               </div>
             </Link>
             
             <Link href="/files">
               <div className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                 <Folder className="w-4 h-4" />
-                <span>File Manager</span>
+                <span>{t.fileManager}</span>
               </div>
             </Link>
 
             <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 mt-6">
-              Assistants ({assistants.length})
+              {t.myAssistants} ({assistants.length})
             </div>
             
             <div className="space-y-1">
@@ -227,8 +233,8 @@ export default function Dashboard() {
               {assistants.length === 0 && (
                 <div className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
                   <Bot className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No assistants yet</p>
-                  <p className="text-xs">Create your first assistant to get started</p>
+                  <p className="text-sm">{t.noAssistants}</p>
+                  <p className="text-xs">{t.createAssistant}</p>
                 </div>
               )}
             </div>
@@ -313,21 +319,21 @@ export default function Dashboard() {
                     <Link href="/admin">
                       <Button variant="outline" className="gap-2 text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto">
                         <Crown className="w-4 h-4" />
-                        <span className="hidden sm:inline">Админ-панель</span>
-                        <span className="sm:hidden">Админ</span>
+                        <span className="hidden sm:inline">{t.adminPanel}</span>
+                        <span className="sm:hidden">{t.admin}</span>
                       </Button>
                     </Link>
                   )}
                   
                   <Button variant="ghost" onClick={logout} className="gap-2 w-full sm:w-auto">
                     <LogOut className="w-4 h-4" />
-                    <span className="hidden sm:inline">Выйти</span>
+                    <span className="hidden sm:inline">{t.logout}</span>
                   </Button>
                 </div>
               ) : (
                 <Button onClick={() => setShowAuthModal(true)} className="gap-2 w-full sm:w-auto">
                   <LogIn className="w-4 h-4" />
-                  Войти
+                  {t.login}
                 </Button>
               )}
             </div>
@@ -506,14 +512,14 @@ export default function Dashboard() {
               {assistants.length === 0 ? (
                 <div className="text-center py-12">
                   <Bot className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-medium mb-2">No assistants yet</h3>
+                  <h3 className="text-lg font-medium mb-2">{t.noAssistants}</h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    Create your first AI assistant to get started with the platform.
+                    {t.noAssistants}
                   </p>
                   <Link href="/playground">
                     <Button className="bg-emerald-600 hover:bg-emerald-700">
                       <Plus className="w-4 h-4 mr-2" />
-                      Create Assistant
+                      {t.createAssistant}
                     </Button>
                   </Link>
                 </div>
@@ -544,7 +550,7 @@ export default function Dashboard() {
                         <Link href={`/playground/${assistant.id}`}>
                           <Button variant="outline" size="sm" className="w-full sm:w-auto">
                             <Play className="w-4 h-4 mr-1" />
-                            Open
+                            {t.playground}
                           </Button>
                         </Link>
                       </div>
@@ -567,7 +573,7 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Settings className="w-5 h-5" />
-                  Управление интеграциями
+                  {t.integrations}
                 </CardTitle>
               </CardHeader>
               <CardContent>
