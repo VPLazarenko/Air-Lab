@@ -279,7 +279,7 @@ export default function Playground() {
   };
 
   // Find current conversation for this assistant
-  const assistantConversation = conversations.find(c => c.assistantId === assistantId);
+  const assistantConversation = conversations.find((c: any) => c.assistantId === assistantId);
 
   useEffect(() => {
     if (assistantConversation && !currentConversation) {
