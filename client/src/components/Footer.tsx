@@ -113,7 +113,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-gray-400 text-sm">
               <p>© 2025 Air Lab. Все права защищены.</p>
-              <p className="mt-1">Founder and Creator: Viacheslav Lazarenko</p>
+              <p className="mt-1">Founder and Creator: Viacheslav Lazarenko | Initiology AI Systems</p>
             </div>
 
             {/* Social Widget */}
