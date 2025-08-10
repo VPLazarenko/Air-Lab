@@ -717,7 +717,7 @@ export function AssistantConfigPanel({
                   onComplete={handleFileComplete}
                   buttonClassName="text-emerald-600 text-sm hover:underline"
                 >
-                  Browse files
+                  <span>Browse files</span>
                 </ObjectUploader>
               </div>
               
@@ -753,7 +753,7 @@ export function AssistantConfigPanel({
                           variant={doc.status === 'completed' ? 'default' : doc.status === 'error' ? 'destructive' : 'secondary'} 
                           className="text-xs"
                         >
-                          {doc.status === 'completed' ? 'Готов' : doc.status === 'error' ? 'Ошибка' : 'Обработка'}
+                          {String(doc.status === 'completed' ? 'Готов' : doc.status === 'error' ? 'Ошибка' : 'Обработка')}
                         </Badge>
                       </div>
                       <div className="flex items-center space-x-1">
