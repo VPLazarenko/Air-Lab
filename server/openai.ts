@@ -44,6 +44,16 @@ export class OpenAIService {
     }
   }
 
+  async getAssistant(assistantId: string) {
+    try {
+      const assistant = await this.client.beta.assistants.retrieve(assistantId);
+      return assistant;
+    } catch (error) {
+      console.error("Error retrieving assistant:", error);
+      throw new Error(`Failed to retrieve assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   async updateAssistant(assistantId: string, params: {
     name?: string;
     description?: string;
@@ -59,6 +69,7 @@ export class OpenAIService {
         instructions: params.instructions,
         model: params.model,
         tools: params.tools?.map(tool => ({ type: tool.type })) || [],
+        file_ids: params.file_ids,
       });
 
       return assistant;

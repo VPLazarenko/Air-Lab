@@ -169,9 +169,9 @@ export default function Playground() {
   }, [assistantConversation, currentConversation]);
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 overflow-hidden max-w-full">
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
         <div className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6">
           <div className="flex items-center space-x-4">
@@ -228,9 +228,9 @@ export default function Playground() {
         </div>
 
         {/* Main Playground Area */}
-        <div className="flex-1 flex">
+        <div className="flex-1 flex overflow-hidden">
           {/* Chat Area */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <ChatInterface
               conversation={currentConversation}
               assistant={assistant}
@@ -240,7 +240,7 @@ export default function Playground() {
           </div>
 
           {/* Configuration Panel */}
-          <div className="w-80 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-gray-700">
+          <div className="w-80 flex-shrink-0 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-gray-700 overflow-hidden">
             <AssistantConfigPanel
               assistant={assistant}
               assistantId={assistantId}

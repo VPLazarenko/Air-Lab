@@ -7,6 +7,7 @@ This is a full-stack web application for creating, managing, and interacting wit
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Primary language: Russian (Русский язык)
 
 ## System Architecture
 
@@ -47,6 +48,8 @@ Preferred communication style: Simple, everyday language.
 - **Data Persistence**: Comprehensive protection against accidental data deletion
 - **Startup Validation**: Verifies and repairs data integrity on application startup
 - **Backup Integration**: All assistants are automatically recreated in OpenAI if lost
+- **File Attachment System**: Fixed file upload and attachment to assistants with proper OpenAI API integration
+- **UI Layout Protection**: Implemented overflow controls and proper constraints to prevent content from going off-screen
 
 ## External Dependencies
 
