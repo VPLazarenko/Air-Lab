@@ -1,137 +1,142 @@
-import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/lib/i18n";
-import { MessageCircle, Phone, Shield, FileText, HelpCircle, Book } from "lucide-react";
+import { MessageSquare, Phone, FileText, Shield, Book, HelpCircle, Settings, Users, Code, Mail } from "lucide-react";
 
 export function Footer() {
   const { t } = useLanguage();
 
-  const openTelegram = () => {
-    window.open('https://t.me/vlazarenko', '_blank');
-  };
-
-  const openWhatsApp = () => {
-    window.open('https://wa.me/79258298223', '_blank');
-  };
-
   return (
-    <footer className="bg-slate-50 dark:bg-slate-900 border-t border-gray-200 dark:border-gray-700 mt-auto">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Brand Section */}
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Air Lab
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                AI Assistants Laboratory by Initiology AI Systems
-              </p>
+    <footer className="bg-black text-white py-12 mt-auto border-t border-gray-800">
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Main Content */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+          
+          {/* Company Info */}
+          <div className="lg:col-span-1">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <Code className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">Air Lab</h3>
+                <p className="text-sm text-gray-400">Assistant Builder</p>
+              </div>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-500">
-              © 2025 Все права защищены
+            <p className="text-gray-300 text-sm leading-relaxed mb-4">
+              Профессиональная AI платформа от Initiology AI Systems для создания и управления интеллектуальными ассистентами нового поколения.
             </p>
           </div>
 
-          {/* Links Section */}
-          <div className="space-y-4">
-            <h4 className="text-md font-medium text-gray-900 dark:text-white">
-              Информация
-            </h4>
-            <div className="space-y-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-auto p-0 text-left justify-start text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                onClick={() => window.open('/privacy-policy', '_blank')}
-              >
-                <Shield className="w-4 h-4 mr-2" />
-                Политика конфиденциальности
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-auto p-0 text-left justify-start text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                onClick={() => window.open('/cookie-policy', '_blank')}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Политика использования Cookies
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-auto p-0 text-left justify-start text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                onClick={() => window.open('/documentation', '_blank')}
-              >
-                <Book className="w-4 h-4 mr-2" />
-                Документация
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-auto p-0 text-left justify-start text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                onClick={() => window.open('/help', '_blank')}
-              >
-                <HelpCircle className="w-4 h-4 mr-2" />
-                Инструкция
-              </Button>
+          {/* Product Links */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4 text-white">Продукт</h4>
+            <div className="space-y-3">
+              <a href="/about" className="flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition-colors text-sm group">
+                <Book className="w-4 h-4 group-hover:text-emerald-400" />
+                <span>О приложении</span>
+              </a>
+              <a href="/features" className="flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition-colors text-sm group">
+                <Settings className="w-4 h-4 group-hover:text-emerald-400" />
+                <span>Возможности</span>
+              </a>
+              <a href="/pricing" className="flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition-colors text-sm group">
+                <Users className="w-4 h-4 group-hover:text-emerald-400" />
+                <span>Тарифы и цены</span>
+              </a>
             </div>
           </div>
 
-          {/* Contacts Section */}
-          <div className="space-y-4">
-            <h4 className="text-md font-medium text-gray-900 dark:text-white">
-              Контакты
-            </h4>
+          {/* Documentation */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4 text-white">Документация</h4>
             <div className="space-y-3">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-950"
-                onClick={openTelegram}
+              <a href="/docs/getting-started" className="flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition-colors text-sm group">
+                <Book className="w-4 h-4 group-hover:text-emerald-400" />
+                <span>Руководство пользователя</span>
+              </a>
+              <a href="/docs/api" className="flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition-colors text-sm group">
+                <Code className="w-4 h-4 group-hover:text-emerald-400" />
+                <span>Документация API</span>
+              </a>
+              <a href="/support" className="flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition-colors text-sm group">
+                <HelpCircle className="w-4 h-4 group-hover:text-emerald-400" />
+                <span>Техническая поддержка</span>
+              </a>
+              <a href="/tutorials" className="flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition-colors text-sm group">
+                <FileText className="w-4 h-4 group-hover:text-emerald-400" />
+                <span>Обучающие материалы</span>
+              </a>
+            </div>
+          </div>
+
+          {/* Legal & Contact */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4 text-white">Юридическая информация</h4>
+            <div className="space-y-3 mb-6">
+              <a href="/privacy-policy" className="flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition-colors text-sm group">
+                <Shield className="w-4 h-4 group-hover:text-emerald-400" />
+                <span>Политика конфиденциальности</span>
+              </a>
+              <a href="/terms-of-service" className="flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition-colors text-sm group">
+                <FileText className="w-4 h-4 group-hover:text-emerald-400" />
+                <span>Пользовательское соглашение</span>
+              </a>
+              <a href="/contact" className="flex items-center space-x-2 text-gray-400 hover:text-emerald-400 transition-colors text-sm group">
+                <Mail className="w-4 h-4 group-hover:text-emerald-400" />
+                <span>Контактная информация</span>
+              </a>
+            </div>
+
+            {/* Contact Widgets */}
+            <div className="space-y-3">
+              <a 
+                href="https://t.me/vlazarenko" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center space-x-3 text-gray-400 hover:text-blue-400 transition-colors text-sm group bg-gray-900 rounded-lg p-3"
               >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Telegram: @vlazarenko
-              </Button>
+                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <div className="text-white text-sm font-medium">Telegram</div>
+                  <div className="text-xs text-gray-400">@vlazarenko</div>
+                </div>
+              </a>
               
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full justify-start text-green-600 border-green-200 hover:bg-green-50 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-950"
-                onClick={openWhatsApp}
+              <a 
+                href="https://wa.me/79258298223" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center space-x-3 text-gray-400 hover:text-green-400 transition-colors text-sm group bg-gray-900 rounded-lg p-3"
               >
-                <Phone className="w-4 h-4 mr-2" />
-                WhatsApp: +7 925 829 82 23
-              </Button>
+                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                  <Phone className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <div className="text-white text-sm font-medium">WhatsApp</div>
+                  <div className="text-xs text-gray-400">+7 925 829 8223</div>
+                </div>
+              </a>
             </div>
           </div>
         </div>
 
-        {/* Bottom divider */}
-        <div className="border-t border-gray-200 dark:border-gray-700 mt-8 pt-6">
-          <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-            <p className="text-xs text-gray-500 dark:text-gray-500 text-center sm:text-left">
-              Air Lab. AI Assistants Laboratory by Initiology AI Systems
-            </p>
-            <div className="flex space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300"
-                onClick={openTelegram}
-              >
-                Telegram
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300"
-                onClick={openWhatsApp}
-              >
-                WhatsApp
-              </Button>
+        {/* Bottom Bar */}
+        <div className="border-t border-gray-800 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <div className="text-center md:text-left">
+              <p className="text-gray-400 text-sm">
+                © 2024 <span className="text-white font-medium">Initiology AI Systems</span>. Все права защищены.
+              </p>
+              <p className="text-gray-500 text-xs mt-1">
+                Air Lab. AI Assistants Laboratory by Initiology AI Systems Lazarenko
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-6 text-sm">
+              <span className="text-gray-500">Версия 2.1.0</span>
+              <span className="text-gray-500">•</span>
+              <span className="text-emerald-400 font-medium">Статус: Активно</span>
             </div>
           </div>
         </div>
