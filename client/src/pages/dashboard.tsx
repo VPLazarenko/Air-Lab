@@ -144,23 +144,11 @@ export default function Dashboard() {
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3 mb-4">
-            <svg 
-              className="w-10 h-10"
-              viewBox="0 0 40 40" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect width="40" height="40" rx="8" fill="url(#gradient1)"/>
-              <path d="M20 10L26 16L20 22L14 16L20 10Z" fill="white" opacity="0.9"/>
-              <path d="M20 18L26 24L20 30L14 24L20 18Z" fill="white" opacity="0.7"/>
-              <circle cx="20" cy="20" r="3" fill="white"/>
-              <defs>
-                <linearGradient id="gradient1" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#10B981"/>
-                  <stop offset="1" stopColor="#059669"/>
-                </linearGradient>
-              </defs>
-            </svg>
+            <img 
+              src="/assets/лого3_1754818495981.jpg"
+              alt="Air Lab Logo"
+              className="w-10 h-10 rounded-lg object-contain"
+            />
             <div>
               <h1 className="text-lg font-semibold">Air Lab. Assistant Builder</h1>
               <p className="text-xs text-gray-500 dark:text-gray-400">AI Platform by Initiology</p>
