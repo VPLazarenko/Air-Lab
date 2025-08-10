@@ -434,12 +434,12 @@ export function AssistantConfigPanel({
     <ScrollArea className="h-full">
       <div className="p-4 space-y-6">
         {/* Quick Actions Panel */}
-        {assistantId && (
-          <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border">
-            <h3 className="font-semibold mb-3 text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-              Быстрые действия
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border">
+          <h3 className="font-semibold mb-3 text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+            Быстрые действия
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {assistantId ? (
               <RouterLink href={`/widget-designer/${assistantId}`}>
                 <Card className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardContent className="p-4 text-center">
@@ -449,7 +449,17 @@ export function AssistantConfigPanel({
                   </CardContent>
                 </Card>
               </RouterLink>
-              
+            ) : (
+              <Card className="opacity-50 cursor-not-allowed">
+                <CardContent className="p-4 text-center">
+                  <Palette className="w-8 h-8 mx-auto mb-2 text-purple-400" />
+                  <h4 className="font-semibold text-sm text-gray-400">Дизайн виджета</h4>
+                  <p className="text-xs text-gray-400 mt-1">Сохраните ассистента</p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {assistantId ? (
               <Dialog open={showWidgetCode} onOpenChange={setShowWidgetCode}>
                 <DialogTrigger asChild>
                   <Card className="cursor-pointer hover:shadow-md transition-shadow">
@@ -495,7 +505,17 @@ export function AssistantConfigPanel({
                   </div>
                 </DialogContent>
               </Dialog>
-              
+            ) : (
+              <Card className="opacity-50 cursor-not-allowed">
+                <CardContent className="p-4 text-center">
+                  <Code className="w-8 h-8 mx-auto mb-2 text-blue-400" />
+                  <h4 className="font-semibold text-sm text-gray-400">Код чат-виджета</h4>
+                  <p className="text-xs text-gray-400 mt-1">Сохраните ассистента</p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {assistantId ? (
               <RouterLink href={`/chat/${assistantId}`}>
                 <Card className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardContent className="p-4 text-center">
@@ -505,9 +525,17 @@ export function AssistantConfigPanel({
                   </CardContent>
                 </Card>
               </RouterLink>
-            </div>
+            ) : (
+              <Card className="opacity-50 cursor-not-allowed">
+                <CardContent className="p-4 text-center">
+                  <MessageSquare className="w-8 h-8 mx-auto mb-2 text-green-400" />
+                  <h4 className="font-semibold text-sm text-gray-400">Открыть чат</h4>
+                  <p className="text-xs text-gray-400 mt-1">Сохраните ассистента</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Assistant Info */}
         <div>
