@@ -224,9 +224,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         success: true,
-        filesCount: newFileIds.length,
-        fileIds: newFileIds,
-        message: `Assistant synced with ${newFileIds.length} files`
+        filesCount: fileIds.length,
+        fileIds: fileIds,
+        message: `Assistant synced with ${fileIds.length} files`
       });
       
     } catch (error) {

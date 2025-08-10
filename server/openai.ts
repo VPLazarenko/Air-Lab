@@ -129,8 +129,8 @@ export class OpenAIService {
       let vectorStoreId = assistant.tool_resources?.file_search?.vector_store_ids?.[0];
       
       if (!vectorStoreId) {
-        // Create a new vector store
-        const vectorStore = await this.client.beta.vectorStores.create({
+        // Create a new vector store using the correct API
+        const vectorStore = await (this.client.beta as any).vectorStores.create({
           name: `Assistant ${assistantId} Files`
         });
         vectorStoreId = vectorStore.id;
@@ -140,7 +140,7 @@ export class OpenAIService {
           tools: [{ type: 'file_search' }],
           tool_resources: {
             file_search: {
-              vector_store_ids: [vectorStoreId]
+              vector_store_ids: [vectorStore.id]
             }
           }
         });
@@ -148,7 +148,7 @@ export class OpenAIService {
       
       // If we have a file to add, add it to the vector store
       if (fileId && vectorStoreId) {
-        await this.client.beta.vectorStores.files.create(vectorStoreId, {
+        await (this.client.beta as any).vectorStores.files.create(vectorStoreId, {
           file_id: fileId
         });
         console.log(`Added file ${fileId} to vector store ${vectorStoreId}`);
@@ -173,7 +173,7 @@ export class OpenAIService {
       }
       
       // Get files from vector store
-      const vectorStoreFiles = await this.client.beta.vectorStores.files.list(vectorStoreId);
+      const vectorStoreFiles = await (this.client.beta as any).vectorStores.files.list(vectorStoreId);
       
       return vectorStoreFiles.data.map((file: any) => ({ 
         file_id: file.id, 

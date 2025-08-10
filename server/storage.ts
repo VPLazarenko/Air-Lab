@@ -14,7 +14,7 @@ export interface IStorage {
   // Assistant operations
   getAssistant(id: string): Promise<Assistant | undefined>;
   getAssistantsByUserId(userId: string): Promise<Assistant[]>;
-  createAssistant(assistant: InsertAssistant & { userId: string }): Promise<Assistant>;
+  createAssistant(assistant: InsertAssistant & { userId: string; openaiAssistantId?: string }): Promise<Assistant>;
   updateAssistant(id: string, updates: Partial<Assistant>): Promise<Assistant | undefined>;
   deleteAssistant(id: string): Promise<boolean>;
 
@@ -257,7 +257,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(assistants).where(eq(assistants.userId, userId));
   }
 
-  async createAssistant(assistantData: InsertAssistant & { userId: string }): Promise<Assistant> {
+  async createAssistant(assistantData: InsertAssistant & { userId: string; openaiAssistantId?: string }): Promise<Assistant> {
     const id = randomUUID();
     const [assistant] = await db
       .insert(assistants)
