@@ -58,6 +58,11 @@ Assistant Configuration:
 - **Instruction Templates**: Built-in algorithm templates for database updates and document checking
 - **System Prompt Separation**: System prompts stored separately from user instructions for automatic execution
 - **URL-Based Document Checking**: Support for specific Google Docs URLs in system prompts for targeted updates
+- **Widget Design System**: Complete visual designer for chat widgets with customizable colors, layouts, and content
+- **Multi-State Widget Preview**: Real-time preview in minimized, open, and fullscreen states
+- **HTML Code Generation**: Automatic generation of standalone widget HTML with copy/download functionality
+- **Clean Chat Interface**: Dedicated distraction-free chat page for optimal user experience
+- **Collapsible Panel System**: Improved UI with toggleable configuration panel to prevent screen overflow
 
 ## External Dependencies
 
