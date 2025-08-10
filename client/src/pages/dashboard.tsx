@@ -249,7 +249,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="text-sm font-medium">
-                  {authUser?.username || user?.username || "Гость"}
+                  {authUser?.username || user?.username || t.user}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {authUser?.email || user?.email || "demo@example.com"}
