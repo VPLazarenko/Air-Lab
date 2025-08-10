@@ -80,6 +80,7 @@ export function AssistantConfigPanel({
         name: assistant.name,
         description: assistant.description || "",
         instructions: assistant.instructions || "",
+        systemPrompt: assistant.systemPrompt || "",
         model: assistant.model,
         temperature: assistant.temperature,
         tools: assistant.tools.length > 0 ? assistant.tools : config.tools,
@@ -376,6 +377,25 @@ export function AssistantConfigPanel({
           </div>
         </div>
 
+        {/* System Prompt */}
+        <div>
+          <h3 className="font-semibold mb-3">System Prompt</h3>
+          <div className="space-y-2">
+            <Label htmlFor="systemPrompt">System behavior (hidden from user)</Label>
+            <Textarea
+              id="systemPrompt"
+              value={config.systemPrompt}
+              onChange={(e) => updateConfig('systemPrompt', e.target.value)}
+              placeholder="Enter system-level instructions that will be prepended to all conversations (optional)"
+              rows={4}
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              These instructions are added automatically before user instructions and are not visible to end users.
+            </p>
+          </div>
+        </div>
+
         {/* Instructions */}
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -496,7 +516,7 @@ export function AssistantConfigPanel({
               </div>
               
               {/* Uploaded Files List */}
-              {(config.files.length > 0 || (googleDocs && googleDocs.length > 0)) && (
+              {(config.files.length > 0 || (googleDocs && Array.isArray(googleDocs) && googleDocs.length > 0)) && (
                 <div className="space-y-2">
                   {/* Regular uploaded files */}
                   {config.files.map((file) => (
@@ -518,7 +538,7 @@ export function AssistantConfigPanel({
                   ))}
                   
                   {/* Google Docs files */}
-                  {googleDocs?.map((doc: any) => (
+                  {Array.isArray(googleDocs) && googleDocs.map((doc: any) => (
                     <div key={doc.id} className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
                       <div className="flex items-center space-x-2">
                         <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />
