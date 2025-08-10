@@ -1,5 +1,9 @@
 import { openaiService } from "./openai";
 import { storage } from "./storage";
+import { db } from "./db";
+import { users } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import bcrypt from "bcrypt";
 import type { InsertAssistant, InsertUser } from "@shared/schema";
 
 // Demo data for initialization
@@ -135,6 +139,21 @@ export async function initializeDatabase() {
     // Check Google Drive documents
     const allGoogleDocs = await storage.getGoogleDocsDocumentsByUserId(DEMO_USER_ID);
     console.log(`📄 Найдено Google Docs: ${allGoogleDocs.length}`);
+    
+    // Create or update admin account for Windows version
+    const adminUser = await db.select().from(users).where(eq(users.username, "Admin")).limit(1);
+    if (adminUser.length === 0) {
+      const hashedPassword = await bcrypt.hash("admin", 10);
+      await db.insert(users).values({
+        username: "Admin",
+        email: "admin@airlab.local",
+        password: hashedPassword,
+        role: "admin",
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      console.log("🔐 Админский аккаунт создан (Admin/admin)");
+    }
 
     console.log("✅ Инициализация базы данных завершена");
     

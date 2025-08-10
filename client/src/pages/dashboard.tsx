@@ -11,6 +11,7 @@ import { SettingsModal } from "@/components/settings-modal";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { IntegrationModal } from "@/components/integrations/IntegrationModal";
 import { useAuth } from "@/hooks/useAuth";
+import { DownloadButton } from "@/components/download-button";
 import { 
   Bot, 
   Plus, 
@@ -214,7 +215,7 @@ export default function Dashboard() {
         </div>
 
         {/* User Settings */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center">
@@ -247,6 +248,11 @@ export default function Dashboard() {
                 <Settings className="w-4 h-4" />
               </Button>
             </div>
+          </div>
+          
+          {/* Download Button */}
+          <div className="w-full">
+            <DownloadButton />
           </div>
         </div>
       </div>
