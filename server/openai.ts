@@ -57,6 +57,16 @@ export class OpenAIService {
       return assistant;
     } catch (error) {
       console.error("Error creating assistant:", error);
+      console.error("Assistant params:", JSON.stringify(params, null, 2));
+      
+      // Log more detailed error information
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        if ('response' in error) {
+          console.error("OpenAI response:", (error as any).response?.data);
+        }
+      }
+      
       throw new Error(`Failed to create assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

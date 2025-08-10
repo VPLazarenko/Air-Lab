@@ -95,13 +95,13 @@ export function AssistantConfigPanel({
       onAssistantCreated(newAssistant);
       onSave();
       toast({
-        title: "Assistant created",
-        description: "Your assistant has been created successfully.",
+        title: "Ассистент создан",
+        description: "Ваш ассистент успешно создан.",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
-        title: "Error creating assistant",
+        title: "Ошибка создания ассистента",
         description: error.message,
         variant: "destructive",
       });

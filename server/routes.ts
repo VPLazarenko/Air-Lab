@@ -150,7 +150,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Assistant routes (protected)
   app.post("/api/assistants", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
+      console.log("Raw request body:", JSON.stringify(req.body, null, 2));
+      
       const assistantData = insertAssistantSchema.parse(req.body);
+      console.log("Parsed assistant data:", JSON.stringify(assistantData, null, 2));
 
       // Use OpenAI API key from environment
       const apiKey = process.env.OPENAI_API_KEY;
@@ -161,14 +164,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create assistant with OpenAI
       openaiService.setApiKey(apiKey);
 
-      const openaiAssistant = await openaiService.createAssistant({
+      // Filter and prepare tools
+      const enabledTools = (assistantData.tools || [])
+        .filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search"))
+        .map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" }));
+
+      console.log("Enabled tools:", JSON.stringify(enabledTools, null, 2));
+
+      const openaiParams = {
         name: assistantData.name,
         description: assistantData.description || undefined,
         instructions: assistantData.instructions || "",
         systemPrompt: assistantData.systemPrompt || undefined,
-        model: assistantData.model,
-        tools: (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
-      });
+        model: assistantData.model || "gpt-4o",
+        tools: enabledTools,
+      };
+
+      console.log("OpenAI create params:", JSON.stringify(openaiParams, null, 2));
+
+      const openaiAssistant = await openaiService.createAssistant(openaiParams);
 
       // Save to local storage with OpenAI ID and current user ID
       const assistant = await storage.createAssistant({

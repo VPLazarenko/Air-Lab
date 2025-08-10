@@ -9,7 +9,9 @@ import { ChatInterface } from "@/components/chat-interface";
 import { AssistantConfigPanel } from "@/components/assistant-config-panel";
 import { SettingsModal } from "@/components/settings-modal";
 import { GoogleDocsIntegration } from "@/components/google-docs-integration";
+import { AuthModal } from "@/components/auth/AuthModal";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Bot, 
   Settings, 
@@ -22,8 +24,6 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 
-const DEMO_USER_ID = "84ac8242-6c19-42a0-825b-caa01572e5e6";
-
 export default function Playground() {
   const params = useParams();
   const [, setLocation] = useLocation();
@@ -31,6 +31,7 @@ export default function Playground() {
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showConfigPanel, setShowConfigPanel] = useState(true);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('darkMode') === 'true' || 
@@ -39,25 +40,29 @@ export default function Playground() {
     return false;
   });
   const { toast } = useToast();
+  
+  // Use actual authentication
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  // Get user data
-  const { data: user } = useQuery({
-    queryKey: ['/api/users', DEMO_USER_ID],
-    queryFn: () => openaiClient.getUser(DEMO_USER_ID),
-  });
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setShowAuthModal(true);
+    }
+  }, [authLoading, isAuthenticated]);
 
   // Get assistant data if editing existing
   const { data: assistant, refetch: refetchAssistant } = useQuery({
     queryKey: ['/api/assistants', assistantId],
     queryFn: () => openaiClient.getAssistant(assistantId!),
-    enabled: !!assistantId,
+    enabled: !!assistantId && isAuthenticated,
   });
 
   // Get conversations for this assistant
   const { data: conversations = [] } = useQuery({
-    queryKey: ['/api/conversations/user', DEMO_USER_ID],
-    queryFn: () => openaiClient.getConversationsByUserId(DEMO_USER_ID),
-    enabled: !!user,
+    queryKey: ['/api/conversations/user', user?.id],
+    queryFn: () => openaiClient.getConversationsByUserId(user?.id!),
+    enabled: !!user?.id,
   });
 
   useEffect(() => {
@@ -77,13 +82,13 @@ export default function Playground() {
   const createConversationMutation = useMutation({
     mutationFn: (data: { assistantId: string; title?: string }) =>
       openaiClient.createConversation({
-        userId: DEMO_USER_ID,
+        userId: user?.id!,
         assistantId: data.assistantId,
         title: data.title,
       }),
     onSuccess: (conversation) => {
       setCurrentConversation(conversation);
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', user?.id] });
     },
   });
 
@@ -102,7 +107,7 @@ export default function Playground() {
       }
       
       // Invalidate queries for fresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', user?.id] });
     },
     onError: (error) => {
       toast({
@@ -151,6 +156,39 @@ export default function Playground() {
       description: "Your assistant configuration has been saved successfully.",
     });
   };
+
+  // Show loading or auth modal for unauthenticated users
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <Bot className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <p className="text-gray-600 dark:text-gray-400">Загрузка...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <Bot className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <h2 className="text-xl font-semibold mb-2">Вход в систему</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Войдите в систему для создания ассистентов
+          </p>
+          <Button onClick={() => setShowAuthModal(true)}>
+            Войти
+          </Button>
+        </div>
+        <AuthModal 
+          open={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+        />
+      </div>
+    );
+  }
 
   const handleShare = () => {
     if (currentConversation) {
@@ -272,7 +310,7 @@ export default function Playground() {
               <AssistantConfigPanel
                 assistant={assistant}
                 assistantId={assistantId}
-                userId={DEMO_USER_ID}
+                userId={user?.id || ""}
                 onSave={handleAssistantSave}
                 onAssistantCreated={(newAssistant) => {
                   setLocation(`/playground/${newAssistant.id}`);
@@ -288,6 +326,12 @@ export default function Playground() {
         isOpen={showSettings} 
         onClose={() => setShowSettings(false)} 
         user={user}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal 
+        open={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
       />
     </div>
   );
