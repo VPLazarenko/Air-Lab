@@ -5,7 +5,7 @@ import { openaiService } from "./openai";
 import { ObjectStorageService } from "./objectStorage";
 import { GoogleDocsService } from "./googleDocs";
 import { AuthService } from "./auth";
-import { insertUserSchema, insertAssistantSchema, insertConversationSchema, insertGoogleDocsDocumentSchema, loginSchema, registerSchema } from "@shared/schema";
+import { insertUserSchema, insertAssistantSchema, insertConversationSchema, insertGoogleDocsDocumentSchema, loginSchema, registerSchema, telegramIntegrationSchema, vkIntegrationSchema, whatsappIntegrationSchema, openaiIntegrationSchema } from "@shared/schema";
 import { z } from "zod";
 import type { Request, Response, NextFunction } from "express";
 
@@ -811,6 +811,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   }
+
+  // Integration routes (protected)
+  app.get("/api/integrations", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const integrations = await storage.getIntegrationsByUserId(req.user.id);
+      res.json(integrations);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка получения интеграций' });
+    }
+  });
+
+  app.post("/api/integrations/telegram", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const data = telegramIntegrationSchema.parse(req.body);
+      const integration = await storage.createIntegration({
+        ...data,
+        userId: req.user.id,
+        isActive: true,
+      });
+      res.json(integration);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка создания интеграции Telegram' });
+    }
+  });
+
+  app.post("/api/integrations/vk", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const data = vkIntegrationSchema.parse(req.body);
+      const integration = await storage.createIntegration({
+        ...data,
+        userId: req.user.id,
+        isActive: true,
+      });
+      res.json(integration);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка создания интеграции VK' });
+    }
+  });
+
+  app.post("/api/integrations/whatsapp", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const data = whatsappIntegrationSchema.parse(req.body);
+      const integration = await storage.createIntegration({
+        ...data,
+        userId: req.user.id,
+        isActive: true,
+      });
+      res.json(integration);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка создания интеграции WhatsApp' });
+    }
+  });
+
+  app.post("/api/integrations/openai", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const data = openaiIntegrationSchema.parse(req.body);
+      const integration = await storage.createIntegration({
+        ...data,
+        userId: req.user.id,
+        isActive: true,
+      });
+      res.json(integration);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка создания интеграции OpenAI' });
+    }
+  });
+
+  app.put("/api/integrations/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      // Check if user owns this integration
+      const integration = await storage.getIntegration(id);
+      if (!integration || integration.userId !== req.user.id) {
+        return res.status(404).json({ error: "Интеграция не найдена" });
+      }
+      
+      const updatedIntegration = await storage.updateIntegration(id, updates);
+      res.json(updatedIntegration);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка обновления интеграции' });
+    }
+  });
+
+  app.delete("/api/integrations/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Check if user owns this integration
+      const integration = await storage.getIntegration(id);
+      if (!integration || integration.userId !== req.user.id) {
+        return res.status(404).json({ error: "Интеграция не найдена" });
+      }
+      
+      await storage.deleteIntegration(id);
+      res.json({ message: "Интеграция удалена" });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка удаления интеграции' });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

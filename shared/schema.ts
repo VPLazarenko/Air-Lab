@@ -76,6 +76,36 @@ export const sessions = pgTable("sessions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const integrations = pgTable("integrations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(), // telegram, vk, whatsapp, openai
+  name: text("name").notNull(),
+  isActive: boolean("is_active").default(false),
+  config: json("config").$type<{
+    // Telegram
+    botToken?: string;
+    botUsername?: string;
+    webhookUrl?: string;
+    
+    // VK
+    accessToken?: string;
+    groupId?: string;
+    confirmationToken?: string;
+    
+    // WhatsApp
+    phoneNumberId?: string;
+    verifyToken?: string;
+    
+    // OpenAI
+    apiKey?: string;
+    assistantId?: string;
+    model?: string;
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
@@ -127,6 +157,55 @@ export const insertSessionSchema = createInsertSchema(sessions).pick({
   expiresAt: true,
 });
 
+export const insertIntegrationSchema = createInsertSchema(integrations).pick({
+  type: true,
+  name: true,
+  isActive: true,
+  config: true,
+});
+
+// Схемы валидации для каждого типа интеграции
+export const telegramIntegrationSchema = z.object({
+  type: z.literal("telegram"),
+  name: z.string().min(1, "Введите название интеграции"),
+  config: z.object({
+    botToken: z.string().min(1, "Введите токен бота"),
+    botUsername: z.string().min(1, "Введите имя пользователя бота"),
+    webhookUrl: z.string().url("Введите корректный URL").optional().or(z.literal("")),
+  }),
+});
+
+export const vkIntegrationSchema = z.object({
+  type: z.literal("vk"),
+  name: z.string().min(1, "Введите название интеграции"),
+  config: z.object({
+    accessToken: z.string().min(1, "Введите токен доступа"),
+    groupId: z.string().min(1, "Введите ID группы"),
+    confirmationToken: z.string().min(1, "Введите токен подтверждения"),
+  }),
+});
+
+export const whatsappIntegrationSchema = z.object({
+  type: z.literal("whatsapp"),
+  name: z.string().min(1, "Введите название интеграции"),
+  config: z.object({
+    phoneNumberId: z.string().min(1, "Введите ID номера телефона"),
+    accessToken: z.string().min(1, "Введите токен доступа"),
+    verifyToken: z.string().min(1, "Введите токен верификации"),
+    webhookUrl: z.string().url("Введите корректный URL").optional().or(z.literal("")),
+  }),
+});
+
+export const openaiIntegrationSchema = z.object({
+  type: z.literal("openai"),
+  name: z.string().min(1, "Введите название интеграции"),
+  config: z.object({
+    apiKey: z.string().min(1, "Введите API ключ OpenAI"),
+    assistantId: z.string().min(1, "Введите ID ассистента"),
+    model: z.string().default("gpt-4o"),
+  }),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type LoginData = z.infer<typeof loginSchema>;
@@ -139,3 +218,9 @@ export type InsertGoogleDocsDocument = z.infer<typeof insertGoogleDocsDocumentSc
 export type GoogleDocsDocument = typeof googleDocsDocuments.$inferSelect;
 export type InsertSession = z.infer<typeof insertSessionSchema>;
 export type Session = typeof sessions.$inferSelect;
+export type InsertIntegration = z.infer<typeof insertIntegrationSchema>;
+export type Integration = typeof integrations.$inferSelect;
+export type TelegramIntegration = z.infer<typeof telegramIntegrationSchema>;
+export type VkIntegration = z.infer<typeof vkIntegrationSchema>;
+export type WhatsappIntegration = z.infer<typeof whatsappIntegrationSchema>;
+export type OpenaiIntegration = z.infer<typeof openaiIntegrationSchema>;

@@ -1,7 +1,7 @@
-import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type GoogleDocsDocument, type InsertGoogleDocsDocument, type Session, type InsertSession } from "@shared/schema";
+import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type GoogleDocsDocument, type InsertGoogleDocsDocument, type Session, type InsertSession, type Integration, type InsertIntegration } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { users, assistants, conversations, googleDocsDocuments, sessions } from "@shared/schema";
+import { users, assistants, conversations, googleDocsDocuments, sessions, integrations } from "@shared/schema";
 import { eq, and, gt } from "drizzle-orm";
 
 export interface IStorage {
@@ -41,6 +41,13 @@ export interface IStorage {
   createGoogleDocsDocument(document: InsertGoogleDocsDocument & { userId: string; assistantId: string }): Promise<GoogleDocsDocument>;
   updateGoogleDocsDocument(id: string, updates: Partial<GoogleDocsDocument>): Promise<GoogleDocsDocument | undefined>;
   deleteGoogleDocsDocument(id: string): Promise<boolean>;
+
+  // Integration operations
+  getIntegration(id: string): Promise<Integration | undefined>;
+  getIntegrationsByUserId(userId: string): Promise<Integration[]>;
+  createIntegration(integration: InsertIntegration & { userId: string }): Promise<Integration>;
+  updateIntegration(id: string, updates: Partial<Integration>): Promise<Integration | undefined>;
+  deleteIntegration(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -49,6 +56,7 @@ export class MemStorage implements IStorage {
   private conversations: Map<string, Conversation>;
   private googleDocsDocuments: Map<string, GoogleDocsDocument>;
   private sessions: Map<string, Session>;
+  private integrations: Map<string, Integration>;
 
   constructor() {
     this.users = new Map();
@@ -56,6 +64,7 @@ export class MemStorage implements IStorage {
     this.conversations = new Map();
     this.googleDocsDocuments = new Map();
     this.sessions = new Map();
+    this.integrations = new Map();
   }
 
   // User operations
@@ -273,6 +282,46 @@ export class MemStorage implements IStorage {
   async deleteGoogleDocsDocument(id: string): Promise<boolean> {
     return this.googleDocsDocuments.delete(id);
   }
+
+  // Integration operations
+  async getIntegration(id: string): Promise<Integration | undefined> {
+    return this.integrations.get(id);
+  }
+
+  async getIntegrationsByUserId(userId: string): Promise<Integration[]> {
+    return Array.from(this.integrations.values()).filter(integration => integration.userId === userId);
+  }
+
+  async createIntegration(integrationData: InsertIntegration & { userId: string }): Promise<Integration> {
+    const id = randomUUID();
+    const newIntegration: Integration = {
+      ...integrationData,
+      id,
+      isActive: integrationData.isActive ?? false,
+      config: integrationData.config || {},
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.integrations.set(id, newIntegration);
+    return newIntegration;
+  }
+
+  async updateIntegration(id: string, updates: Partial<Integration>): Promise<Integration | undefined> {
+    const integration = this.integrations.get(id);
+    if (!integration) return undefined;
+
+    const updatedIntegration = { 
+      ...integration, 
+      ...updates, 
+      updatedAt: new Date() 
+    };
+    this.integrations.set(id, updatedIntegration);
+    return updatedIntegration;
+  }
+
+  async deleteIntegration(id: string): Promise<boolean> {
+    return this.integrations.delete(id);
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -454,6 +503,39 @@ export class DatabaseStorage implements IStorage {
 
   async deleteGoogleDocsDocument(id: string): Promise<boolean> {
     const result = await db.delete(googleDocsDocuments).where(eq(googleDocsDocuments.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Integration operations
+  async getIntegration(id: string): Promise<Integration | undefined> {
+    const [integration] = await db.select().from(integrations).where(eq(integrations.id, id));
+    return integration || undefined;
+  }
+
+  async getIntegrationsByUserId(userId: string): Promise<Integration[]> {
+    return await db.select().from(integrations).where(eq(integrations.userId, userId));
+  }
+
+  async createIntegration(integrationData: InsertIntegration & { userId: string }): Promise<Integration> {
+    const id = randomUUID();
+    const [integration] = await db
+      .insert(integrations)
+      .values({ ...integrationData, id })
+      .returning();
+    return integration;
+  }
+
+  async updateIntegration(id: string, updates: Partial<Integration>): Promise<Integration | undefined> {
+    const [integration] = await db
+      .update(integrations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(integrations.id, id))
+      .returning();
+    return integration || undefined;
+  }
+
+  async deleteIntegration(id: string): Promise<boolean> {
+    const result = await db.delete(integrations).where(eq(integrations.id, id));
     return result.rowCount > 0;
   }
 }
