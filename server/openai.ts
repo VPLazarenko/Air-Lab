@@ -125,25 +125,36 @@ export class OpenAIService {
       // Get current assistant
       const assistant = await this.getAssistant(assistantId);
       
-      // Get existing file IDs from tool_resources
-      const existingFileIds = assistant.tool_resources?.file_search?.vector_stores?.[0]?.file_ids || [];
+      // Get existing vector store ID or create new one
+      let vectorStoreId = assistant.tool_resources?.file_search?.vector_store_ids?.[0];
       
-      // Prepare file IDs array
-      const fileIds = fileId ? [...existingFileIds, fileId] : existingFileIds;
-      
-      // Update assistant with file search tool resources
-      const updatedAssistant = await this.client.beta.assistants.update(assistantId, {
-        tools: [{ type: 'file_search' }],
-        tool_resources: fileIds.length > 0 ? {
-          file_search: {
-            vector_stores: [{
-              file_ids: fileIds
-            }]
+      if (!vectorStoreId) {
+        // Create a new vector store
+        const vectorStore = await this.client.beta.vectorStores.create({
+          name: `Assistant ${assistantId} Files`
+        });
+        vectorStoreId = vectorStore.id;
+        
+        // Update assistant to use the vector store
+        await this.client.beta.assistants.update(assistantId, {
+          tools: [{ type: 'file_search' }],
+          tool_resources: {
+            file_search: {
+              vector_store_ids: [vectorStoreId]
+            }
           }
-        } : undefined
-      });
+        });
+      }
       
-      return updatedAssistant;
+      // If we have a file to add, add it to the vector store
+      if (fileId && vectorStoreId) {
+        await this.client.beta.vectorStores.files.create(vectorStoreId, {
+          file_id: fileId
+        });
+        console.log(`Added file ${fileId} to vector store ${vectorStoreId}`);
+      }
+      
+      return assistant;
     } catch (error) {
       console.error("Error attaching file to assistant:", error);
       throw new Error(`Failed to attach file to assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -154,13 +165,20 @@ export class OpenAIService {
     try {
       const assistant = await this.getAssistant(assistantId);
       
-      // Get file IDs from tool_resources
-      const fileIds = assistant.tool_resources?.file_search?.vector_stores?.[0]?.file_ids || [];
+      // Get vector store ID from tool_resources
+      const vectorStoreId = assistant.tool_resources?.file_search?.vector_store_ids?.[0];
       
-      return fileIds.map((id: string) => ({ 
-        file_id: id, 
-        id: id,
-        status: 'completed' 
+      if (!vectorStoreId) {
+        return [];
+      }
+      
+      // Get files from vector store
+      const vectorStoreFiles = await this.client.beta.vectorStores.files.list(vectorStoreId);
+      
+      return vectorStoreFiles.data.map((file: any) => ({ 
+        file_id: file.id, 
+        id: file.id,
+        status: file.status || 'completed' 
       }));
     } catch (error) {
       console.error("Error getting assistant files:", error);
