@@ -81,9 +81,6 @@ Cross-Platform Deployment:
 - **Cross-Platform Download System**: In-app download buttons for both Windows and Mac OS with license key validation (0403198422061962)
 - **User-Specific Assistant Management**: Fixed assistant display to show only authenticated user's assistants with proper access control
 - **Chat PDF Export**: Added PDF export functionality in playground with formatted chat history, timestamps, and proper styling
-- **Professional Footer System**: Comprehensive black footer with 10 organized links across Product, Documentation, and Legal categories
-- **Contact Widget System**: Floating chat widgets for Telegram and WhatsApp with modal popup interfaces (no exposed contact details)
-- **Updated Copyright**: All copyright notices updated to 2025 for current year compliance
 
 ## External Dependencies
 

@@ -11,8 +11,6 @@ import { SettingsModal } from "@/components/settings-modal";
 import { GoogleDocsIntegration } from "@/components/google-docs-integration";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { Footer } from "@/components/footer";
-import { ContactWidget } from "@/components/contact-widget";
 import { 
   Bot, 
   Settings, 
@@ -279,7 +277,7 @@ export default function Playground() {
   };
 
   // Find current conversation for this assistant
-  const assistantConversation = conversations.find((c: any) => c.assistantId === assistantId);
+  const assistantConversation = conversations.find(c => c.assistantId === assistantId);
 
   useEffect(() => {
     if (assistantConversation && !currentConversation) {
@@ -413,12 +411,6 @@ export default function Playground() {
           )}
         </div>
       </div>
-
-      {/* Footer */}
-      <Footer />
-
-      {/* Contact Widget */}
-      <ContactWidget />
 
       {/* Settings Modal */}
       <SettingsModal 

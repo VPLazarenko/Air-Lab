@@ -11,7 +11,7 @@ $ProgressPreference = 'SilentlyContinue'
 
 # Configuration
 $AppName = "Air Lab AI Assistant Platform"
-$AppVersion = "2.0.0"
+$AppVersion = "1.0.0"
 $InstallPath = "$env:ProgramFiles\AirLab"
 $DataPath = "$env:APPDATA\AirLab"
 $NodeVersion = "20.19.3"
@@ -52,11 +52,7 @@ function Show-Welcome {
     Write-Host "This installer will:"
     Write-Host "  • Install Node.js runtime environment"
     Write-Host "  • Setup PostgreSQL database"
-    Write-Host "  • Configure the application with latest features"
-    Write-Host "  • Professional footer with contact widgets"
-    Write-Host "  • Multi-language support (EN/RU/PL)"
-    Write-Host "  • PDF export and chat logging system"
-    Write-Host "  • Cross-platform authentication system"
+    Write-Host "  • Configure the application"
     Write-Host "  • Create desktop shortcuts"
     Write-Host "  • Register Windows service"
     Write-Host ""
