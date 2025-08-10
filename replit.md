@@ -75,6 +75,7 @@ Platform Branding:
 - **Windows Installer Package**: Complete autonomous installer with PowerShell scripts and all dependencies
 - **Platform Download System**: In-app download button with license key validation (0403198422061962)
 - **User-Specific Assistant Management**: Fixed assistant display to show only authenticated user's assistants with proper access control
+- **Chat PDF Export**: Added PDF export functionality in playground with formatted chat history, timestamps, and proper styling
 
 ## External Dependencies
 

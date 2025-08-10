@@ -19,7 +19,8 @@ import {
   Moon,
   Sun,
   PanelRightOpen,
-  PanelRightClose
+  PanelRightClose,
+  Download
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -165,6 +166,116 @@ export default function Playground() {
     }
   };
 
+  const downloadChatPDF = async () => {
+    if (!currentConversation || !currentConversation.messages.length) {
+      toast({
+        title: "Нет сообщений",
+        description: "В чате нет сообщений для экспорта",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Create a temporary div to render chat content
+      const printContent = document.createElement('div');
+      printContent.style.cssText = `
+        font-family: 'system-ui', sans-serif;
+        padding: 20px;
+        background: white;
+        color: black;
+        line-height: 1.6;
+      `;
+
+      // Add header
+      const header = document.createElement('div');
+      header.innerHTML = `
+        <h1 style="color: #10B981; margin-bottom: 10px;">${assistant?.name || 'Assistant Chat'}</h1>
+        <p style="color: #666; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+          Модель: ${assistant?.model || 'GPT-4o'} | Экспортировано: ${new Date().toLocaleString('ru-RU')}
+        </p>
+      `;
+      printContent.appendChild(header);
+
+      // Add messages
+      currentConversation.messages.forEach((msg, index) => {
+        const messageDiv = document.createElement('div');
+        messageDiv.style.cssText = `
+          margin-bottom: 15px;
+          padding: 12px;
+          border-radius: 8px;
+          ${msg.role === 'user' 
+            ? 'background: #10B981; color: white; margin-left: 20%; text-align: right;' 
+            : 'background: #f8f9fa; border: 1px solid #e9ecef; margin-right: 20%;'
+          }
+        `;
+        
+        const roleLabel = msg.role === 'user' ? 'Пользователь' : assistant?.name || 'Ассистент';
+        const timestamp = new Date(msg.timestamp).toLocaleString('ru-RU');
+        
+        messageDiv.innerHTML = `
+          <div style="font-weight: bold; margin-bottom: 5px; font-size: 12px; opacity: 0.8;">
+            ${roleLabel} • ${timestamp}
+          </div>
+          <div style="white-space: pre-wrap; word-wrap: break-word;">${msg.content}</div>
+        `;
+        
+        printContent.appendChild(messageDiv);
+      });
+
+      // Create a new window for printing
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (!printWindow) {
+        toast({
+          title: "Ошибка",
+          description: "Не удалось открыть окно для печати. Проверьте настройки блокировки всплывающих окон.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Chat Export - ${assistant?.name || 'Assistant'}</title>
+            <style>
+              @media print {
+                body { margin: 0; }
+                @page { size: A4; margin: 1cm; }
+              }
+            </style>
+          </head>
+          <body>
+            ${printContent.outerHTML}
+          </body>
+        </html>
+      `);
+
+      printWindow.document.close();
+      
+      // Wait for content to load then print
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 250);
+      };
+
+      toast({
+        title: "PDF экспорт",
+        description: "Открыто окно печати. Выберите 'Сохранить как PDF' в параметрах печати.",
+      });
+
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast({
+        title: "Ошибка экспорта",
+        description: "Не удалось создать PDF файл",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Find current conversation for this assistant
   const assistantConversation = conversations.find(c => c.assistantId === assistantId);
 
@@ -212,6 +323,18 @@ export default function Playground() {
               className="p-2"
             >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={downloadChatPDF}
+              disabled={!currentConversation || !currentConversation?.messages?.length}
+              className="hidden sm:flex"
+              title="Скачать чат как PDF"
+            >
+              <Download className="w-4 h-4 lg:mr-2" />
+              <span className="hidden lg:inline">PDF</span>
             </Button>
             
             <Button
