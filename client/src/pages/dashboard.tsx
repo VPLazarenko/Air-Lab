@@ -13,6 +13,7 @@ import { IntegrationModal } from "@/components/integrations/IntegrationModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { Footer } from "@/components/footer";
 import { useToast } from "@/hooks/use-toast";
 import { DownloadButton } from "@/components/download-button";
 import { ChatLogs } from "@/components/chat-logs";
@@ -100,7 +101,7 @@ export default function Dashboard() {
     setIsDark(!isDark);
   };
 
-  const getAssistantIcon = (assistant: Assistant) => {
+  const getAssistantIcon = (assistant: any) => {
     const name = assistant.name.toLowerCase();
     if (name.includes('code')) return <GraduationCap className="w-3 h-3 text-white" />;
     if (name.includes('write') || name.includes('content')) return <PenTool className="w-3 h-3 text-white" />;
@@ -108,7 +109,7 @@ export default function Dashboard() {
     return <Bot className="w-3 h-3 text-white" />;
   };
 
-  const getAssistantColor = (assistant: Assistant) => {
+  const getAssistantColor = (assistant: any) => {
     const name = assistant.name.toLowerCase();
     if (name.includes('code')) return 'bg-blue-500';
     if (name.includes('write') || name.includes('content')) return 'bg-purple-500';
@@ -117,7 +118,7 @@ export default function Dashboard() {
   };
 
   const getIntegrationStatus = (type: string) => {
-    return integrations.find(integration => integration.type === type.toLowerCase());
+    return (integrations as any[]).find((integration: any) => integration.type === type.toLowerCase());
   };
 
   const handleIntegrationClick = (integration: string) => {
@@ -131,7 +132,8 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 overflow-hidden w-full">
+    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 w-full">
+      <div className="flex flex-1 overflow-hidden">
       {/* Mobile Menu Button */}
       <Button
         className="lg:hidden fixed top-4 left-4 z-50"
@@ -216,7 +218,7 @@ export default function Dashboard() {
             </div>
             
             <div className="space-y-1">
-              {assistants.map((assistant) => (
+              {assistants.map((assistant: any) => (
                 <Link key={assistant.id} href={`/playground/${assistant.id}`}>
                   <div className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer">
                     <div className="flex items-center space-x-3">
@@ -525,7 +527,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="space-y-4 w-full">
-                  {assistants.map((assistant) => (
+                  {assistants.map((assistant: any) => (
                     <div key={assistant.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                       <div className="flex items-start sm:items-center gap-4">
                         <div className={`w-10 h-10 ${getAssistantColor(assistant)} rounded-lg flex items-center justify-center flex-shrink-0`}>
@@ -656,6 +658,9 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+      
+      {/* Footer */}
+      <Footer />
 
       {/* Settings Modal */}
       <SettingsModal 
@@ -674,8 +679,9 @@ export default function Dashboard() {
       <IntegrationModal 
         open={showIntegrationModal}
         onClose={() => setShowIntegrationModal(false)}
-        integration={selectedIntegration}
+        integration={selectedIntegration as any}
       />
+      </div>
     </div>
   );
 }

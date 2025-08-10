@@ -11,6 +11,7 @@ import { SettingsModal } from "@/components/settings-modal";
 import { GoogleDocsIntegration } from "@/components/google-docs-integration";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { Footer } from "@/components/footer";
 import { 
   Bot, 
   Settings, 
@@ -411,6 +412,9 @@ export default function Playground() {
           )}
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
 
       {/* Settings Modal */}
       <SettingsModal 
