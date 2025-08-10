@@ -23,7 +23,11 @@ export function GoogleDocsIntegration({ assistantId, userId }: GoogleDocsIntegra
   // Fetch existing Google Docs documents
   const { data: documents, isLoading } = useQuery<GoogleDocsDocument[]>({
     queryKey: ['/api/assistants', assistantId, 'google-drive'],
-    refetchInterval: false, // Disable automatic refetch
+    refetchInterval: (query) => {
+      // Only refetch if there are documents in processing status
+      const hasProcessing = query.state.data?.some((doc: GoogleDocsDocument) => doc.status === 'processing');
+      return hasProcessing ? 2000 : false; // Poll every 2 seconds if processing
+    },
     refetchOnWindowFocus: false,
   });
 

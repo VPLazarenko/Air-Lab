@@ -125,33 +125,15 @@ export class OpenAIService {
       // Get current assistant
       const assistant = await this.getAssistant(assistantId);
       
-      // Get existing vector store ID or create new one
-      let vectorStoreId = assistant.tool_resources?.file_search?.vector_store_ids?.[0];
-      
-      if (!vectorStoreId) {
-        // Create a new vector store using the correct API
-        const vectorStore = await (this.client.beta as any).vectorStores.create({
-          name: `Assistant ${assistantId} Files`
-        });
-        vectorStoreId = vectorStore.id;
-        
-        // Update assistant to use the vector store
+      // For now, just attach files directly to the assistant
+      // The new API doesn't require separate vector store management
+      if (fileId) {
+        // Update assistant with the file directly
         await this.client.beta.assistants.update(assistantId, {
           tools: [{ type: 'file_search' }],
-          tool_resources: {
-            file_search: {
-              vector_store_ids: [vectorStore.id]
-            }
-          }
+          file_ids: [...(assistant.file_ids || []), fileId]
         });
-      }
-      
-      // If we have a file to add, add it to the vector store
-      if (fileId && vectorStoreId) {
-        await (this.client.beta as any).vectorStores.files.create(vectorStoreId, {
-          file_id: fileId
-        });
-        console.log(`Added file ${fileId} to vector store ${vectorStoreId}`);
+        console.log(`Added file ${fileId} to assistant ${assistantId}`);
       }
       
       return assistant;
@@ -165,20 +147,16 @@ export class OpenAIService {
     try {
       const assistant = await this.getAssistant(assistantId);
       
-      // Get vector store ID from tool_resources
-      const vectorStoreId = assistant.tool_resources?.file_search?.vector_store_ids?.[0];
-      
-      if (!vectorStoreId) {
+      // Return files directly from assistant
+      if (!assistant.file_ids || assistant.file_ids.length === 0) {
         return [];
       }
       
-      // Get files from vector store
-      const vectorStoreFiles = await (this.client.beta as any).vectorStores.files.list(vectorStoreId);
-      
-      return vectorStoreFiles.data.map((file: any) => ({ 
-        file_id: file.id, 
-        id: file.id,
-        status: file.status || 'completed' 
+      // Return file IDs as file objects
+      return assistant.file_ids.map((fileId: string) => ({ 
+        file_id: fileId, 
+        id: fileId,
+        status: 'completed' 
       }));
     } catch (error) {
       console.error("Error getting assistant files:", error);
