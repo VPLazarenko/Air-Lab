@@ -120,7 +120,7 @@ export const chatLogs = pgTable("chat_logs", {
     userAgent?: string;
     ipAddress?: string;
     model?: string;
-    temperature?: real;
+    temperature?: number;
     tokensUsed?: number;
     responseTime?: number;
     error?: string;
@@ -149,6 +149,7 @@ export const plans = pgTable("plans", {
   isActive: boolean("is_active").default(true),
   isDefault: boolean("is_default").default(false),
   sortOrder: real("sort_order").default(0),
+  paymentLink: text("payment_link"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

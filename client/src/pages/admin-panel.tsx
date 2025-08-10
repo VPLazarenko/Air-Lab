@@ -55,6 +55,7 @@ interface PlanFormData {
   isActive: boolean;
   isDefault: boolean;
   sortOrder: number;
+  paymentLink: string;
 }
 
 interface AnnouncementFormData {
@@ -97,7 +98,8 @@ export default function AdminPanel() {
     },
     isActive: true,
     isDefault: false,
-    sortOrder: 0
+    sortOrder: 0,
+    paymentLink: ""
   });
 
   const [announcementForm, setAnnouncementForm] = useState<AnnouncementFormData>({
@@ -271,7 +273,8 @@ export default function AdminPanel() {
       },
       isActive: true,
       isDefault: false,
-      sortOrder: 0
+      sortOrder: 0,
+      paymentLink: ""
     });
   };
 
@@ -301,7 +304,8 @@ export default function AdminPanel() {
         features: plan.features as any,
         isActive: plan.isActive || false,
         isDefault: plan.isDefault || false,
-        sortOrder: plan.sortOrder || 0
+        sortOrder: plan.sortOrder || 0,
+        paymentLink: plan.paymentLink || ""
       });
     } else {
       setEditingPlan(null);
@@ -635,6 +639,11 @@ export default function AdminPanel() {
                               <p className="text-sm font-mono">
                                 {plan.price} {plan.currency} / {plan.billingPeriod === 'monthly' ? 'месяц' : plan.billingPeriod === 'yearly' ? 'год' : plan.billingPeriod}
                               </p>
+                              {plan.paymentLink && (
+                                <p className="text-xs text-blue-600 dark:text-blue-400 truncate">
+                                  🔗 {plan.paymentLink}
+                                </p>
+                              )}
                             </div>
                           </div>
                           
@@ -801,6 +810,14 @@ export default function AdminPanel() {
                     <SelectItem value="EUR">EUR</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2 col-span-2">
+                <Label>Платежная ссылка</Label>
+                <Input
+                  value={planForm.paymentLink}
+                  onChange={(e) => setPlanForm({...planForm, paymentLink: e.target.value})}
+                  placeholder="https://payment-provider.com/plan-link"
+                />
               </div>
             </div>
 
