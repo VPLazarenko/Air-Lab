@@ -25,8 +25,9 @@ interface IntegrationModalProps {
 // Схемы валидации для каждой интеграции
 const telegramSchema = z.object({
   botToken: z.string().min(1, "Введите токен бота"),
-  botUsername: z.string().min(1, "Введите имя пользователя бота"),
-  webhookUrl: z.string().url("Введите корректный URL").optional().or(z.literal("")),
+  assistantId: z.string().min(1, "Введите ID ассистента"),
+  openaiApiKey: z.string().min(1, "Введите OpenAI API Key"),
+  webhookUrl: z.string().optional().or(z.literal("")),
 });
 
 const vkSchema = z.object({
@@ -61,7 +62,7 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
 
   const telegramForm = useForm<TelegramFormData>({
     resolver: zodResolver(telegramSchema),
-    defaultValues: { botToken: "", botUsername: "", webhookUrl: "" },
+    defaultValues: { botToken: "", assistantId: "", openaiApiKey: "", webhookUrl: "" },
   });
 
   const vkForm = useForm<VkFormData>({
@@ -82,16 +83,20 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
   // Мутации для создания интеграций
   const telegramMutation = useMutation({
     mutationFn: async (data: TelegramFormData) => {
-      await apiRequest(`/api/integrations/telegram`, {
+      await apiRequest(`/api/integrations`, {
         method: "POST",
-        body: {
+        body: JSON.stringify({
           type: "telegram",
-          name: data.botUsername || "Telegram Bot",
+          name: "Telegram Bot",
           config: {
             botToken: data.botToken,
-            botUsername: data.botUsername,
+            assistantId: data.assistantId,
+            openaiApiKey: data.openaiApiKey,
             webhookUrl: data.webhookUrl || "",
           },
+        }),
+        headers: {
+          'Content-Type': 'application/json',
         },
       });
     },
@@ -107,9 +112,9 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
 
   const vkMutation = useMutation({
     mutationFn: async (data: VkFormData) => {
-      await apiRequest(`/api/integrations/vk`, {
+      await apiRequest(`/api/integrations`, {
         method: "POST",
-        body: {
+        body: JSON.stringify({
           type: "vk",
           name: "VK Bot",
           config: {
@@ -117,6 +122,9 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
             groupId: data.groupId,
             confirmationToken: data.confirmationToken,
           },
+        }),
+        headers: {
+          'Content-Type': 'application/json',
         },
       });
     },
@@ -132,9 +140,9 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
 
   const whatsappMutation = useMutation({
     mutationFn: async (data: WhatsappFormData) => {
-      await apiRequest(`/api/integrations/whatsapp`, {
+      await apiRequest(`/api/integrations`, {
         method: "POST",
-        body: {
+        body: JSON.stringify({
           type: "whatsapp",
           name: "WhatsApp Business",
           config: {
@@ -143,6 +151,9 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
             verifyToken: data.verifyToken,
             webhookUrl: data.webhookUrl || "",
           },
+        }),
+        headers: {
+          'Content-Type': 'application/json',
         },
       });
     },
@@ -158,9 +169,9 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
 
   const openaiMutation = useMutation({
     mutationFn: async (data: OpenaiFormData) => {
-      await apiRequest(`/api/integrations/openai`, {
+      await apiRequest(`/api/integrations`, {
         method: "POST",
-        body: {
+        body: JSON.stringify({
           type: "openai",
           name: "OpenAI Assistant",
           config: {
@@ -168,6 +179,9 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
             assistantId: data.assistantId,
             model: data.model,
           },
+        }),
+        headers: {
+          'Content-Type': 'application/json',
         },
       });
     },
@@ -257,14 +271,27 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="botUsername">Имя пользователя бота</Label>
+                  <Label htmlFor="assistantId">ID ассистента</Label>
                   <Input
-                    id="botUsername"
-                    placeholder="@your_bot_name"
-                    {...telegramForm.register("botUsername")}
+                    id="assistantId"
+                    placeholder="asst_..."
+                    {...telegramForm.register("assistantId")}
                   />
-                  {telegramForm.formState.errors.botUsername && (
-                    <p className="text-sm text-red-500">{telegramForm.formState.errors.botUsername.message}</p>
+                  {telegramForm.formState.errors.assistantId && (
+                    <p className="text-sm text-red-500">{telegramForm.formState.errors.assistantId.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="openaiApiKey">OpenAI API Key</Label>
+                  <Input
+                    id="openaiApiKey"
+                    type="password"
+                    placeholder="sk-..."
+                    {...telegramForm.register("openaiApiKey")}
+                  />
+                  {telegramForm.formState.errors.openaiApiKey && (
+                    <p className="text-sm text-red-500">{telegramForm.formState.errors.openaiApiKey.message}</p>
                   )}
                 </div>
 
