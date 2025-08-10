@@ -44,17 +44,20 @@ export default function Dashboard() {
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const { user: authUser, isAuthenticated, logout } = useAuth();
 
-  // Initialize demo user
+  // Get current user or demo user as fallback
+  const currentUserId = authUser?.id || DEMO_USER_ID;
+  
+  // Initialize user (demo or authenticated)
   const { data: user } = useQuery({
-    queryKey: ['/api/users', DEMO_USER_ID],
+    queryKey: ['/api/users', currentUserId],
     queryFn: async () => {
       try {
-        return await openaiClient.getUser(DEMO_USER_ID);
+        return await openaiClient.getUser(currentUserId);
       } catch {
         // Create demo user if doesn't exist
         return await openaiClient.createUser({
-          username: "Demo User",
-          email: "demo@example.com",
+          username: authUser?.username || "Demo User",
+          email: authUser?.email || "demo@example.com",
           settings: { defaultModel: "gpt-4o", autoSave: true, darkMode: isDark }
         });
       }
@@ -62,8 +65,8 @@ export default function Dashboard() {
   });
 
   const { data: assistants = [], refetch: refetchAssistants } = useQuery({
-    queryKey: ['/api/assistants/user', DEMO_USER_ID],
-    queryFn: () => openaiClient.getAssistantsByUserId(DEMO_USER_ID),
+    queryKey: ['/api/assistants/user', currentUserId],
+    queryFn: () => openaiClient.getAssistantsByUserId(currentUserId),
     enabled: !!user,
   });
 
@@ -168,7 +171,7 @@ export default function Dashboard() {
             </Link>
 
             <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 mt-6">
-              Assistants ({assistants.length})
+              {isAuthenticated ? 'Мои ассистенты' : 'Демо ассистенты'} ({assistants.length})
             </div>
             
             <div className="space-y-1">
@@ -241,9 +244,14 @@ export default function Dashboard() {
           {/* Header */}
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+              <h1 className="text-3xl font-bold mb-2">
+                {isAuthenticated ? 'Личная панель управления' : 'Demo Dashboard'}
+              </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                Manage your AI assistants and monitor their performance
+                {isAuthenticated 
+                  ? 'Управляйте своими ИИ-ассистентами и интеграциями'
+                  : 'Попробуйте создать ассистентов в демо-режиме'
+                }
               </p>
             </div>
             

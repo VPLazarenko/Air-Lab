@@ -10,8 +10,6 @@ import { AssistantConfigPanel } from "@/components/assistant-config-panel";
 import { SettingsModal } from "@/components/settings-modal";
 import { GoogleDocsIntegration } from "@/components/google-docs-integration";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { AuthModal } from "@/components/auth/AuthModal";
 import { 
   Bot, 
   Settings, 
@@ -33,7 +31,6 @@ export default function Playground() {
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showConfigPanel, setShowConfigPanel] = useState(true);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('darkMode') === 'true' || 
@@ -42,37 +39,6 @@ export default function Playground() {
     return false;
   });
   const { toast } = useToast();
-  const { user, isAuthenticated, isLoading } = useAuth();
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      setShowAuthModal(true);
-    }
-  }, [isAuthenticated, isLoading]);
-
-  // Show auth modal if not authenticated
-  if (!isLoading && !isAuthenticated) {
-    return (
-      <>
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold mb-4">Требуется авторизация</h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Для доступа к конструктору ассистентов необходимо войти в систему
-            </p>
-            <Button onClick={() => setShowAuthModal(true)}>
-              Войти в систему
-            </Button>
-          </div>
-        </div>
-        <AuthModal 
-          open={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-        />
-      </>
-    );
-  }
 
   // Get user data
   const { data: user } = useQuery({
