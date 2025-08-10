@@ -44,13 +44,6 @@ export default function Playground() {
   // Use actual authentication
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      setShowAuthModal(true);
-    }
-  }, [authLoading, isAuthenticated]);
-
   // Get assistant data if editing existing
   const { data: assistant, refetch: refetchAssistant } = useQuery({
     queryKey: ['/api/assistants', assistantId],
@@ -64,19 +57,6 @@ export default function Playground() {
     queryFn: () => openaiClient.getConversationsByUserId(user?.id!),
     enabled: !!user?.id,
   });
-
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('darkMode', isDark.toString());
-  }, [isDark]);
-
-  const toggleDarkMode = () => {
-    setIsDark(!isDark);
-  };
 
   // Create new conversation when assistant is selected
   const createConversationMutation = useMutation({
@@ -117,6 +97,26 @@ export default function Playground() {
       });
     },
   });
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      setShowAuthModal(true);
+    }
+  }, [authLoading, isAuthenticated]);
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('darkMode', isDark.toString());
+  }, [isDark]);
+
+  const toggleDarkMode = () => {
+    setIsDark(!isDark);
+  };
 
   const handleSendMessage = async (message: string): Promise<void> => {
     if (!currentConversation) {
