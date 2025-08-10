@@ -148,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Assistant routes (protected)
-  app.post("/api/assistants", async (req, res) => {
+  app.post("/api/assistants", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       const assistantData = insertAssistantSchema.parse(req.body);
 
@@ -170,10 +170,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tools: (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
       });
 
-      // Save to local storage with OpenAI ID and demo user ID
+      // Save to local storage with OpenAI ID and current user ID
       const assistant = await storage.createAssistant({
         ...assistantData,
-        userId: assistantData.userId || "84ac8242-6c19-42a0-825b-caa01572e5e6",
+        userId: req.user.id,
         openaiAssistantId: openaiAssistant.id,
       });
 
@@ -184,9 +184,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/assistants/user/:userId", async (req, res) => {
+  app.get("/api/assistants/user/:userId", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const assistants = await storage.getAssistantsByUserId(req.params.userId);
+      // Users can only see their own assistants, admins can see any
+      const userId = req.params.userId;
+      if (req.user.role !== 'admin' && req.user.id !== userId) {
+        return res.status(403).json({ error: 'Доступ запрещен' });
+      }
+      
+      const assistants = await storage.getAssistantsByUserId(userId);
       res.json(assistants);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -202,14 +208,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/assistants/:id", async (req, res) => {
+  app.get("/api/assistants/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       const assistant = await storage.getAssistant(req.params.id);
       if (!assistant) {
         return res.status(404).json({ error: "Ассистент не найден" });
       }
       
-      // Skip access check for demo
+      // Check if user has access to this assistant
+      if (req.user.role !== 'admin' && assistant.userId !== req.user.id) {
+        return res.status(403).json({ error: 'Доступ запрещен' });
+      }
       
       // Sync files from OpenAI if assistant exists there
       if (assistant.openaiAssistantId) {

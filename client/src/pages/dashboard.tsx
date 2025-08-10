@@ -44,21 +44,17 @@ export default function Dashboard() {
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const { user: authUser, isAuthenticated, logout } = useAuth();
 
-  // Always show demo user's assistants for everyone
-  // Authenticated users can also create and save their own
-  const currentUserId = DEMO_USER_ID;
-  
-  // Initialize user (demo or authenticated)
+  // Initialize demo user
   const { data: user } = useQuery({
-    queryKey: ['/api/users', currentUserId],
+    queryKey: ['/api/users', DEMO_USER_ID],
     queryFn: async () => {
       try {
-        return await openaiClient.getUser(currentUserId);
+        return await openaiClient.getUser(DEMO_USER_ID);
       } catch {
         // Create demo user if doesn't exist
         return await openaiClient.createUser({
-          username: authUser?.username || "Demo User",
-          email: authUser?.email || "demo@example.com",
+          username: "Demo User",
+          email: "demo@example.com",
           settings: { defaultModel: "gpt-4o", autoSave: true, darkMode: isDark }
         });
       }
@@ -66,8 +62,8 @@ export default function Dashboard() {
   });
 
   const { data: assistants = [], refetch: refetchAssistants } = useQuery({
-    queryKey: ['/api/assistants/user', currentUserId],
-    queryFn: () => openaiClient.getAssistantsByUserId(currentUserId),
+    queryKey: ['/api/assistants/user', DEMO_USER_ID],
+    queryFn: () => openaiClient.getAssistantsByUserId(DEMO_USER_ID),
     enabled: !!user,
   });
 
@@ -172,12 +168,7 @@ export default function Dashboard() {
             </Link>
 
             <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 mt-6">
-              Ассистенты ({assistants.length})
-              {!isAuthenticated && (
-                <div className="text-xs font-normal text-amber-600 dark:text-amber-400 mt-1">
-                  Без сохранения изменений
-                </div>
-              )}
+              Assistants ({assistants.length})
             </div>
             
             <div className="space-y-1">
@@ -198,8 +189,8 @@ export default function Dashboard() {
               {assistants.length === 0 && (
                 <div className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
                   <Bot className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Пока нет ассистентов</p>
-                  <p className="text-xs">Создайте первого ассистента для начала работы</p>
+                  <p className="text-sm">No assistants yet</p>
+                  <p className="text-xs">Create your first assistant to get started</p>
                 </div>
               )}
             </div>
@@ -250,14 +241,9 @@ export default function Dashboard() {
           {/* Header */}
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold mb-2">
-                {isAuthenticated ? 'Панель управления' : 'Assistant Constructor'}
-              </h1>
+              <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
               <p className="text-gray-600 dark:text-gray-400">
-                {isAuthenticated 
-                  ? 'Управляйте своими ИИ-ассистентами и интеграциями'
-                  : 'Создавайте и настраивайте ИИ-ассистентов'
-                }
+                Manage your AI assistants and monitor their performance
               </p>
             </div>
             

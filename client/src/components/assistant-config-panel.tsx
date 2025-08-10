@@ -80,7 +80,6 @@ export function AssistantConfigPanel({
         name: assistant.name,
         description: assistant.description || "",
         instructions: assistant.instructions || "",
-        systemPrompt: assistant.systemPrompt || "",
         model: assistant.model,
         temperature: assistant.temperature,
         tools: assistant.tools.length > 0 ? assistant.tools : config.tools,
@@ -497,7 +496,7 @@ export function AssistantConfigPanel({
               </div>
               
               {/* Uploaded Files List */}
-              {(config.files.length > 0 || (googleDocs && Array.isArray(googleDocs) && googleDocs.length > 0)) && (
+              {(config.files.length > 0 || (googleDocs && googleDocs.length > 0)) && (
                 <div className="space-y-2">
                   {/* Regular uploaded files */}
                   {config.files.map((file) => (
@@ -519,7 +518,7 @@ export function AssistantConfigPanel({
                   ))}
                   
                   {/* Google Docs files */}
-                  {Array.isArray(googleDocs) && googleDocs.map((doc: any) => (
+                  {googleDocs?.map((doc: any) => (
                     <div key={doc.id} className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
                       <div className="flex items-center space-x-2">
                         <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />

@@ -39,15 +39,11 @@ export default function Playground() {
     return false;
   });
   const { toast } = useToast();
-  const { user: authUser, isAuthenticated } = useAuth();
 
-  // Always use demo user for playground access
-  const currentUserId = DEMO_USER_ID;
-  
   // Get user data
   const { data: user } = useQuery({
-    queryKey: ['/api/users', currentUserId],
-    queryFn: () => openaiClient.getUser(currentUserId),
+    queryKey: ['/api/users', DEMO_USER_ID],
+    queryFn: () => openaiClient.getUser(DEMO_USER_ID),
   });
 
   // Get assistant data if editing existing
@@ -59,8 +55,8 @@ export default function Playground() {
 
   // Get conversations for this assistant
   const { data: conversations = [] } = useQuery({
-    queryKey: ['/api/conversations/user', currentUserId],
-    queryFn: () => openaiClient.getConversationsByUserId(currentUserId),
+    queryKey: ['/api/conversations/user', DEMO_USER_ID],
+    queryFn: () => openaiClient.getConversationsByUserId(DEMO_USER_ID),
     enabled: !!user,
   });
 
@@ -79,44 +75,15 @@ export default function Playground() {
 
   // Create new conversation when assistant is selected
   const createConversationMutation = useMutation({
-    mutationFn: (data: { assistantId: string; title?: string }) => {
-      if (!isAuthenticated) {
-        // For demo users, create temporary conversation that won't persist
-        return Promise.resolve({
-          id: `temp-${Date.now()}`,
-          userId: currentUserId,
-          assistantId: data.assistantId,
-          title: data.title || 'Временный разговор',
-          messages: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-      }
-      return openaiClient.createConversation({
-        userId: currentUserId,
+    mutationFn: (data: { assistantId: string; title?: string }) =>
+      openaiClient.createConversation({
+        userId: DEMO_USER_ID,
         assistantId: data.assistantId,
         title: data.title,
-      });
-    },
+      }),
     onSuccess: (conversation) => {
       setCurrentConversation(conversation);
-      if (isAuthenticated) {
-        queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', currentUserId] });
-      }
-      if (!isAuthenticated) {
-        toast({
-          title: "Временная сессия",
-          description: "Разговор не будет сохранен. Войдите для сохранения данных.",
-          variant: "default",
-        });
-      }
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Ошибка",
-        description: error.message || "Не удалось создать разговор",
-        variant: "destructive",
-      });
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
     },
   });
 
@@ -135,7 +102,7 @@ export default function Playground() {
       }
       
       // Invalidate queries for fresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
     },
     onError: (error) => {
       toast({
