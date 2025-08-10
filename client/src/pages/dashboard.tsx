@@ -141,7 +141,6 @@ export default function Dashboard() {
       >
         {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
       </Button>
-
       {/* Sidebar with mobile overlay */}
       <div className={`
         ${isMobileMenuOpen ? 'fixed inset-0 z-40 lg:relative' : 'hidden lg:block'}
@@ -283,7 +282,6 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden pt-16 lg:pt-8">
         <div className="p-4 lg:p-8 max-w-6xl mx-auto w-full">
@@ -298,9 +296,7 @@ export default function Dashboard() {
               />
               <div>
                 <h1 className="text-xl lg:text-2xl font-bold mb-1">Air Lab.</h1>
-                <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">
-                  AI Assistants Laboratory by Initiology AI Systems Lazarenko
-                </p>
+                <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">AI Assistants Laboratory by Initiology AI Systems</p>
               </div>
             </div>
             
@@ -656,20 +652,17 @@ export default function Dashboard() {
           )}
         </div>
       </div>
-
       {/* Settings Modal */}
       <SettingsModal 
         isOpen={showSettings} 
         onClose={() => setShowSettings(false)} 
         user={user}
       />
-
       {/* Auth Modal */}
       <AuthModal 
         open={showAuthModal}
         onClose={() => setShowAuthModal(false)}
       />
-
       {/* Integration Modal */}
       <IntegrationModal 
         open={showIntegrationModal}
