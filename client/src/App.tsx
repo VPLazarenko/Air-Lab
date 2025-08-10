@@ -11,6 +11,15 @@ import WidgetDesigner from "@/pages/widget-designer.tsx";
 import Chat from "@/pages/chat.tsx";
 import UserProfile from "@/pages/user-profile.tsx";
 import AdminPanel from "@/pages/admin-panel.tsx";
+import PlatformDescription from "@/pages/platform-description.tsx";
+import PlatformFeatures from "@/pages/platform-features.tsx";
+import Documentation from "@/pages/documentation.tsx";
+import UserInstructions from "@/pages/user-instructions.tsx";
+import PrivacyPolicy from "@/pages/privacy-policy.tsx";
+import TermsOfService from "@/pages/terms-of-service.tsx";
+import TermsConditions from "@/pages/terms-conditions.tsx";
+import CookiePolicy from "@/pages/cookie-policy.tsx";
+import SupportCenter from "@/pages/support-center.tsx";
 import NotFound from "@/pages/not-found.tsx";
 
 function Router() {
@@ -24,6 +33,15 @@ function Router() {
       <Route path="/files" component={FileManager} />
       <Route path="/profile" component={UserProfile} />
       <Route path="/admin" component={AdminPanel} />
+      <Route path="/platform-description" component={PlatformDescription} />
+      <Route path="/platform-features" component={PlatformFeatures} />
+      <Route path="/documentation" component={Documentation} />
+      <Route path="/user-instructions" component={UserInstructions} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/terms-conditions" component={TermsConditions} />
+      <Route path="/cookie-policy" component={CookiePolicy} />
+      <Route path="/support-center" component={SupportCenter} />
       <Route component={NotFound} />
     </Switch>
   );

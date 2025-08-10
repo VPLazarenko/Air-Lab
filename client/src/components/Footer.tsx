@@ -31,22 +31,22 @@ export default function Footer() {
             <h4 className="font-semibold text-white">Платформа</h4>
             <ul className="space-y-2 text-gray-300 text-sm">
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/platform-description" className="hover:text-white transition-colors">
                   Описание платформы
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/platform-features" className="hover:text-white transition-colors">
                   Функции и возможности
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/documentation" className="hover:text-white transition-colors">
                   Документация
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/user-instructions" className="hover:text-white transition-colors">
                   Инструкции по использованию
                 </a>
               </li>
@@ -58,22 +58,22 @@ export default function Footer() {
             <h4 className="font-semibold text-white">Правовая информация</h4>
             <ul className="space-y-2 text-gray-300 text-sm">
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/privacy-policy" className="hover:text-white transition-colors">
                   Политика конфиденциальности
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/terms-of-service" className="hover:text-white transition-colors">
                   Пользовательское соглашение
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/terms-conditions" className="hover:text-white transition-colors">
                   Условия использования
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/cookie-policy" className="hover:text-white transition-colors">
                   Cookie Policy
                 </a>
               </li>
@@ -85,22 +85,22 @@ export default function Footer() {
             <h4 className="font-semibold text-white">Поддержка</h4>
             <ul className="space-y-2 text-gray-300 text-sm">
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/support-center" className="hover:text-white transition-colors">
                   Центр поддержки
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/support-center#faq" className="hover:text-white transition-colors">
                   FAQ
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/support-center#feedback" className="hover:text-white transition-colors">
                   Обратная связь
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition-colors">
+                <a href="/support-center#report" className="hover:text-white transition-colors">
                   Сообщить об ошибке
                 </a>
               </li>
