@@ -17,6 +17,7 @@ import type { Assistant } from "@/lib/openai-client";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { GoogleDocsIntegration } from "@/components/google-docs-integration";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Save, 
   Download, 
@@ -28,7 +29,8 @@ import {
   Link,
   Globe,
   RefreshCw,
-  Palette
+  Palette,
+  AlertCircle
 } from "lucide-react";
 import { Link as RouterLink } from "wouter";
 
@@ -65,6 +67,7 @@ export function AssistantConfigPanel({
   const [googleDocsUrl, setGoogleDocsUrl] = useState("");
 
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
   // Получаем Google Docs документы для отображения в файл менеджере
   const { data: googleDocs } = useQuery({
@@ -182,6 +185,16 @@ export function AssistantConfigPanel({
   });
 
   const handleSave = () => {
+    // Check if user is authenticated
+    if (!isAuthenticated) {
+      toast({
+        title: "Требуется авторизация",
+        description: "Платформа AI Ассистентов Air Lab доступна только авторизованным пользователям!",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!config.name.trim()) {
       toast({
         title: "Name required",

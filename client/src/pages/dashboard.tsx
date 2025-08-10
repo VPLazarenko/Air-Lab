@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { SettingsModal } from "@/components/settings-modal";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { IntegrationModal } from "@/components/integrations/IntegrationModal";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { DownloadButton } from "@/components/download-button";
 import logoPath from "@assets/лого3_1754808405274.jpg";
 import { 
@@ -29,7 +30,8 @@ import {
   LogOut,
   Crown,
   Menu,
-  X
+  X,
+  AlertCircle
 } from "lucide-react";
 
 const DEMO_USER_ID = "84ac8242-6c19-42a0-825b-caa01572e5e6";
@@ -48,6 +50,8 @@ export default function Dashboard() {
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user: authUser, isAuthenticated, logout } = useAuth();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   // Initialize demo user
   const { data: user } = useQuery({
@@ -149,12 +153,23 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <Link href="/playground">
-            <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Assistant
-            </Button>
-          </Link>
+          <Button 
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+            onClick={() => {
+              if (!isAuthenticated) {
+                toast({
+                  title: "Требуется авторизация",
+                  description: "Платформа AI Ассистентов Air Lab доступна только авторизованным пользователям!",
+                  variant: "destructive",
+                });
+                return;
+              }
+              setLocation('/playground');
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Assistant
+          </Button>
         </div>
 
         {/* Navigation */}
