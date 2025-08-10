@@ -15,7 +15,7 @@ Assistant Configuration:
 Platform Branding:
 - Header title: "Air Lab. Assistant Builder"
 - Subtitle: "AI Platform by Initiology"
-- Custom gradient logo integrated in Dashboard header
+- Custom brain logo integrated in Dashboard header (logo.jpg)
 - Admin credentials: Admin/admin
 - License key: 0403198422061962
 
