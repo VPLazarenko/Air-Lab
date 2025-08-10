@@ -9,6 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -30,7 +31,10 @@ import {
   Globe,
   RefreshCw,
   Palette,
-  AlertCircle
+  AlertCircle,
+  MessageSquare,
+  ExternalLink,
+  Copy
 } from "lucide-react";
 import { Link as RouterLink } from "wouter";
 
@@ -65,6 +69,7 @@ export function AssistantConfigPanel({
   });
   
   const [googleDocsUrl, setGoogleDocsUrl] = useState("");
+  const [showWidgetCode, setShowWidgetCode] = useState(false);
 
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
@@ -83,7 +88,7 @@ export function AssistantConfigPanel({
         name: assistant.name,
         description: assistant.description || "",
         instructions: assistant.instructions || "",
-        systemPrompt: assistant.systemPrompt || "",
+        systemPrompt: (assistant as any).systemPrompt || "",
         model: assistant.model,
         temperature: assistant.temperature,
         tools: assistant.tools.length > 0 ? assistant.tools : config.tools,
@@ -323,9 +328,187 @@ export function AssistantConfigPanel({
     return <File className="w-4 h-4 text-gray-500" />;
   };
 
+  const generateWidgetCode = () => {
+    if (!assistantId || !assistant) return '';
+    
+    return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат-виджет ${assistant.name}</title>
+    <style>
+        /* Стили чат-виджета */
+        .chat-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 500px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            z-index: 10000;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 12px 12px 0 0;
+            font-weight: 600;
+        }
+        
+        .chat-iframe {
+            width: 100%;
+            height: calc(100% - 60px);
+            border: none;
+            border-radius: 0 0 12px 12px;
+        }
+        
+        .widget-trigger {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 10001;
+        }
+        
+        .widget-hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Кнопка открытия чата -->
+    <button class="widget-trigger" onclick="toggleChat()" id="chatTrigger">
+        💬
+    </button>
+    
+    <!-- Виджет чата -->
+    <div class="chat-widget widget-hidden" id="chatWidget">
+        <div class="chat-header">
+            <span>${assistant.name}</span>
+            <button onclick="toggleChat()" style="float: right; background: none; border: none; color: white; font-size: 18px; cursor: pointer;">×</button>
+        </div>
+        <iframe class="chat-iframe" src="${window.location.origin}/chat/${assistantId}"></iframe>
+    </div>
+    
+    <script>
+        function toggleChat() {
+            const widget = document.getElementById('chatWidget');
+            const trigger = document.getElementById('chatTrigger');
+            
+            if (widget.classList.contains('widget-hidden')) {
+                widget.classList.remove('widget-hidden');
+                trigger.style.display = 'none';
+            } else {
+                widget.classList.add('widget-hidden');
+                trigger.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>`;
+  };
+
+  const copyWidgetCode = () => {
+    const code = generateWidgetCode();
+    navigator.clipboard.writeText(code);
+    toast({
+      title: "Код скопирован",
+      description: "HTML код виджета скопирован в буфер обмена",
+    });
+  };
+
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-6">
+        {/* Quick Actions Panel */}
+        {assistantId && (
+          <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border">
+            <h3 className="font-semibold mb-3 text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+              Быстрые действия
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <RouterLink href={`/widget-designer/${assistantId}`}>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 text-center">
+                    <Palette className="w-8 h-8 mx-auto mb-2 text-purple-600" />
+                    <h4 className="font-semibold text-sm">Дизайн виджета</h4>
+                    <p className="text-xs text-gray-500 mt-1">Настроить внешний вид чата</p>
+                  </CardContent>
+                </Card>
+              </RouterLink>
+              
+              <Dialog open={showWidgetCode} onOpenChange={setShowWidgetCode}>
+                <DialogTrigger asChild>
+                  <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 text-center">
+                      <Code className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+                      <h4 className="font-semibold text-sm">Код чат-виджета</h4>
+                      <p className="text-xs text-gray-500 mt-1">Получить HTML код для сайта</p>
+                    </CardContent>
+                  </Card>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[80vh]">
+                  <DialogHeader>
+                    <DialogTitle>HTML код чат-виджета</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Скопируйте этот код и вставьте его на ваш сайт перед закрывающим тегом &lt;/body&gt;
+                    </p>
+                    <div className="relative">
+                      <ScrollArea className="h-96 w-full border rounded-lg">
+                        <pre className="p-4 text-xs bg-gray-50 dark:bg-gray-900 overflow-x-auto">
+                          <code>{generateWidgetCode()}</code>
+                        </pre>
+                      </ScrollArea>
+                      <Button
+                        onClick={copyWidgetCode}
+                        size="sm"
+                        className="absolute top-2 right-2"
+                      >
+                        <Copy className="w-3 h-3 mr-1" />
+                        Копировать
+                      </Button>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                      <h4 className="font-semibold text-sm mb-1">Инструкция по установке:</h4>
+                      <ol className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                        <li>1. Скопируйте весь HTML код выше</li>
+                        <li>2. Вставьте его в HTML код вашего сайта перед &lt;/body&gt;</li>
+                        <li>3. Виджет появится в правом нижнем углу страницы</li>
+                        <li>4. Посетители смогут открыть чат нажав на кнопку 💬</li>
+                      </ol>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              
+              <RouterLink href={`/chat/${assistantId}`}>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 text-center">
+                    <MessageSquare className="w-8 h-8 mx-auto mb-2 text-green-600" />
+                    <h4 className="font-semibold text-sm">Открыть чат</h4>
+                    <p className="text-xs text-gray-500 mt-1">Отдельная страница чата</p>
+                  </CardContent>
+                </Card>
+              </RouterLink>
+            </div>
+          </div>
+        )}
+
         {/* Assistant Info */}
         <div>
           <h3 className="font-semibold mb-3">Assistant Configuration</h3>
@@ -511,7 +694,7 @@ export function AssistantConfigPanel({
               </div>
               
               {/* Uploaded Files List */}
-              {(config.files.length > 0 || (googleDocs && googleDocs.length > 0)) && (
+              {(config.files.length > 0 || (googleDocs && Array.isArray(googleDocs) && googleDocs.length > 0)) && (
                 <div className="space-y-2">
                   {/* Regular uploaded files */}
                   {config.files.map((file) => (
@@ -533,7 +716,7 @@ export function AssistantConfigPanel({
                   ))}
                   
                   {/* Google Docs files */}
-                  {googleDocs?.map((doc: any) => (
+                  {Array.isArray(googleDocs) && googleDocs.map((doc: any) => (
                     <div key={doc.id} className="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
                       <div className="flex items-center space-x-2">
                         <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -610,16 +793,6 @@ export function AssistantConfigPanel({
                 <Download className="w-4 h-4 mr-2" />
                 Export Configuration
               </Button>
-              
-              <RouterLink href={`/widget-designer/${assistantId}`}>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Palette className="w-4 h-4 mr-2" />
-                  Дизайн виджета
-                </Button>
-              </RouterLink>
             </>
           )}
         </div>
