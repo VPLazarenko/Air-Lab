@@ -79,7 +79,7 @@ fi
 # Install application dependencies
 echo "📦 Установка зависимостей приложения..."
 cd "$APP_DIR"
-sudo npm install --production
+sudo npm install
 
 # Setup database
 echo "🗄️  Настройка базы данных..."
@@ -105,13 +105,13 @@ EOF
 
 # Create desktop entry
 echo "🖥️  Создание ярлыка приложения..."
-cat > ~/Desktop/AirLab-Assistant-Builder.command << EOF
+cat > ~/Desktop/"Air Lab Assistant.command" << EOF
 #!/bin/bash
 cd "/Applications/AirLab-Assistant-Builder"
-./start.sh
+./run.sh
 EOF
 
-chmod +x ~/Desktop/AirLab-Assistant-Builder.command
+chmod +x ~/Desktop/"Air Lab Assistant.command"
 
 # Create Applications folder entry
 cat > "/Applications/AirLab-Assistant-Builder.app/Contents/Info.plist" << EOF
@@ -158,6 +158,10 @@ echo "🔄 Инициализация базы данных..."
 cd "$APP_DIR"
 npm run db:push
 
+# Build the application
+echo "🔨 Сборка приложения..."
+npm run build
+
 echo ""
 echo "✅ Установка завершена успешно!"
 echo ""
@@ -166,8 +170,8 @@ echo "   Администратор: admin / admin"
 echo "   Лицензионный ключ: 0403198422061962"
 echo ""
 echo "🚀 Для запуска приложения:"
-echo "   • Откройте приложение из папки Applications"
-echo "   • Или используйте ярлык на рабочем столе"
+echo "   • Дважды нажмите на ярлык 'Air Lab Assistant' на рабочем столе"  
+echo "   • Или откройте терминал и выполните: /Applications/AirLab-Assistant-Builder/run.sh"
 echo "   • Приложение откроется в браузере по адресу: http://localhost:5000"
 echo ""
 echo "⚠️  Не забудьте настроить OpenAI API ключ в файле:"

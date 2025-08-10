@@ -98,27 +98,29 @@ export function DownloadButton() {
               </div>
               Air Lab Platform для Windows
             </DialogTitle>
-            <DialogDescription className="pt-4 space-y-4">
-              <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">Включено в установщик:</h4>
-                <ul className="space-y-1 text-sm">
-                  <li>✓ Полная платформа AI ассистентов</li>
-                  <li>✓ Автоматическая установка Node.js и PostgreSQL</li>
-                  <li>✓ Предустановленный админ-аккаунт (admin/admin)</li>
-                  <li>✓ Автозапуск как Windows-сервис</li>
-                  <li>✓ Интеграции с Telegram, VK, WhatsApp</li>
-                </ul>
-              </div>
-              
-              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-3 rounded-lg">
-                <p className="text-sm text-amber-800 dark:text-amber-200">
-                  <strong>Системные требования:</strong> Windows 10/11 x64, 4GB RAM, 2GB свободного места
-                </p>
-              </div>
+            <DialogDescription>
+              Автономный установщик со всеми компонентами платформы
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-4">
+            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg">
+              <h4 className="font-semibold mb-2">Включено в установщик:</h4>
+              <ul className="space-y-1 text-sm">
+                <li>✓ Полная платформа AI ассистентов</li>
+                <li>✓ Автоматическая установка Node.js и PostgreSQL</li>
+                <li>✓ Предустановленный админ-аккаунт (admin/admin)</li>
+                <li>✓ Автозапуск как Windows-сервис</li>
+                <li>✓ Интеграции с Telegram, VK, WhatsApp</li>
+              </ul>
+            </div>
+            
+            <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-3 rounded-lg">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                <strong>Системные требования:</strong> Windows 10/11 x64, 4GB RAM, 2GB свободного места
+              </p>
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="license">Лицензионный ключ</Label>
               <Input
@@ -185,27 +187,29 @@ export function DownloadButton() {
               </div>
               Air Lab Platform для Mac OS
             </DialogTitle>
-            <DialogDescription className="pt-4 space-y-4">
-              <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">Включено в установщик:</h4>
-                <ul className="space-y-1 text-sm">
-                  <li>✓ Полная платформа AI ассистентов</li>
-                  <li>✓ Автоматическая установка Node.js и PostgreSQL через Homebrew</li>
-                  <li>✓ Предустановленный админ-аккаунт (admin/admin)</li>
-                  <li>✓ Автозапуск приложения в Applications</li>
-                  <li>✓ Интеграции с Telegram, VK, WhatsApp</li>
-                </ul>
-              </div>
-              
-              <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-3 rounded-lg">
-                <p className="text-sm text-amber-800 dark:text-amber-200">
-                  <strong>Системные требования:</strong> Mac OS 10.15+, 8GB RAM, 2GB свободного места
-                </p>
-              </div>
+            <DialogDescription>
+              Автономный установщик с поддержкой Homebrew
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
+          <div className="space-y-4">
+            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg">
+              <h4 className="font-semibold mb-2">Включено в установщик:</h4>
+              <ul className="space-y-1 text-sm">
+                <li>✓ Полная платформа AI ассистентов</li>
+                <li>✓ Автоматическая установка Node.js и PostgreSQL через Homebrew</li>
+                <li>✓ Предустановленный админ-аккаунт (admin/admin)</li>
+                <li>✓ Автозапуск приложения в Applications</li>
+                <li>✓ Интеграции с Telegram, VK, WhatsApp</li>
+              </ul>
+            </div>
+            
+            <div className="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 p-3 rounded-lg">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                <strong>Системные требования:</strong> Mac OS 10.15+, 8GB RAM, 2GB свободного места
+              </p>
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="license-mac">Лицензионный ключ</Label>
               <Input
