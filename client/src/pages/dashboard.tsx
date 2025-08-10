@@ -145,7 +145,7 @@ export default function Dashboard() {
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3 mb-4">
             <img 
-              src="/assets/лого3_1754818495981.jpg"
+              src="/assets/logo.jpg"
               alt="Air Lab Logo"
               className="w-10 h-10 rounded-lg object-contain"
             />
