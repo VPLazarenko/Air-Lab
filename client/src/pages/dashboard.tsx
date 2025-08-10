@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Footer } from "@/components/footer";
+import { ContactWidget } from "@/components/contact-widget";
 import { useToast } from "@/hooks/use-toast";
 import { DownloadButton } from "@/components/download-button";
 import { ChatLogs } from "@/components/chat-logs";
@@ -662,6 +663,9 @@ export default function Dashboard() {
       
       {/* Footer */}
       <Footer />
+
+      {/* Contact Widget */}
+      <ContactWidget />
 
       {/* Settings Modal */}
       <SettingsModal 

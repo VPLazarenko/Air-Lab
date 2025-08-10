@@ -12,6 +12,7 @@ import { GoogleDocsIntegration } from "@/components/google-docs-integration";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Footer } from "@/components/footer";
+import { ContactWidget } from "@/components/contact-widget";
 import { 
   Bot, 
   Settings, 
@@ -415,6 +416,9 @@ export default function Playground() {
 
       {/* Footer */}
       <Footer />
+
+      {/* Contact Widget */}
+      <ContactWidget />
 
       {/* Settings Modal */}
       <SettingsModal 

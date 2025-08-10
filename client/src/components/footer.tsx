@@ -86,37 +86,11 @@ export function Footer() {
               </a>
             </div>
 
-            {/* Contact Widgets */}
-            <div className="space-y-3">
-              <a 
-                href="https://t.me/vlazarenko" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center space-x-3 text-gray-400 hover:text-blue-400 transition-colors text-sm group bg-gray-900 rounded-lg p-3"
-              >
-                <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                  <MessageSquare className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <div className="text-white text-sm font-medium">Telegram</div>
-                  <div className="text-xs text-gray-400">@vlazarenko</div>
-                </div>
-              </a>
-              
-              <a 
-                href="https://wa.me/79258298223" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center space-x-3 text-gray-400 hover:text-green-400 transition-colors text-sm group bg-gray-900 rounded-lg p-3"
-              >
-                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                  <Phone className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <div className="text-white text-sm font-medium">WhatsApp</div>
-                  <div className="text-xs text-gray-400">+7 925 829 8223</div>
-                </div>
-              </a>
+            {/* Contact Information */}
+            <div className="text-gray-400 text-sm">
+              <p className="mb-2">Свяжитесь с нами:</p>
+              <p className="text-xs">Используйте плавающие виджеты чата</p>
+              <p className="text-xs">в правом нижнем углу экрана</p>
             </div>
           </div>
         </div>
