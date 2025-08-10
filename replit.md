@@ -63,6 +63,9 @@ Assistant Configuration:
 - **HTML Code Generation**: Automatic generation of standalone widget HTML with copy/download functionality
 - **Clean Chat Interface**: Dedicated distraction-free chat page for optimal user experience
 - **Collapsible Panel System**: Improved UI with toggleable configuration panel to prevent screen overflow
+- **Complete Authentication System**: Full login/registration system with user profiles and admin panel
+- **Integration Dashboard**: Platform integration cards for Telegram, VK, WhatsApp, and OpenAI API setup
+- **Role-Based Access Control**: User and admin roles with different access levels and permissions
 
 ## External Dependencies
 
