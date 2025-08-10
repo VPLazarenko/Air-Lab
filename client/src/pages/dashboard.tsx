@@ -151,28 +151,27 @@ export default function Dashboard() {
         {/* Sidebar with mobile overlay */}
         <div className={`
           ${isMobileMenuOpen ? 'fixed inset-0 z-40 lg:relative' : 'hidden lg:block'}
-          lg:w-80 flex-shrink-0 bg-background border-r border-border flex flex-col overflow-hidden
-          backdrop-filter backdrop-blur-lg
+          lg:w-80 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden
         `}>
         {/* Header */}
-        <div className="p-6 border-b border-border data-flow">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <img 
                 src="/assets/logo.jpg"
                 alt="Air Lab Logo"
-                className="w-10 h-10 rounded-lg object-contain cyber-glow"
+                className="w-10 h-10 rounded-lg object-contain"
               />
               <div>
-                <h1 className="text-lg font-semibold hologram text-foreground">{t.title}</h1>
-                <p className="text-xs text-muted-foreground">AI Platform by Initiology AI Systems</p>
+                <h1 className="text-lg font-semibold">{t.title}</h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">AI Platform by Initiology AI Systems</p>
               </div>
             </div>
             <LanguageSwitcher />
           </div>
           
           <Button 
-            className="w-full cyber-button"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
             onClick={() => {
               if (!isAuthenticated) {
                 toast({
@@ -198,21 +197,21 @@ export default function Dashboard() {
             </div>
             
             <Link href="/">
-              <div className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-primary/20 text-primary border border-primary/30 cyber-glow">
+              <div className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400">
                 <Bot className="w-4 h-4" />
                 <span>{t.dashboard}</span>
               </div>
             </Link>
             
             <Link href="/playground">
-              <div className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-secondary/50 transition-all duration-300 hover:border hover:border-primary/30 hover:shadow-lg">
+              <div className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                 <Play className="w-4 h-4" />
                 <span>{t.playground}</span>
               </div>
             </Link>
             
             <Link href="/files">
-              <div className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-secondary/50 transition-all duration-300 hover:border hover:border-primary/30 hover:shadow-lg">
+              <div className="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                 <Folder className="w-4 h-4" />
                 <span>{t.fileManager}</span>
               </div>
@@ -225,14 +224,14 @@ export default function Dashboard() {
             <div className="space-y-1">
               {assistants.map((assistant: any) => (
                 <Link key={assistant.id} href={`/playground/${assistant.id}`}>
-                  <div className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-secondary/50 transition-all duration-300 cursor-pointer hover:border hover:border-primary/30 hover:shadow-lg relative overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer">
                     <div className="flex items-center space-x-3">
-                      <div className={`w-6 h-6 ${getAssistantColor(assistant)} rounded-full flex items-center justify-center border border-primary/30`}>
+                      <div className={`w-6 h-6 ${getAssistantColor(assistant)} rounded-full flex items-center justify-center`}>
                         {getAssistantIcon(assistant)}
                       </div>
-                      <span className="text-sm truncate text-foreground">{assistant.name}</span>
+                      <span className="text-sm truncate">{assistant.name}</span>
                     </div>
-                    <div className={`w-2 h-2 rounded-full ${assistant.isActive ? 'bg-neon-green shadow-[0_0_8px_var(--neon-green)]' : 'bg-warning-orange shadow-[0_0_8px_var(--warning-orange)]'}`}></div>
+                    <div className={`w-2 h-2 rounded-full ${assistant.isActive ? 'bg-green-400' : 'bg-yellow-400'}`}></div>
                   </div>
                 </Link>
               ))}
@@ -292,7 +291,7 @@ export default function Dashboard() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden pt-16 lg:pt-8 bg-background">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pt-16 lg:pt-8">
         <div className="p-4 lg:p-8 max-w-6xl mx-auto w-full">
           {/* Header */}
           <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -301,11 +300,11 @@ export default function Dashboard() {
               <img 
                 src={logoPath} 
                 alt="Air Lab Logo" 
-                className="w-12 h-12 lg:w-16 lg:h-16 rounded-lg object-cover cyber-glow"
+                className="w-12 h-12 lg:w-16 lg:h-16 rounded-lg object-cover shadow-md"
               />
               <div>
-                <h1 className="text-xl lg:text-2xl font-bold mb-1 hologram text-foreground">Air Lab.</h1>
-                <p className="text-sm lg:text-base text-muted-foreground">
+                <h1 className="text-xl lg:text-2xl font-bold mb-1">Air Lab.</h1>
+                <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">
                   AI Assistants Laboratory by Initiology AI Systems
                 </p>
               </div>
@@ -352,7 +351,7 @@ export default function Dashboard() {
               const telegramIntegration = getIntegrationStatus('telegram');
               return (
                 <Card 
-                  className="assistant-card cursor-pointer hover:scale-105 transition-all duration-300"
+                  className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-300"
                   onClick={() => handleIntegrationClick('Telegram')}
                 >
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -382,7 +381,7 @@ export default function Dashboard() {
               const vkIntegration = getIntegrationStatus('vk');
               return (
                 <Card 
-                  className="assistant-card cursor-pointer hover:scale-105 transition-all duration-300"
+                  className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-blue-600"
                   onClick={() => handleIntegrationClick('VK')}
                 >
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -412,7 +411,7 @@ export default function Dashboard() {
               const whatsappIntegration = getIntegrationStatus('whatsapp');
               return (
                 <Card 
-                  className="assistant-card cursor-pointer hover:scale-105 transition-all duration-300"
+                  className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-green-500"
                   onClick={() => handleIntegrationClick('WhatsApp')}
                 >
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -442,7 +441,7 @@ export default function Dashboard() {
               const openaiIntegration = getIntegrationStatus('openai');
               return (
                 <Card 
-                  className="assistant-card cursor-pointer hover:scale-105 transition-all duration-300"
+                  className="hover:shadow-lg transition-shadow cursor-pointer border-2 hover:border-purple-500"
                   onClick={() => handleIntegrationClick('OpenAI')}
                 >
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -468,11 +467,11 @@ export default function Dashboard() {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex flex-wrap gap-2 mb-6 border-b border-border data-flow">
+          <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
             <Button
               variant={activeTab === 'assistants' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('assistants')}
-              className={`gap-2 ${activeTab === 'assistants' ? 'cyber-button text-primary-foreground' : 'hover:bg-secondary/50 transition-all duration-300'}`}
+              className="gap-2"
             >
               <Bot className="w-4 h-4" />
               Ассистенты
@@ -481,7 +480,7 @@ export default function Dashboard() {
             <Button
               variant={activeTab === 'logs' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('logs')}
-              className={`gap-2 ${activeTab === 'logs' ? 'cyber-button text-primary-foreground' : 'hover:bg-secondary/50 transition-all duration-300'}`}
+              className="gap-2"
             >
               <FileText className="w-4 h-4" />
               Логи чатов
@@ -489,7 +488,7 @@ export default function Dashboard() {
             <Button
               variant={activeTab === 'integrations' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('integrations')}
-              className={`gap-2 ${activeTab === 'integrations' ? 'cyber-button text-primary-foreground' : 'hover:bg-secondary/50 transition-all duration-300'}`}
+              className="gap-2"
             >
               <Settings className="w-4 h-4" />
               Интеграции
@@ -498,16 +497,16 @@ export default function Dashboard() {
 
           {/* Tab Content */}
           {activeTab === 'assistants' && (
-            <Card className="w-full assistant-card">
+            <Card className="w-full">
               <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <CardTitle className="flex items-center gap-2 hologram text-foreground">
+                <CardTitle className="flex items-center gap-2">
                   <Bot className="w-5 h-5" />
                   <span>Ваши ассистенты</span>
                   <Badge variant="secondary">{filteredAssistants.length}</Badge>
                 </CardTitle>
                 <Link href="/playground">
-                  <Button className="gap-2 w-full sm:w-auto cyber-button">
+                  <Button className="gap-2 w-full sm:w-auto">
                     <Plus className="w-4 h-4" />
                     <span className="hidden sm:inline">Создать ассистента</span>
                     <span className="sm:hidden">Создать</span>

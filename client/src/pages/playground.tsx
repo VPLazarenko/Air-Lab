@@ -288,11 +288,11 @@ export default function Playground() {
   }, [assistantConversation, currentConversation]);
 
   return (
-    <div className="flex h-screen bg-background text-foreground overflow-hidden max-w-full">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 overflow-hidden max-w-full">
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 max-w-full">
         {/* Top Bar */}
-        <div className="min-h-[4rem] bg-card border-b border-border flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 lg:px-6 gap-3 lg:gap-0 data-flow">
+        <div className="min-h-[4rem] bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 lg:px-6 gap-3 lg:gap-0">
           <div className="flex items-center space-x-2 lg:space-x-4">
             <Link href="/">
               <Button variant="ghost" size="sm" className="p-2 lg:px-3">
@@ -302,16 +302,16 @@ export default function Playground() {
             </Link>
             
             <div className="flex items-center space-x-2 lg:space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0 cyber-glow">
-                <Bot className="w-4 h-4 text-primary-foreground" />
+              <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Bot className="w-4 h-4 text-white" />
               </div>
               <div className="hidden sm:block">
-                <h2 className="text-base lg:text-lg font-semibold truncate max-w-[200px] lg:max-w-none hologram text-foreground">
+                <h2 className="text-base lg:text-lg font-semibold truncate max-w-[200px] lg:max-w-none">
                   {assistant?.name || 'New Assistant'}
                 </h2>
-                <div className="flex items-center space-x-2 text-xs lg:text-sm text-muted-foreground">
+                <div className="flex items-center space-x-2 text-xs lg:text-sm text-gray-500 dark:text-gray-400">
                   <span>Model:</span>
-                  <span className="font-medium text-primary">{assistant?.model || 'GPT-4o'}</span>
+                  <span className="font-medium">{assistant?.model || 'GPT-4o'}</span>
                 </div>
               </div>
             </div>
@@ -332,7 +332,7 @@ export default function Playground() {
               size="sm"
               onClick={downloadChatPDF}
               disabled={!currentConversation || !currentConversation?.messages?.length}
-              className="hidden sm:flex cyber-button"
+              className="hidden sm:flex"
               title="Скачать чат как PDF"
             >
               <Download className="w-4 h-4 lg:mr-2" />
@@ -344,7 +344,7 @@ export default function Playground() {
               size="sm"
               onClick={handleShare}
               disabled={!currentConversation}
-              className="hidden sm:flex cyber-button"
+              className="hidden sm:flex"
             >
               <Share className="w-4 h-4 lg:mr-2" />
               <span className="hidden lg:inline">Share</span>
@@ -380,7 +380,7 @@ export default function Playground() {
                 onClick={() => setShowConfigPanel(true)}
                 variant="outline"
                 size="sm"
-                className="cyber-button"
+                className="bg-white dark:bg-slate-800 border shadow-md"
               >
                 <PanelRightOpen className="w-4 h-4" />
               </Button>
@@ -389,13 +389,13 @@ export default function Playground() {
 
           {/* Configuration Panel */}
           {showConfigPanel && (
-            <div className="absolute lg:relative inset-0 lg:inset-auto w-full lg:w-96 flex-shrink-0 bg-card border-l border-border z-20 lg:z-auto backdrop-filter backdrop-blur-lg">
+            <div className="absolute lg:relative inset-0 lg:inset-auto w-full lg:w-96 flex-shrink-0 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-gray-700 z-20 lg:z-auto">
               <div className="absolute top-4 left-4 z-10">
                 <Button
                   onClick={() => setShowConfigPanel(false)}
                   variant="outline"
                   size="sm"
-                  className="cyber-button"
+                  className="bg-white dark:bg-slate-800 border shadow-md"
                 >
                   <PanelRightClose className="w-4 h-4" />
                 </Button>
