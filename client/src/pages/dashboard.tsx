@@ -153,8 +153,8 @@ export default function Dashboard() {
               className="w-10 h-10 rounded-lg object-contain"
             />
             <div>
-              <h1 className="text-lg font-semibold">Air Lab. Assistant Builder</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">AI Platform by Initiology</p>
+              <h1 className="text-lg font-semibold">Initiology AI Systems</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Assistant Builder</p>
             </div>
           </div>
           
@@ -291,9 +291,9 @@ export default function Dashboard() {
                 className="w-12 h-12 lg:w-16 lg:h-16 rounded-lg object-cover shadow-md"
               />
               <div>
-                <h1 className="text-xl lg:text-2xl font-bold mb-1">Air Lab.</h1>
+                <h1 className="text-xl lg:text-2xl font-bold mb-1">Initiology AI Systems</h1>
                 <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">
-                  AI Assistants Laboratory by Initiology AI Systems Lazarenko
+                  AI Assistants Laboratory by Air Lab
                 </p>
               </div>
             </div>
