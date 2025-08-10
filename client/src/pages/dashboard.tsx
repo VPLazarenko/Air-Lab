@@ -519,16 +519,16 @@ export default function Dashboard() {
                 <div className="text-center py-12">
                   <Bot className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                   <h3 className="text-lg font-medium mb-2">
-                    {isAuthenticated ? t.noAssistants : "Войдите в систему"}
+                    {isAuthenticated ? "Нет ассистентов" : "Войдите в систему"}
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    {isAuthenticated ? t.noAssistants : "Для просмотра и создания ассистентов необходимо авторизоваться"}
+                    {isAuthenticated ? "Создайте своего первого ИИ-ассистента" : "Для просмотра и создания ассистентов необходимо авторизоваться"}
                   </p>
                   {isAuthenticated ? (
                     <Link href="/playground">
                       <Button className="bg-emerald-600 hover:bg-emerald-700">
                         <Plus className="w-4 h-4 mr-2" />
-                        {t.createAssistant}
+                        Создать ассистента
                       </Button>
                     </Link>
                   ) : (
