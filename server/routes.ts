@@ -64,6 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: assistantData.name,
         description: assistantData.description || undefined,
         instructions: assistantData.instructions || "",
+        systemPrompt: assistantData.systemPrompt,
         model: assistantData.model,
         tools: (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
       });
@@ -150,6 +151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: updates.name,
           description: updates.description,
           instructions: updates.instructions,
+          systemPrompt: updates.systemPrompt,
           model: updates.model,
           tools: (updates.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
         });

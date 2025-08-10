@@ -22,16 +22,22 @@ export class OpenAIService {
     name: string;
     description?: string;
     instructions: string;
+    systemPrompt?: string;
     model?: string;
     tools?: Array<{ type: "code_interpreter" | "file_search" }>;
     file_ids?: string[];
     tool_resources?: any;
   }) {
     try {
+      // Combine system prompt with instructions if provided
+      const fullInstructions = params.systemPrompt 
+        ? `${params.systemPrompt}\n\n${params.instructions}`
+        : params.instructions;
+        
       const assistant = await this.client.beta.assistants.create({
         name: params.name,
         description: params.description,
-        instructions: params.instructions,
+        instructions: fullInstructions,
         model: params.model || DEFAULT_MODEL,
         tools: params.tools?.map(tool => ({ type: tool.type })) || [],
         tool_resources: params.tool_resources,
@@ -58,15 +64,22 @@ export class OpenAIService {
     name?: string;
     description?: string;
     instructions?: string;
+    systemPrompt?: string;
     model?: string;
     tools?: Array<{ type: "code_interpreter" | "file_search" }>;
     tool_resources?: any;
   }) {
     try {
+      // Combine system prompt with instructions if both provided
+      let fullInstructions = params.instructions;
+      if (params.systemPrompt && params.instructions) {
+        fullInstructions = `${params.systemPrompt}\n\n${params.instructions}`;
+      }
+      
       const updateParams: any = {
         name: params.name,
         description: params.description,
-        instructions: params.instructions,
+        instructions: fullInstructions,
         model: params.model,
         tools: params.tools?.map(tool => ({ type: tool.type })) || [],
       };

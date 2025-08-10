@@ -8,7 +8,10 @@ This is a full-stack web application for creating, managing, and interacting wit
 
 Preferred communication style: Simple, everyday language.
 Primary language: Russian (Русский язык)
-Assistant Configuration: Always include database update algorithm in system instructions
+Assistant Configuration: 
+- Always include database update algorithm in system instructions
+- System prompts are stored separately from user-visible instructions
+- System prompts automatically execute on each assistant activation
 
 ## System Architecture
 
@@ -53,6 +56,8 @@ Assistant Configuration: Always include database update algorithm in system inst
 - **UI Layout Protection**: Implemented overflow controls and proper constraints to prevent content from going off-screen
 - **Google Docs Integration**: Automatic context loading from Google Docs when creating new conversations
 - **Instruction Templates**: Built-in algorithm templates for database updates and document checking
+- **System Prompt Separation**: System prompts stored separately from user instructions for automatic execution
+- **URL-Based Document Checking**: Support for specific Google Docs URLs in system prompts for targeted updates
 
 ## External Dependencies
 

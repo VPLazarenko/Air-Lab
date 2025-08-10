@@ -49,6 +49,7 @@ export function AssistantConfigPanel({
     name: "",
     description: "",
     instructions: "",
+    systemPrompt: "",
     model: "gpt-4o",
     temperature: 0.7,
     tools: [
@@ -58,6 +59,8 @@ export function AssistantConfigPanel({
     ],
     files: [] as Array<{ id: string; name: string; path: string }>,
   });
+  
+  const [googleDocsUrl, setGoogleDocsUrl] = useState("");
 
   const { toast } = useToast();
 
@@ -190,6 +193,7 @@ export function AssistantConfigPanel({
       name: config.name,
       description: config.description,
       instructions: config.instructions,
+      systemPrompt: config.systemPrompt,
       model: config.model,
       temperature: config.temperature,
       tools: config.tools,
@@ -374,11 +378,22 @@ export function AssistantConfigPanel({
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold">Instructions</h3>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                const defaultInstructions = `АЛГОРИТМ ДЕЙСТВИЙ ПРИ АКТИВАЦИИ:
+            <div className="flex gap-2">
+              <Input
+                value={googleDocsUrl}
+                onChange={(e) => setGoogleDocsUrl(e.target.value)}
+                placeholder="Google Docs URL для проверки"
+                className="w-64"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const docsSection = googleDocsUrl ? 
+                    `\n4. КОНКРЕТНЫЕ ДОКУМЕНТЫ ДЛЯ ПРОВЕРКИ\n   - Всегда проверять документ: ${googleDocsUrl}\n   - Извлекать и обновлять информацию из указанного источника\n   - Использовать актуальные данные из документа при ответах` 
+                    : '';
+                  
+                  const systemPromptContent = `СИСТЕМНЫЙ АЛГОРИТМ ДЕЙСТВИЙ (ВЫПОЛНЯЕТСЯ ПРИ КАЖДОЙ АКТИВАЦИИ):
 
 1. ОБНОВЛЕНИЕ БАЗЫ ДАННЫХ
    - При каждой активации проверять актуальность данных в базе знаний
@@ -393,19 +408,29 @@ export function AssistantConfigPanel({
 3. РАБОТА С ПОЛЬЗОВАТЕЛЕМ
    - Использовать обновленную информацию для ответов
    - Ссылаться на конкретные источники при необходимости
-   - Предоставлять точную и актуальную информацию
-
-${config.instructions ? '\n' + config.instructions : ''}`;
-                updateConfig('instructions', defaultInstructions);
-                toast({
-                  title: "Шаблон добавлен",
-                  description: "Алгоритм обновления базы данных добавлен в инструкции",
-                });
-              }}
-            >
-              <RefreshCw className="w-3 h-3 mr-1" />
-              Добавить алгоритм обновления
-            </Button>
+   - Предоставлять точную и актуальную информацию${docsSection}`;
+                  
+                  // Добавляем системный промпт (скрытый)
+                  updateConfig('systemPrompt', systemPromptContent);
+                  
+                  // Добавляем краткое указание в видимые инструкции
+                  const userInstructions = config.instructions ? 
+                    config.instructions + '\n\n[Системный алгоритм обновления базы данных добавлен]' :
+                    '[Системный алгоритм обновления базы данных добавлен]';
+                  updateConfig('instructions', userInstructions);
+                  
+                  toast({
+                    title: "Системный алгоритм добавлен",
+                    description: googleDocsUrl ? 
+                      "Алгоритм с проверкой конкретного документа добавлен в системные настройки" : 
+                      "Базовый алгоритм обновления добавлен в системные настройки",
+                  });
+                }}
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Добавить алгоритм
+              </Button>
+            </div>
           </div>
           <Textarea
             value={config.instructions}
