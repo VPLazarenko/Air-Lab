@@ -134,21 +134,21 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 w-full">
       <div className="flex flex-1 overflow-hidden">
-      {/* Mobile Menu Button */}
-      <Button
-        className="lg:hidden fixed top-4 left-4 z-50"
-        variant="outline"
-        size="icon"
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-      >
-        {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-      </Button>
+        {/* Mobile Menu Button */}
+        <Button
+          className="lg:hidden fixed top-4 left-4 z-50"
+          variant="outline"
+          size="icon"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+        </Button>
 
-      {/* Sidebar with mobile overlay */}
-      <div className={`
-        ${isMobileMenuOpen ? 'fixed inset-0 z-40 lg:relative' : 'hidden lg:block'}
-        lg:w-80 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden
-      `}>
+        {/* Sidebar with mobile overlay */}
+        <div className={`
+          ${isMobileMenuOpen ? 'fixed inset-0 z-40 lg:relative' : 'hidden lg:block'}
+          lg:w-80 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden
+        `}>
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
@@ -284,10 +284,10 @@ export default function Dashboard() {
             <DownloadButton />
           </div>
         </div>
-      </div>
+        </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden pt-16 lg:pt-8">
+        {/* Main Content */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden pt-16 lg:pt-8">
         <div className="p-4 lg:p-8 max-w-6xl mx-auto w-full">
           {/* Header */}
           <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -657,6 +657,7 @@ export default function Dashboard() {
             </Card>
           )}
         </div>
+        </div>
       </div>
       
       {/* Footer */}
@@ -681,7 +682,6 @@ export default function Dashboard() {
         onClose={() => setShowIntegrationModal(false)}
         integration={selectedIntegration as any}
       />
-      </div>
     </div>
   );
 }
