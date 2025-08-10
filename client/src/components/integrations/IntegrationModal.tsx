@@ -528,63 +528,21 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
                   <CardHeader>
                     <CardTitle className="text-sm">1. Создайте сообщество VK</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
+                  <CardContent>
                     <p className="text-sm text-gray-600">
-                      Перейдите на <a href="https://vk.com/groups" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline inline-flex items-center gap-1">
-                        vk.com/groups <ExternalLink className="w-3 h-3" />
-                      </a> и создайте новое сообщество
+                      Перейдите в VK, создайте сообщество и получите токен доступа в настройках API
                     </p>
-                    <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-sm">
-                      • Выберите тип: "Публичная страница" или "Группа"<br/>
-                      • Заполните название и описание<br/>
-                      • Сохраните ID группы из URL (например: club123456789)
-                    </div>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm">2. Получите токен доступа</CardTitle>
+                    <CardTitle className="text-sm">2. Настройте Callback API</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <p className="text-sm text-gray-600">В настройках сообщества:</p>
-                    <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-sm">
-                      • Перейдите в "Управление" → "Настройки" → "Работа с API"<br/>
-                      • Создайте ключ доступа с правами на сообщения<br/>
-                      • Скопируйте токен доступа
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">3. Настройте Callback API</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <p className="text-sm text-gray-600">Для получения сообщений:</p>
-                    <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-sm">
-                      • В разделе "Сообщения" включите "Сообщения сообщества"<br/>
-                      • В "Callback API" укажите URL сервера<br/>
-                      • Включите события: message_new, message_reply
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">4. Создайте OpenAI ассистента</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
+                  <CardContent>
                     <p className="text-sm text-gray-600">
-                      В <a href="https://platform.openai.com/assistants" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline inline-flex items-center gap-1">
-                        OpenAI Playground <ExternalLink className="w-3 h-3" />
-                      </a> создайте ассистента для VK сообщества
+                      В настройках сообщества включите Callback API и укажите URL для получения событий
                     </p>
-                    <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-sm">
-                      • Настройте инструкции для работы с VK<br/>
-                      • Скопируйте ID ассистента (начинается с "asst_")<br/>
-                      • Получите API ключ OpenAI для интеграции
-                    </div>
                   </CardContent>
                 </Card>
               </div>

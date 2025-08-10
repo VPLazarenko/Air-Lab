@@ -62,12 +62,12 @@ export default function Dashboard() {
   });
 
   const { data: assistants = [], refetch: refetchAssistants } = useQuery({
-    queryKey: ['/api/assistants/user', user?.id || DEMO_USER_ID],
-    queryFn: () => openaiClient.getAssistantsByUserId(user?.id || DEMO_USER_ID),
+    queryKey: ['/api/assistants/user', DEMO_USER_ID],
+    queryFn: () => openaiClient.getAssistantsByUserId(DEMO_USER_ID),
     enabled: !!user,
   });
 
-  const { data: integrations = [], isLoading: integrationsLoading } = useQuery<any[]>({
+  const { data: integrations = [], isLoading: integrationsLoading } = useQuery({
     queryKey: ["/api/integrations"],
     enabled: isAuthenticated,
   });
@@ -102,7 +102,7 @@ export default function Dashboard() {
   };
 
   const getIntegrationStatus = (type: string) => {
-    return integrations.find((integration: any) => integration.type === type.toLowerCase());
+    return integrations.find(integration => integration.type === type.toLowerCase());
   };
 
   const handleIntegrationClick = (integration: string) => {
@@ -321,7 +321,7 @@ export default function Dashboard() {
                   onClick={() => handleIntegrationClick('VK')}
                 >
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">VK Сообщества</CardTitle>
+                    <CardTitle className="text-sm font-medium">VK Бот</CardTitle>
                     <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                       <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zM18.636 15.84c.648.648 1.008 1.2 1.008 1.584 0 .744-.624 1.368-1.368 1.368h-2.328c-.48 0-.816-.192-1.056-.432-.192-.192-.36-.36-.528-.528-.528-.528-.888-.888-1.248-.888-.12 0-.216.096-.216.216v1.632c0 .384-.312.696-.696.696h-1.728c-.384 0-.696-.312-.696-.696V13.8c0-.384.312-.696.696-.696h.912c.384 0 .696.312.696.696v.624c.168-.168.36-.36.576-.576.648-.648 1.296-1.296 1.944-1.944.216-.216.432-.432.648-.648.192-.192.432-.288.696-.288h2.328c.744 0 1.368.624 1.368 1.368 0 .384-.36.936-1.008 1.584z"/>
@@ -333,7 +333,7 @@ export default function Dashboard() {
                       {vkIntegration ? 'Подключено' : 'Настроить'}
                     </div>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      Интеграция вконтакте для управления сообществами
+                      Интеграция с VKontakte для сообщений
                     </p>
                     <Badge variant={vkIntegration ? "default" : "outline"} className="mt-2">
                       {vkIntegration ? 'Настроено' : 'Не настроено'}
@@ -387,14 +387,14 @@ export default function Dashboard() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className={`text-lg font-bold ${openaiIntegration ? 'text-green-600' : 'text-purple-600'}`}>
-                      {openaiIntegration ? 'Подключено' : 'Настроить'}
+                    <div className={`text-lg font-bold ${openaiIntegration || user?.apiKey ? 'text-green-600' : 'text-purple-600'}`}>
+                      {openaiIntegration || user?.apiKey ? 'Подключено' : 'Настроить'}
                     </div>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      Подключение к OpenAI Assistants API
+                      Подключение к OpenAI Assistants ID
                     </p>
-                    <Badge variant={openaiIntegration ? "default" : "outline"} className="mt-2">
-                      {openaiIntegration ? 'Настроено' : 'Не настроено'}
+                    <Badge variant={openaiIntegration || user?.apiKey ? "default" : "outline"} className="mt-2">
+                      {openaiIntegration || user?.apiKey ? 'Настроено' : 'Не настроено'}
                     </Badge>
                   </CardContent>
                 </Card>
@@ -491,7 +491,7 @@ export default function Dashboard() {
       <IntegrationModal 
         open={showIntegrationModal}
         onClose={() => setShowIntegrationModal(false)}
-        integration={selectedIntegration as 'telegram' | 'vk' | 'whatsapp' | 'openai' | null}
+        integration={selectedIntegration}
       />
     </div>
   );

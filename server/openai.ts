@@ -29,49 +29,23 @@ export class OpenAIService {
     tool_resources?: any;
   }) {
     try {
-      // Validate and sanitize name (OpenAI requires 1-256 characters)
-      const sanitizedName = params.name.trim().slice(0, 256);
-      if (!sanitizedName) {
-        throw new Error('Assistant name cannot be empty');
-      }
-
       // Combine system prompt with instructions if provided
       const fullInstructions = params.systemPrompt 
         ? `${params.systemPrompt}\n\n${params.instructions}`
-        : params.instructions || "";
-
-      // Validate instructions length (OpenAI has limits)
-      if (fullInstructions.length > 256000) {
-        throw new Error('Instructions are too long (max 256,000 characters)');
-      }
-
-      // Prepare OpenAI params - DO NOT include systemPrompt as it's not a valid OpenAI field
-      const openaiCreateParams = {
-        name: sanitizedName,
-        description: params.description?.slice(0, 512), // Limit description length
+        : params.instructions;
+        
+      const assistant = await this.client.beta.assistants.create({
+        name: params.name,
+        description: params.description,
         instructions: fullInstructions,
         model: params.model || DEFAULT_MODEL,
         tools: params.tools?.map(tool => ({ type: tool.type })) || [],
-        ...(params.tool_resources && { tool_resources: params.tool_resources })
-      };
-
-      console.log("Final OpenAI create params:", JSON.stringify(openaiCreateParams, null, 2));
-        
-      const assistant = await this.client.beta.assistants.create(openaiCreateParams);
+        tool_resources: params.tool_resources,
+      });
 
       return assistant;
     } catch (error) {
       console.error("Error creating assistant:", error);
-      console.error("Assistant params:", JSON.stringify(params, null, 2));
-      
-      // Log more detailed error information
-      if (error instanceof Error) {
-        console.error("Error message:", error.message);
-        if ('response' in error) {
-          console.error("OpenAI response:", (error as any).response?.data);
-        }
-      }
-      
       throw new Error(`Failed to create assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -164,19 +138,13 @@ export class OpenAIService {
       // Get current assistant
       const assistant = await this.getAssistant(assistantId);
       
-      // Use the new tool_resources API for file attachments
+      // For now, just attach files directly to the assistant
+      // The new API doesn't require separate vector store management
       if (fileId) {
-        const currentFileSearch = assistant.tool_resources?.file_search;
-        const currentFileIds = currentFileSearch?.vector_store_ids || [];
-        
-        // Update assistant with the file using tool_resources
+        // Update assistant with the file directly
         await this.client.beta.assistants.update(assistantId, {
           tools: [{ type: 'file_search' }],
-          tool_resources: {
-            file_search: {
-              vector_store_ids: [...currentFileIds]
-            }
-          }
+          file_ids: [...(assistant.file_ids || []), fileId]
         });
         console.log(`Added file ${fileId} to assistant ${assistantId}`);
       }
@@ -192,16 +160,15 @@ export class OpenAIService {
     try {
       const assistant = await this.getAssistant(assistantId);
       
-      // Return files from tool_resources
-      const fileSearchResources = assistant.tool_resources?.file_search;
-      if (!fileSearchResources || !fileSearchResources.vector_store_ids?.length) {
+      // Return files directly from assistant
+      if (!assistant.file_ids || assistant.file_ids.length === 0) {
         return [];
       }
       
-      // Return vector store IDs as file objects
-      return fileSearchResources.vector_store_ids.map((vectorStoreId: string) => ({ 
-        file_id: vectorStoreId, 
-        id: vectorStoreId,
+      // Return file IDs as file objects
+      return assistant.file_ids.map((fileId: string) => ({ 
+        file_id: fileId, 
+        id: fileId,
         status: 'completed' 
       }));
     } catch (error) {
