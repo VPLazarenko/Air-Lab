@@ -12,6 +12,11 @@ Assistant Configuration:
 - Always include database update algorithm in system instructions
 - System prompts are stored separately from user-visible instructions
 - System prompts automatically execute on each assistant activation
+Platform Branding:
+- Header title: "Air Lab. AI Assistants Laboratory by Initiology AI Systems Lazarenko"
+- Logo integrated in Dashboard header
+- Admin credentials: Admin/admin
+- License key: 0403198422061962
 
 ## System Architecture
 
@@ -66,6 +71,8 @@ Assistant Configuration:
 - **Complete Authentication System**: Full login/registration system with user profiles and admin panel
 - **Integration Dashboard**: Platform integration cards for Telegram, VK, WhatsApp, and OpenAI API setup
 - **Role-Based Access Control**: User and admin roles with different access levels and permissions
+- **Windows Installer Package**: Complete autonomous installer with PowerShell scripts and all dependencies
+- **Platform Download System**: In-app download button with license key validation (0403198422061962)
 
 ## External Dependencies
 

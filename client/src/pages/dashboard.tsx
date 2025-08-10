@@ -12,6 +12,7 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { IntegrationModal } from "@/components/integrations/IntegrationModal";
 import { useAuth } from "@/hooks/useAuth";
 import { DownloadButton } from "@/components/download-button";
+import logoPath from "@assets/лого3_1754808405274.jpg";
 import { 
   Bot, 
   Plus, 
@@ -262,11 +263,19 @@ export default function Dashboard() {
         <div className="p-4 lg:p-8 max-w-6xl mx-auto w-full">
           {/* Header */}
           <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold mb-2">Dashboard</h1>
-              <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">
-                Manage your AI assistants and monitor their performance
-              </p>
+            <div className="flex items-center gap-4">
+              {/* Logo */}
+              <img 
+                src={logoPath} 
+                alt="Air Lab Logo" 
+                className="w-12 h-12 lg:w-16 lg:h-16 rounded-lg object-cover shadow-md"
+              />
+              <div>
+                <h1 className="text-xl lg:text-2xl font-bold mb-1">Air Lab.</h1>
+                <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">
+                  AI Assistants Laboratory by Initiology AI Systems Lazarenko
+                </p>
+              </div>
             </div>
             
             {/* Auth Button */}
