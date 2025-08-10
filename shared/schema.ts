@@ -128,6 +128,58 @@ export const chatLogs = pgTable("chat_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const plans = pgTable("plans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  price: real("price").notNull().default(0),
+  currency: text("currency").notNull().default("RUB"),
+  billingPeriod: text("billing_period").notNull().default("monthly"), // monthly, yearly, lifetime
+  features: json("features").$type<{
+    maxAssistants?: number;
+    maxConversations?: number;
+    maxFileUploads?: number;
+    maxFileSize?: number; // in MB
+    apiAccess?: boolean;
+    prioritySupport?: boolean;
+    customBranding?: boolean;
+    analytics?: boolean;
+  }>().default({}),
+  isActive: boolean("is_active").default(true),
+  isDefault: boolean("is_default").default(false),
+  sortOrder: real("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const announcements = pgTable("announcements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: text("type").notNull().default("info"), // info, success, warning, error
+  priority: text("priority").notNull().default("normal"), // low, normal, high, urgent
+  targetUsers: text("target_users").notNull().default("all"), // all, specific, role-based
+  targetUserIds: json("target_user_ids").$type<string[]>().default([]),
+  targetRoles: json("target_roles").$type<string[]>().default([]),
+  isActive: boolean("is_active").default(true),
+  isPinned: boolean("is_pinned").default(false),
+  expiresAt: timestamp("expires_at"),
+  publishedAt: timestamp("published_at"),
+  createdBy: varchar("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const userAnnouncements = pgTable("user_announcements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  announcementId: varchar("announcement_id").references(() => announcements.id).notNull(),
+  isRead: boolean("is_read").default(false),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
@@ -197,6 +249,40 @@ export const insertChatLogSchema = createInsertSchema(chatLogs).pick({
   metadata: true,
 });
 
+export const insertPlanSchema = createInsertSchema(plans).pick({
+  name: true,
+  displayName: true,
+  description: true,
+  price: true,
+  currency: true,
+  billingPeriod: true,
+  features: true,
+  isActive: true,
+  isDefault: true,
+  sortOrder: true,
+});
+
+export const insertAnnouncementSchema = createInsertSchema(announcements).pick({
+  title: true,
+  content: true,
+  type: true,
+  priority: true,
+  targetUsers: true,
+  targetUserIds: true,
+  targetRoles: true,
+  isActive: true,
+  isPinned: true,
+  expiresAt: true,
+  publishedAt: true,
+});
+
+export const insertUserAnnouncementSchema = createInsertSchema(userAnnouncements).pick({
+  userId: true,
+  announcementId: true,
+  isRead: true,
+  readAt: true,
+});
+
 // Схемы валидации для каждого типа интеграции
 export const telegramIntegrationSchema = z.object({
   type: z.literal("telegram"),
@@ -259,3 +345,9 @@ export type WhatsappIntegration = z.infer<typeof whatsappIntegrationSchema>;
 export type OpenaiIntegration = z.infer<typeof openaiIntegrationSchema>;
 export type InsertChatLog = z.infer<typeof insertChatLogSchema>;
 export type ChatLog = typeof chatLogs.$inferSelect;
+export type InsertPlan = z.infer<typeof insertPlanSchema>;
+export type Plan = typeof plans.$inferSelect;
+export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
+export type Announcement = typeof announcements.$inferSelect;
+export type InsertUserAnnouncement = z.infer<typeof insertUserAnnouncementSchema>;
+export type UserAnnouncement = typeof userAnnouncements.$inferSelect;

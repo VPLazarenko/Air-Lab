@@ -1,8 +1,8 @@
-import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type GoogleDocsDocument, type InsertGoogleDocsDocument, type Session, type InsertSession, type Integration, type InsertIntegration, type ChatLog, type InsertChatLog } from "@shared/schema";
+import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type GoogleDocsDocument, type InsertGoogleDocsDocument, type Session, type InsertSession, type Integration, type InsertIntegration, type ChatLog, type InsertChatLog, type Plan, type InsertPlan, type Announcement, type InsertAnnouncement, type UserAnnouncement, type InsertUserAnnouncement } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { users, assistants, conversations, googleDocsDocuments, sessions, integrations, chatLogs } from "@shared/schema";
-import { eq, and, gt } from "drizzle-orm";
+import { users, assistants, conversations, googleDocsDocuments, sessions, integrations, chatLogs, plans, announcements, userAnnouncements } from "@shared/schema";
+import { eq, and, gt, desc, asc } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -54,6 +54,29 @@ export interface IStorage {
   getChatLogsByConversationId(conversationId: string): Promise<ChatLog[]>;
   createChatLog(log: InsertChatLog & { userId: string }): Promise<ChatLog>;
   deleteChatLogsByConversationId(conversationId: string): Promise<boolean>;
+
+  // Plan operations
+  getPlan(id: string): Promise<Plan | undefined>;
+  getAllPlans(): Promise<Plan[]>;
+  getActivePlans(): Promise<Plan[]>;
+  createPlan(plan: InsertPlan): Promise<Plan>;
+  updatePlan(id: string, updates: Partial<Plan>): Promise<Plan | undefined>;
+  deletePlan(id: string): Promise<boolean>;
+
+  // Announcement operations
+  getAnnouncement(id: string): Promise<Announcement | undefined>;
+  getAllAnnouncements(): Promise<Announcement[]>;
+  getActiveAnnouncements(): Promise<Announcement[]>;
+  getAnnouncementsForUser(userId: string, userRole: string): Promise<Announcement[]>;
+  createAnnouncement(announcement: InsertAnnouncement & { createdBy: string }): Promise<Announcement>;
+  updateAnnouncement(id: string, updates: Partial<Announcement>): Promise<Announcement | undefined>;
+  deleteAnnouncement(id: string): Promise<boolean>;
+
+  // User Announcement operations
+  getUserAnnouncement(userId: string, announcementId: string): Promise<UserAnnouncement | undefined>;
+  getUserAnnouncements(userId: string): Promise<UserAnnouncement[]>;
+  createUserAnnouncement(userAnnouncement: InsertUserAnnouncement): Promise<UserAnnouncement>;
+  markAnnouncementAsRead(userId: string, announcementId: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -637,6 +660,147 @@ export class DatabaseStorage implements IStorage {
   async deleteChatLogsByConversationId(conversationId: string): Promise<boolean> {
     const result = await db.delete(chatLogs).where(eq(chatLogs.conversationId, conversationId));
     return result.rowCount > 0;
+  }
+
+  // Plan operations
+  async getPlan(id: string): Promise<Plan | undefined> {
+    const [plan] = await db.select().from(plans).where(eq(plans.id, id));
+    return plan || undefined;
+  }
+
+  async getAllPlans(): Promise<Plan[]> {
+    return await db.select().from(plans).orderBy(asc(plans.sortOrder));
+  }
+
+  async getActivePlans(): Promise<Plan[]> {
+    return await db.select().from(plans).where(eq(plans.isActive, true)).orderBy(asc(plans.sortOrder));
+  }
+
+  async createPlan(planData: InsertPlan): Promise<Plan> {
+    const id = randomUUID();
+    const [plan] = await db
+      .insert(plans)
+      .values({ ...planData, id })
+      .returning();
+    return plan;
+  }
+
+  async updatePlan(id: string, updates: Partial<Plan>): Promise<Plan | undefined> {
+    const [plan] = await db
+      .update(plans)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(plans.id, id))
+      .returning();
+    return plan || undefined;
+  }
+
+  async deletePlan(id: string): Promise<boolean> {
+    const result = await db.delete(plans).where(eq(plans.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Announcement operations
+  async getAnnouncement(id: string): Promise<Announcement | undefined> {
+    const [announcement] = await db.select().from(announcements).where(eq(announcements.id, id));
+    return announcement || undefined;
+  }
+
+  async getAllAnnouncements(): Promise<Announcement[]> {
+    return await db.select().from(announcements).orderBy(desc(announcements.createdAt));
+  }
+
+  async getActiveAnnouncements(): Promise<Announcement[]> {
+    return await db.select().from(announcements)
+      .where(and(
+        eq(announcements.isActive, true),
+        gt(announcements.expiresAt, new Date())
+      ))
+      .orderBy(desc(announcements.isPinned), desc(announcements.createdAt));
+  }
+
+  async getAnnouncementsForUser(userId: string, userRole: string): Promise<Announcement[]> {
+    // Get announcements targeted to this user specifically, their role, or all users
+    return await db.select().from(announcements)
+      .where(and(
+        eq(announcements.isActive, true),
+        gt(announcements.expiresAt, new Date())
+      ))
+      .orderBy(desc(announcements.isPinned), desc(announcements.createdAt));
+  }
+
+  async createAnnouncement(announcementData: InsertAnnouncement & { createdBy: string }): Promise<Announcement> {
+    const id = randomUUID();
+    const [announcement] = await db
+      .insert(announcements)
+      .values({ ...announcementData, id })
+      .returning();
+    return announcement;
+  }
+
+  async updateAnnouncement(id: string, updates: Partial<Announcement>): Promise<Announcement | undefined> {
+    const [announcement] = await db
+      .update(announcements)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(announcements.id, id))
+      .returning();
+    return announcement || undefined;
+  }
+
+  async deleteAnnouncement(id: string): Promise<boolean> {
+    // Delete related user_announcements first
+    await db.delete(userAnnouncements).where(eq(userAnnouncements.announcementId, id));
+    
+    const result = await db.delete(announcements).where(eq(announcements.id, id));
+    return result.rowCount > 0;
+  }
+
+  // User Announcement operations
+  async getUserAnnouncement(userId: string, announcementId: string): Promise<UserAnnouncement | undefined> {
+    const [userAnnouncement] = await db.select().from(userAnnouncements)
+      .where(and(
+        eq(userAnnouncements.userId, userId),
+        eq(userAnnouncements.announcementId, announcementId)
+      ));
+    return userAnnouncement || undefined;
+  }
+
+  async getUserAnnouncements(userId: string): Promise<UserAnnouncement[]> {
+    return await db.select().from(userAnnouncements).where(eq(userAnnouncements.userId, userId));
+  }
+
+  async createUserAnnouncement(userAnnouncementData: InsertUserAnnouncement): Promise<UserAnnouncement> {
+    const id = randomUUID();
+    const [userAnnouncement] = await db
+      .insert(userAnnouncements)
+      .values({ ...userAnnouncementData, id })
+      .returning();
+    return userAnnouncement;
+  }
+
+  async markAnnouncementAsRead(userId: string, announcementId: string): Promise<boolean> {
+    // Try to find existing record first
+    const existing = await this.getUserAnnouncement(userId, announcementId);
+    
+    if (existing) {
+      // Update existing record
+      const result = await db
+        .update(userAnnouncements)
+        .set({ isRead: true, readAt: new Date() })
+        .where(and(
+          eq(userAnnouncements.userId, userId),
+          eq(userAnnouncements.announcementId, announcementId)
+        ));
+      return result.rowCount > 0;
+    } else {
+      // Create new record
+      await this.createUserAnnouncement({
+        userId,
+        announcementId,
+        isRead: true,
+        readAt: new Date()
+      });
+      return true;
+    }
   }
 }
 

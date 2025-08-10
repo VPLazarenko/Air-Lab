@@ -5,7 +5,7 @@ import { openaiService } from "./openai";
 import { ObjectStorageService } from "./objectStorage";
 import { GoogleDocsService } from "./googleDocs";
 import { AuthService } from "./auth";
-import { insertUserSchema, insertAssistantSchema, insertConversationSchema, insertGoogleDocsDocumentSchema, loginSchema, registerSchema, telegramIntegrationSchema, vkIntegrationSchema, whatsappIntegrationSchema, openaiIntegrationSchema, insertChatLogSchema } from "@shared/schema";
+import { insertUserSchema, insertAssistantSchema, insertConversationSchema, insertGoogleDocsDocumentSchema, loginSchema, registerSchema, telegramIntegrationSchema, vkIntegrationSchema, whatsappIntegrationSchema, openaiIntegrationSchema, insertChatLogSchema, insertPlanSchema, insertAnnouncementSchema } from "@shared/schema";
 import { z } from "zod";
 import type { Request, Response, NextFunction } from "express";
 
@@ -165,7 +165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: assistantData.name,
         description: assistantData.description || undefined,
         instructions: assistantData.instructions || "",
-        systemPrompt: assistantData.systemPrompt,
+        systemPrompt: assistantData.systemPrompt || undefined,
         model: assistantData.model,
         tools: (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
       });
@@ -1010,6 +1010,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(log);
     } catch (error) {
       res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка создания лога чата' });
+    }
+  });
+
+  // Plans routes
+  app.get("/api/plans", async (req, res) => {
+    try {
+      const plans = await storage.getActivePlans();
+      res.json(plans);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка получения планов' });
+    }
+  });
+
+  app.get("/api/admin/plans", authenticateUser, requireAdmin, async (req, res) => {
+    try {
+      const plans = await storage.getAllPlans();
+      res.json(plans);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка получения всех планов' });
+    }
+  });
+
+  app.post("/api/admin/plans", authenticateUser, requireAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const planData = insertPlanSchema.parse(req.body);
+      const plan = await storage.createPlan(planData);
+      res.json(plan);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка создания плана' });
+    }
+  });
+
+  app.put("/api/admin/plans/:id", authenticateUser, requireAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const plan = await storage.updatePlan(id, updates);
+      if (!plan) {
+        return res.status(404).json({ error: "План не найден" });
+      }
+      res.json(plan);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка обновления плана' });
+    }
+  });
+
+  app.delete("/api/admin/plans/:id", authenticateUser, requireAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deletePlan(id);
+      if (!success) {
+        return res.status(404).json({ error: "План не найден" });
+      }
+      res.json({ message: "План удален" });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка удаления плана' });
+    }
+  });
+
+  // Announcements routes
+  app.get("/api/announcements", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const announcements = await storage.getAnnouncementsForUser(req.user.id, req.user.role);
+      res.json(announcements);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка получения объявлений' });
+    }
+  });
+
+  app.get("/api/admin/announcements", authenticateUser, requireAdmin, async (req, res) => {
+    try {
+      const announcements = await storage.getAllAnnouncements();
+      res.json(announcements);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка получения всех объявлений' });
+    }
+  });
+
+  app.post("/api/admin/announcements", authenticateUser, requireAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const announcementData = insertAnnouncementSchema.parse(req.body);
+      const announcement = await storage.createAnnouncement({
+        ...announcementData,
+        createdBy: req.user.id
+      });
+      res.json(announcement);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка создания объявления' });
+    }
+  });
+
+  app.put("/api/admin/announcements/:id", authenticateUser, requireAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const announcement = await storage.updateAnnouncement(id, updates);
+      if (!announcement) {
+        return res.status(404).json({ error: "Объявление не найдено" });
+      }
+      res.json(announcement);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка обновления объявления' });
+    }
+  });
+
+  app.delete("/api/admin/announcements/:id", authenticateUser, requireAdmin, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteAnnouncement(id);
+      if (!success) {
+        return res.status(404).json({ error: "Объявление не найдено" });
+      }
+      res.json({ message: "Объявление удалено" });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка удаления объявления' });
+    }
+  });
+
+  app.post("/api/announcements/:id/read", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.markAnnouncementAsRead(req.user.id, id);
+      res.json({ success });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка отметки объявления как прочитанного' });
     }
   });
 
