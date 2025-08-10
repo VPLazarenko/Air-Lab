@@ -38,21 +38,26 @@ export class OpenAIService {
       // Combine system prompt with instructions if provided
       const fullInstructions = params.systemPrompt 
         ? `${params.systemPrompt}\n\n${params.instructions}`
-        : params.instructions;
+        : params.instructions || "";
 
       // Validate instructions length (OpenAI has limits)
       if (fullInstructions.length > 256000) {
         throw new Error('Instructions are too long (max 256,000 characters)');
       }
-        
-      const assistant = await this.client.beta.assistants.create({
+
+      // Prepare OpenAI params - DO NOT include systemPrompt as it's not a valid OpenAI field
+      const openaiCreateParams = {
         name: sanitizedName,
         description: params.description?.slice(0, 512), // Limit description length
         instructions: fullInstructions,
         model: params.model || DEFAULT_MODEL,
         tools: params.tools?.map(tool => ({ type: tool.type })) || [],
-        tool_resources: params.tool_resources,
-      });
+        ...(params.tool_resources && { tool_resources: params.tool_resources })
+      };
+
+      console.log("Final OpenAI create params:", JSON.stringify(openaiCreateParams, null, 2));
+        
+      const assistant = await this.client.beta.assistants.create(openaiCreateParams);
 
       return assistant;
     } catch (error) {

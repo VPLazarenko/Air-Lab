@@ -66,9 +66,11 @@ export const openaiClient = {
     name: string;
     description?: string;
     instructions?: string;
+    systemPrompt?: string;
     model: string;
     temperature: number;
     tools: Array<{ type: string; enabled: boolean }>;
+    files?: Array<{ id: string; name: string; path: string }>;
   }) {
     const response = await apiRequest("POST", "/api/assistants", assistantData);
     return await response.json() as Assistant;

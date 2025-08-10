@@ -180,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tools: enabledTools,
       };
 
-      console.log("OpenAI create params:", JSON.stringify(openaiParams, null, 2));
+      console.log("OpenAI create params before processing:", JSON.stringify(openaiParams, null, 2));
 
       const openaiAssistant = await openaiService.createAssistant(openaiParams);
 
