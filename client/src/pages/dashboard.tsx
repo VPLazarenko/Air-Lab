@@ -164,7 +164,7 @@ export default function Dashboard() {
               />
               <div>
                 <h1 className="text-lg font-semibold">{t.title}</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{t.subtitle}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">AI Platform by Initiology AI Systems</p>
               </div>
             </div>
             <LanguageSwitcher />
@@ -305,7 +305,7 @@ export default function Dashboard() {
               <div>
                 <h1 className="text-xl lg:text-2xl font-bold mb-1">Air Lab.</h1>
                 <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">
-                  AI Assistants Laboratory by Initiology AI Systems Lazarenko
+                  AI Assistants Laboratory by Initiology AI Systems
                 </p>
               </div>
             </div>

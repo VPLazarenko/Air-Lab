@@ -12,7 +12,7 @@ export function ContactWidget({ className = "" }: ContactWidgetProps) {
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
 
   const openTelegram = () => {
-    window.open('https://t.me/vlazarenko', '_blank');
+    window.open('https://t.me/initiology', '_blank');
     setShowTelegramModal(false);
   };
 
