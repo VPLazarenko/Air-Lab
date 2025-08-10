@@ -15,6 +15,7 @@ const INCLUDE_PATTERNS = [
   'client/**/*',
   'server/**/*',
   'shared/**/*',
+  'attached_assets/**/*',
   'package.json',
   'package-lock.json',
   'tsconfig.json',
@@ -23,6 +24,7 @@ const INCLUDE_PATTERNS = [
   'postcss.config.js',
   'drizzle.config.ts',
   'components.json',
+  'replit.md',
   '.replit'
 ];
 
@@ -98,7 +100,7 @@ async function createProductionConfig() {
   console.log('Creating production configuration...');
   
   // Create production .env.example
-  const envExample = `# Air Lab Platform Configuration
+  const envExample = `# Air Lab Platform Configuration v2.0
 NODE_ENV=production
 PORT=5000
 
@@ -114,19 +116,30 @@ PGPASSWORD=password
 SESSION_SECRET=will-be-generated-during-installation
 
 # Admin credentials
-ADMIN_USERNAME=Admin
+ADMIN_USERNAME=admin
 ADMIN_PASSWORD=admin
 
 # License
 LICENSE_KEY=0403198422061962
 
 # Application
-APP_NAME=Air Lab AI Assistant Platform
+APP_NAME=Air Lab. Assistant Builder
+APP_SUBTITLE=AI Platform by Initiology AI Systems
 REPLIT_DOMAINS=localhost
 
 # Storage paths (will be configured during installation)
 PUBLIC_OBJECT_SEARCH_PATHS=
 PRIVATE_OBJECT_DIR=
+
+# Features
+ENABLE_MULTI_LANGUAGE=true
+ENABLE_PDF_EXPORT=true
+ENABLE_CHAT_LOGGING=true
+ENABLE_CONTACT_WIDGETS=true
+ENABLE_FOOTER_LINKS=true
+
+# Copyright year
+COPYRIGHT_YEAR=2025
 `;
   
   fs.writeFileSync(path.join(BUILD_DIR, '.env.example'), envExample);
