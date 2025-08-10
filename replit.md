@@ -14,10 +14,14 @@ Assistant Configuration:
 - System prompts automatically execute on each assistant activation
 Platform Branding:
 - Header title: "Air Lab. Assistant Builder"
-- Subtitle: "AI Platform by Initiology"
+- Subtitle: "AI Platform by Initiology AI Systems"
 - Custom brain logo integrated in Dashboard header (logo.jpg)
-- Admin credentials: Admin/admin
+- Admin credentials: admin/admin
 - License key: 0403198422061962
+Cross-Platform Deployment:
+- Windows installer with PowerShell automation and service integration
+- Mac OS installer with shell scripts and Homebrew package management
+- Unified download interface with platform-specific dialogs and license validation
 
 ## System Architecture
 
@@ -73,7 +77,8 @@ Platform Branding:
 - **Integration Dashboard**: Platform integration cards for Telegram, VK, WhatsApp, and OpenAI API setup
 - **Role-Based Access Control**: User and admin roles with different access levels and permissions
 - **Windows Installer Package**: Complete autonomous installer with PowerShell scripts and all dependencies
-- **Platform Download System**: In-app download button with license key validation (0403198422061962)
+- **Mac OS Installer Package**: Complete autonomous installer with shell scripts, Homebrew integration, and app bundle structure
+- **Cross-Platform Download System**: In-app download buttons for both Windows and Mac OS with license key validation (0403198422061962)
 - **User-Specific Assistant Management**: Fixed assistant display to show only authenticated user's assistants with proper access control
 - **Chat PDF Export**: Added PDF export functionality in playground with formatted chat history, timestamps, and proper styling
 
