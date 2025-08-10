@@ -27,8 +27,13 @@ export function LoginForm({ onSwitchToRegister, onClose }: LoginFormProps) {
     },
   });
 
-  const onSubmit = (data: LoginData) => {
-    login(data);
+  const onSubmit = async (data: LoginData) => {
+    try {
+      await login(data);
+      // При успешном входе форма закроется автоматически через useEffect в AuthModal
+    } catch (error) {
+      // Ошибка уже обработана в useAuth
+    }
   };
 
   return (

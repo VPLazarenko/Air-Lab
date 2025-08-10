@@ -46,8 +46,8 @@ export function useAuth() {
     },
   });
 
-  const login = (data: LoginData) => loginMutation.mutate(data);
-  const register = (data: RegisterData) => registerMutation.mutate(data);
+  const login = (data: LoginData) => loginMutation.mutateAsync(data);
+  const register = (data: RegisterData) => registerMutation.mutateAsync(data);
   const logout = () => logoutMutation.mutate();
 
   const isAuthenticated = !!user && !!authAPI.getToken();

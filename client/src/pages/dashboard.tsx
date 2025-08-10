@@ -183,8 +183,12 @@ export default function Dashboard() {
                 <UserIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
               </div>
               <div>
-                <p className="text-sm font-medium">{user?.username || "Demo User"}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email || "demo@example.com"}</p>
+                <p className="text-sm font-medium">
+                  {authUser?.username || user?.username || "Demo User"}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {authUser?.email || user?.email || "demo@example.com"}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-1">

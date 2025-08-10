@@ -30,8 +30,13 @@ export function RegisterForm({ onSwitchToLogin, onClose }: RegisterFormProps) {
     },
   });
 
-  const onSubmit = (data: RegisterData) => {
-    register(data);
+  const onSubmit = async (data: RegisterData) => {
+    try {
+      await register(data);
+      // При успешной регистрации форма закроется автоматически через useEffect в AuthModal
+    } catch (error) {
+      // Ошибка уже обработана в useAuth
+    }
   };
 
   return (
