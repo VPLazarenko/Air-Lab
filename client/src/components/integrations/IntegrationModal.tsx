@@ -33,7 +33,8 @@ const telegramSchema = z.object({
 const vkSchema = z.object({
   accessToken: z.string().min(1, "Введите токен доступа"),
   groupId: z.string().min(1, "Введите ID группы"),
-  confirmationToken: z.string().min(1, "Введите токен подтверждения"),
+  assistantId: z.string().min(1, "Введите ID ассистента"),
+  openaiApiKey: z.string().min(1, "Введите OpenAI API Key"),
 });
 
 const whatsappSchema = z.object({
@@ -67,7 +68,7 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
 
   const vkForm = useForm<VkFormData>({
     resolver: zodResolver(vkSchema),
-    defaultValues: { accessToken: "", groupId: "", confirmationToken: "" },
+    defaultValues: { accessToken: "", groupId: "", assistantId: "", openaiApiKey: "" },
   });
 
   const whatsappForm = useForm<WhatsappFormData>({
@@ -120,7 +121,8 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
           config: {
             accessToken: data.accessToken,
             groupId: data.groupId,
-            confirmationToken: data.confirmationToken,
+            assistantId: data.assistantId,
+            openaiApiKey: data.openaiApiKey,
           },
         }),
         headers: {
@@ -340,14 +342,27 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmationToken">Токен подтверждения</Label>
+                  <Label htmlFor="assistantId">ID ассистента</Label>
                   <Input
-                    id="confirmationToken"
-                    placeholder="confirmation_token"
-                    {...vkForm.register("confirmationToken")}
+                    id="assistantId"
+                    placeholder="asst_..."
+                    {...vkForm.register("assistantId")}
                   />
-                  {vkForm.formState.errors.confirmationToken && (
-                    <p className="text-sm text-red-500">{vkForm.formState.errors.confirmationToken.message}</p>
+                  {vkForm.formState.errors.assistantId && (
+                    <p className="text-sm text-red-500">{vkForm.formState.errors.assistantId.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="openaiApiKey">OpenAI API Key</Label>
+                  <Input
+                    id="openaiApiKey"
+                    type="password"
+                    placeholder="sk-..."
+                    {...vkForm.register("openaiApiKey")}
+                  />
+                  {vkForm.formState.errors.openaiApiKey && (
+                    <p className="text-sm text-red-500">{vkForm.formState.errors.openaiApiKey.message}</p>
                   )}
                 </div>
 
