@@ -8,6 +8,8 @@ import { useQuery } from "@tanstack/react-query";
 import { openaiClient } from "@/lib/openai-client";
 import type { Assistant, User } from "@/lib/openai-client";
 import { SettingsModal } from "@/components/settings-modal";
+import { AuthModal } from "@/components/auth/AuthModal";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Bot, 
   Plus, 
@@ -19,7 +21,10 @@ import {
   BarChart3,
   Moon,
   Sun,
-  User as UserIcon
+  User as UserIcon,
+  LogIn,
+  LogOut,
+  Crown
 } from "lucide-react";
 
 const DEMO_USER_ID = "84ac8242-6c19-42a0-825b-caa01572e5e6";
@@ -33,6 +38,8 @@ export default function Dashboard() {
     return false;
   });
   const [showSettings, setShowSettings] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const { user: authUser, isAuthenticated, logout } = useAuth();
 
   // Initialize demo user
   const { data: user } = useQuery({
@@ -206,11 +213,46 @@ export default function Dashboard() {
       <div className="flex-1 p-8 overflow-y-auto min-w-0">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Manage your AI assistants and monitor their performance
-            </p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                Manage your AI assistants and monitor their performance
+              </p>
+            </div>
+            
+            {/* Auth Button */}
+            <div className="flex items-center space-x-4">
+              {isAuthenticated && authUser ? (
+                <div className="flex items-center space-x-4">
+                  <Link href="/profile">
+                    <Button variant="outline" className="gap-2">
+                      <UserIcon className="w-4 h-4" />
+                      {authUser.username}
+                    </Button>
+                  </Link>
+                  
+                  {authUser.role === 'admin' && (
+                    <Link href="/admin">
+                      <Button variant="outline" className="gap-2 text-red-600 border-red-200 hover:bg-red-50">
+                        <Crown className="w-4 h-4" />
+                        Админ-панель
+                      </Button>
+                    </Link>
+                  )}
+                  
+                  <Button variant="ghost" onClick={logout} className="gap-2">
+                    <LogOut className="w-4 h-4" />
+                    Выйти
+                  </Button>
+                </div>
+              ) : (
+                <Button onClick={() => setShowAuthModal(true)} className="gap-2">
+                  <LogIn className="w-4 h-4" />
+                  Войти
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Stats Cards */}
@@ -324,6 +366,12 @@ export default function Dashboard() {
         isOpen={showSettings} 
         onClose={() => setShowSettings(false)} 
         user={user}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal 
+        open={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
       />
     </div>
   );

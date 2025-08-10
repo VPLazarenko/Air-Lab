@@ -4,11 +4,114 @@ import { storage } from "./storage";
 import { openaiService } from "./openai";
 import { ObjectStorageService } from "./objectStorage";
 import { GoogleDocsService } from "./googleDocs";
-import { insertUserSchema, insertAssistantSchema, insertConversationSchema, insertGoogleDocsDocumentSchema } from "@shared/schema";
+import { AuthService } from "./auth";
+import { insertUserSchema, insertAssistantSchema, insertConversationSchema, insertGoogleDocsDocumentSchema, loginSchema, registerSchema } from "@shared/schema";
 import { z } from "zod";
+import type { Request, Response, NextFunction } from "express";
+
+// Authentication middleware
+interface AuthenticatedRequest extends Request {
+  user?: any;
+}
+
+const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Токен авторизации не предоставлен' });
+  }
+
+  try {
+    const user = await AuthService.authenticate(token);
+    if (!user) {
+      return res.status(401).json({ error: 'Недействительный токен' });
+    }
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Ошибка авторизации' });
+  }
+};
+
+const requireAdmin = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Требуются права администратора' });
+  }
+  next();
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // User routes
+  // Authentication routes
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const data = registerSchema.parse(req.body);
+      const result = await AuthService.register(data);
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка регистрации' });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const data = loginSchema.parse(req.body);
+      const result = await AuthService.login(data);
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка входа' });
+    }
+  });
+
+  app.post("/api/auth/logout", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (token) {
+        await AuthService.logout(token);
+      }
+      res.json({ message: 'Выход выполнен успешно' });
+    } catch (error) {
+      res.status(500).json({ error: 'Ошибка при выходе' });
+    }
+  });
+
+  app.get("/api/auth/me", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    res.json(req.user);
+  });
+
+  // Admin routes
+  app.get("/api/admin/users", authenticateUser, requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Remove passwords from response
+      const usersWithoutPasswords = users.map(({ password, ...user }) => user);
+      res.json(usersWithoutPasswords);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка получения пользователей' });
+    }
+  });
+
+  app.put("/api/admin/users/:id", authenticateUser, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      // Don't allow password updates through this endpoint
+      delete updates.password;
+      
+      const user = await storage.updateUser(id, updates);
+      if (!user) {
+        return res.status(404).json({ error: "Пользователь не найден" });
+      }
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка обновления пользователя' });
+    }
+  });
+
+  // User routes (protected)
   app.post("/api/users", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
@@ -44,12 +147,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Assistant routes
-  app.post("/api/assistants", async (req, res) => {
+  // Assistant routes (protected)
+  app.post("/api/assistants", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const assistantData = insertAssistantSchema.extend({
-        userId: z.string()
-      }).parse(req.body);
+      const assistantData = insertAssistantSchema.parse(req.body);
 
       // Use OpenAI API key from environment
       const apiKey = process.env.OPENAI_API_KEY;
@@ -69,9 +170,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tools: (assistantData.tools || []).filter((t: any) => t.enabled && (t.type === "code_interpreter" || t.type === "file_search")).map((t: any) => ({ type: t.type as "code_interpreter" | "file_search" })),
       });
 
-      // Save to local storage with OpenAI ID
+      // Save to local storage with OpenAI ID and current user ID
       const assistant = await storage.createAssistant({
         ...assistantData,
+        userId: req.user.id,
         openaiAssistantId: openaiAssistant.id,
       });
 
@@ -82,20 +184,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/assistants/user/:userId", async (req, res) => {
+  app.get("/api/assistants/user/:userId", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
-      const assistants = await storage.getAssistantsByUserId(req.params.userId);
+      // Users can only see their own assistants, admins can see any
+      const userId = req.params.userId;
+      if (req.user.role !== 'admin' && req.user.id !== userId) {
+        return res.status(403).json({ error: 'Доступ запрещен' });
+      }
+      
+      const assistants = await storage.getAssistantsByUserId(userId);
       res.json(assistants);
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
-  app.get("/api/assistants/:id", async (req, res) => {
+  app.get("/api/assistants/my", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const assistants = await storage.getAssistantsByUserId(req.user.id);
+      res.json(assistants);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  });
+
+  app.get("/api/assistants/:id", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       const assistant = await storage.getAssistant(req.params.id);
       if (!assistant) {
-        return res.status(404).json({ error: "Assistant not found" });
+        return res.status(404).json({ error: "Ассистент не найден" });
+      }
+      
+      // Check if user has access to this assistant
+      if (req.user.role !== 'admin' && assistant.userId !== req.user.id) {
+        return res.status(403).json({ error: 'Доступ запрещен' });
       }
       
       // Sync files from OpenAI if assistant exists there

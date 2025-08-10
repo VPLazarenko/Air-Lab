@@ -1,15 +1,23 @@
-import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type GoogleDocsDocument, type InsertGoogleDocsDocument } from "@shared/schema";
+import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type GoogleDocsDocument, type InsertGoogleDocsDocument, type Session, type InsertSession } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { users, assistants, conversations, googleDocsDocuments } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { users, assistants, conversations, googleDocsDocuments, sessions } from "@shared/schema";
+import { eq, and, gt } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
+
+  // Session operations
+  createSession(session: InsertSession & { userId: string }): Promise<Session>;
+  getSessionByToken(token: string): Promise<Session | undefined>;
+  deleteSession(token: string): Promise<boolean>;
+  deleteExpiredSessions(): Promise<void>;
 
   // Assistant operations
   getAssistant(id: string): Promise<Assistant | undefined>;
@@ -40,12 +48,14 @@ export class MemStorage implements IStorage {
   private assistants: Map<string, Assistant>;
   private conversations: Map<string, Conversation>;
   private googleDocsDocuments: Map<string, GoogleDocsDocument>;
+  private sessions: Map<string, Session>;
 
   constructor() {
     this.users = new Map();
     this.assistants = new Map();
     this.conversations = new Map();
     this.googleDocsDocuments = new Map();
+    this.sessions = new Map();
   }
 
   // User operations
@@ -57,13 +67,21 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(user => user.email === email);
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.username === username);
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
     const user: User = {
       ...insertUser,
       id,
       apiKey: null,
+      role: "user",
+      isActive: true,
+      plan: "free",
       createdAt: new Date(),
+      updatedAt: new Date(),
       settings: insertUser.settings as { defaultModel?: string; autoSave?: boolean; darkMode?: boolean; } || {}
     };
     this.users.set(id, user);
@@ -77,6 +95,46 @@ export class MemStorage implements IStorage {
     const updatedUser = { ...user, ...updates };
     this.users.set(id, updatedUser);
     return updatedUser;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  // Session operations
+  async createSession(sessionData: InsertSession & { userId: string }): Promise<Session> {
+    const id = randomUUID();
+    const session: Session = {
+      id,
+      userId: sessionData.userId,
+      token: sessionData.token,
+      expiresAt: sessionData.expiresAt,
+      createdAt: new Date()
+    };
+    this.sessions.set(sessionData.token, session);
+    return session;
+  }
+
+  async getSessionByToken(token: string): Promise<Session | undefined> {
+    const session = this.sessions.get(token);
+    if (!session || session.expiresAt < new Date()) {
+      if (session) this.sessions.delete(token);
+      return undefined;
+    }
+    return session;
+  }
+
+  async deleteSession(token: string): Promise<boolean> {
+    return this.sessions.delete(token);
+  }
+
+  async deleteExpiredSessions(): Promise<void> {
+    const now = new Date();
+    for (const [token, session] of this.sessions) {
+      if (session.expiresAt < now) {
+        this.sessions.delete(token);
+      }
+    }
   }
 
   // Assistant operations
@@ -229,6 +287,11 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
   async createUser(userData: InsertUser): Promise<User> {
     const id = randomUUID();
     const [user] = await db
@@ -245,6 +308,40 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return user || undefined;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  // Session operations
+  async createSession(sessionData: InsertSession & { userId: string }): Promise<Session> {
+    const id = randomUUID();
+    const [session] = await db
+      .insert(sessions)
+      .values({ ...sessionData, id })
+      .returning();
+    return session;
+  }
+
+  async getSessionByToken(token: string): Promise<Session | undefined> {
+    // Clean up expired sessions first
+    await this.deleteExpiredSessions();
+    
+    const [session] = await db
+      .select()
+      .from(sessions)
+      .where(and(eq(sessions.token, token), gt(sessions.expiresAt, new Date())));
+    return session || undefined;
+  }
+
+  async deleteSession(token: string): Promise<boolean> {
+    const result = await db.delete(sessions).where(eq(sessions.token, token));
+    return result.rowCount > 0;
+  }
+
+  async deleteExpiredSessions(): Promise<void> {
+    await db.delete(sessions).where(gt(new Date(), sessions.expiresAt));
   }
 
   // Assistant operations

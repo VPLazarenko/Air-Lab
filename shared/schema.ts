@@ -7,13 +7,18 @@ export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
+  password: text("password").notNull(),
   apiKey: text("api_key"),
+  role: text("role").notNull().default("user"), // user, admin
+  isActive: boolean("is_active").default(true),
+  plan: text("plan").default("free"), // free, pro, enterprise
   settings: json("settings").$type<{
     defaultModel?: string;
     autoSave?: boolean;
     darkMode?: boolean;
   }>().default({}),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const assistants = pgTable("assistants", {
@@ -63,10 +68,34 @@ export const googleDocsDocuments = pgTable("google_docs_documents", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const sessions = pgTable("sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  token: text("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
+  password: true,
   settings: true,
+});
+
+export const loginSchema = z.object({
+  email: z.string().email("Неверный формат email"),
+  password: z.string().min(6, "Пароль должен содержать минимум 6 символов"),
+});
+
+export const registerSchema = z.object({
+  username: z.string().min(2, "Имя пользователя должно содержать минимум 2 символа"),
+  email: z.string().email("Неверный формат email"),
+  password: z.string().min(6, "Пароль должен содержать минимум 6 символов"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Пароли не совпадают",
+  path: ["confirmPassword"],
 });
 
 export const insertAssistantSchema = createInsertSchema(assistants).pick({
@@ -93,11 +122,20 @@ export const insertGoogleDocsDocumentSchema = createInsertSchema(googleDocsDocum
   status: true,
 });
 
+export const insertSessionSchema = createInsertSchema(sessions).pick({
+  token: true,
+  expiresAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type LoginData = z.infer<typeof loginSchema>;
+export type RegisterData = z.infer<typeof registerSchema>;
 export type InsertAssistant = z.infer<typeof insertAssistantSchema>;
 export type Assistant = typeof assistants.$inferSelect;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
 export type Conversation = typeof conversations.$inferSelect;
 export type InsertGoogleDocsDocument = z.infer<typeof insertGoogleDocsDocumentSchema>;
 export type GoogleDocsDocument = typeof googleDocsDocuments.$inferSelect;
+export type InsertSession = z.infer<typeof insertSessionSchema>;
+export type Session = typeof sessions.$inferSelect;
