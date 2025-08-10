@@ -65,7 +65,7 @@ export const openaiClient = {
 
   // Assistant operations
   async createAssistant(assistantData: {
-    userId: string;
+    userId?: string;
     name: string;
     description?: string;
     instructions?: string;
@@ -75,9 +75,11 @@ export const openaiClient = {
     tools: Array<{ type: string; enabled: boolean }>;
     files?: Array<{ id: string; name: string; path: string }>;
   }) {
+    // Remove userId from the payload as it's handled by the server from session
+    const { userId, ...dataWithoutUserId } = assistantData;
     return await apiRequest("/api/assistants", {
       method: "POST",
-      body: JSON.stringify(assistantData)
+      body: JSON.stringify(dataWithoutUserId)
     }) as Assistant;
   },
 

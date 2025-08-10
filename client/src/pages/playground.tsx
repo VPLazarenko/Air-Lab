@@ -291,10 +291,12 @@ export default function Playground({}: PlaygroundProps) {
             <div className="w-96 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 overflow-hidden">
               <AssistantConfigPanel
                 assistant={assistant}
+                assistantId={assistantId}
+                userId={user?.id!}
                 onSave={handleAssistantSave}
                 onAssistantCreated={(newAssistant) => {
-                  // Handle new assistant creation
-                  queryClient.invalidateQueries({ queryKey: ['/api/assistants'] });
+                  // Navigate to the new assistant's page after creation
+                  window.location.href = `/playground/${newAssistant.id}`;
                 }}
               />
             </div>
