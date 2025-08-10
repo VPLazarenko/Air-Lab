@@ -46,18 +46,21 @@ export interface Conversation {
 export const openaiClient = {
   // User operations
   async createUser(userData: { username: string; email: string; settings?: any }) {
-    const response = await apiRequest("POST", "/api/users", userData);
-    return await response.json() as User;
+    return await apiRequest("/api/users", {
+      method: "POST",
+      body: JSON.stringify(userData)
+    });
   },
 
   async getUser(userId: string) {
-    const response = await apiRequest("GET", `/api/users/${userId}`);
-    return await response.json() as User;
+    return await apiRequest(`/api/users/${userId}`);
   },
 
   async updateUser(userId: string, updates: Partial<User>) {
-    const response = await apiRequest("PUT", `/api/users/${userId}`, updates);
-    return await response.json() as User;
+    return await apiRequest(`/api/users/${userId}`, {
+      method: "PUT",
+      body: JSON.stringify(updates)
+    });
   },
 
   // Assistant operations
@@ -70,32 +73,35 @@ export const openaiClient = {
     temperature: number;
     tools: Array<{ type: string; enabled: boolean }>;
   }) {
-    const response = await apiRequest("POST", "/api/assistants", assistantData);
-    return await response.json() as Assistant;
+    return await apiRequest("/api/assistants", {
+      method: "POST",
+      body: JSON.stringify(assistantData)
+    });
   },
 
   async getAssistantsByUserId(userId: string) {
-    const response = await apiRequest("GET", `/api/assistants/user/${userId}`);
-    return await response.json() as Assistant[];
+    return await apiRequest(`/api/assistants/user/${userId}`);
   },
 
   async getAssistant(assistantId: string) {
-    const response = await apiRequest("GET", `/api/assistants/${assistantId}`);
-    return await response.json() as Assistant;
+    return await apiRequest(`/api/assistants/${assistantId}`);
   },
 
   async updateAssistant(assistantId: string, updates: Partial<Assistant>) {
-    const response = await apiRequest("PUT", `/api/assistants/${assistantId}`, updates);
-    return await response.json() as Assistant;
+    return await apiRequest(`/api/assistants/${assistantId}`, {
+      method: "PUT",
+      body: JSON.stringify(updates)
+    });
   },
 
   async deleteAssistant(assistantId: string) {
-    const response = await apiRequest("DELETE", `/api/assistants/${assistantId}`);
-    return await response.json() as { success: boolean };
+    return await apiRequest(`/api/assistants/${assistantId}`, {
+      method: "DELETE"
+    });
   },
 
   async exportAssistant(assistantId: string) {
-    const response = await apiRequest("GET", `/api/assistants/${assistantId}/export`);
+    const response = await fetch(`/api/assistants/${assistantId}/export`);
     return await response.blob();
   },
 
@@ -105,52 +111,55 @@ export const openaiClient = {
     assistantId: string;
     title?: string;
   }) {
-    const response = await apiRequest("POST", "/api/conversations", conversationData);
-    return await response.json() as Conversation;
+    return await apiRequest("/api/conversations", {
+      method: "POST",
+      body: JSON.stringify(conversationData)
+    });
   },
 
   async getConversation(conversationId: string) {
-    const response = await apiRequest("GET", `/api/conversations/${conversationId}`);
-    return await response.json() as Conversation;
+    return await apiRequest(`/api/conversations/${conversationId}`);
   },
 
   async sendMessage(conversationId: string, message: string) {
-    const response = await apiRequest("POST", `/api/conversations/${conversationId}/messages`, { message });
-    return await response.json() as {
-      userMessage: { id: string; role: "user"; content: string; timestamp: string };
-      assistantMessage: { id: string; role: "assistant"; content: string; timestamp: string };
-    };
+    return await apiRequest(`/api/conversations/${conversationId}/messages`, {
+      method: "POST",
+      body: JSON.stringify({ message })
+    });
   },
 
   async getConversationsByUserId(userId: string) {
-    const response = await apiRequest("GET", `/api/conversations/user/${userId}`);
-    return await response.json() as Conversation[];
+    return await apiRequest(`/api/conversations/user/${userId}`);
   },
 
   // File operations
   async getUploadUrl() {
-    const response = await apiRequest("POST", "/api/objects/upload");
-    return await response.json() as { uploadURL: string };
+    return await apiRequest("/api/objects/upload", {
+      method: "POST"
+    });
   },
 
   async uploadFileToAssistant(assistantId: string, fileUrl: string, fileName: string) {
-    const response = await apiRequest("POST", `/api/assistants/${assistantId}/files`, {
-      fileUrl,
-      fileName,
+    return await apiRequest(`/api/assistants/${assistantId}/files`, {
+      method: "POST",
+      body: JSON.stringify({
+        fileUrl,
+        fileName,
+      })
     });
-    return await response.json();
   },
 
   async getGoogleDriveDocuments(assistantId: string) {
-    const response = await apiRequest("GET", `/api/assistants/${assistantId}/google-drive`);
-    return await response.json();
+    return await apiRequest(`/api/assistants/${assistantId}/google-drive`);
   },
 
   async addGoogleDriveDocument(assistantId: string, documentUrl: string, userId: string) {
-    const response = await apiRequest("POST", `/api/assistants/${assistantId}/google-drive`, {
-      documentUrl,
-      userId,
+    return await apiRequest(`/api/assistants/${assistantId}/google-drive`, {
+      method: "POST",
+      body: JSON.stringify({
+        documentUrl,
+        userId,
+      })
     });
-    return await response.json();
   },
 };

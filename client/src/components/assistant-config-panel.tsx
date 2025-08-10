@@ -80,6 +80,7 @@ export function AssistantConfigPanel({
         name: assistant.name,
         description: assistant.description || "",
         instructions: assistant.instructions || "",
+        systemPrompt: assistant.systemPrompt || "",
         model: assistant.model,
         temperature: assistant.temperature,
         tools: assistant.tools.length > 0 ? assistant.tools : config.tools,
