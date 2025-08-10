@@ -44,8 +44,9 @@ export default function Dashboard() {
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const { user: authUser, isAuthenticated, logout } = useAuth();
 
-  // Get current user or demo user as fallback
-  const currentUserId = authUser?.id || DEMO_USER_ID;
+  // Always show demo user's assistants for everyone
+  // Authenticated users can also create and save their own
+  const currentUserId = DEMO_USER_ID;
   
   // Initialize user (demo or authenticated)
   const { data: user } = useQuery({
@@ -171,7 +172,12 @@ export default function Dashboard() {
             </Link>
 
             <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 mt-6">
-              {isAuthenticated ? 'Мои ассистенты' : 'Демо ассистенты'} ({assistants.length})
+              Ассистенты ({assistants.length})
+              {!isAuthenticated && (
+                <div className="text-xs font-normal text-amber-600 dark:text-amber-400 mt-1">
+                  Без сохранения изменений
+                </div>
+              )}
             </div>
             
             <div className="space-y-1">
@@ -192,8 +198,8 @@ export default function Dashboard() {
               {assistants.length === 0 && (
                 <div className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
                   <Bot className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No assistants yet</p>
-                  <p className="text-xs">Create your first assistant to get started</p>
+                  <p className="text-sm">Пока нет ассистентов</p>
+                  <p className="text-xs">Создайте первого ассистента для начала работы</p>
                 </div>
               )}
             </div>
@@ -245,12 +251,12 @@ export default function Dashboard() {
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-2">
-                {isAuthenticated ? 'Личная панель управления' : 'Demo Dashboard'}
+                {isAuthenticated ? 'Панель управления' : 'Assistant Constructor'}
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
                 {isAuthenticated 
                   ? 'Управляйте своими ИИ-ассистентами и интеграциями'
-                  : 'Попробуйте создать ассистентов в демо-режиме'
+                  : 'Создавайте и настраивайте ИИ-ассистентов'
                 }
               </p>
             </div>
