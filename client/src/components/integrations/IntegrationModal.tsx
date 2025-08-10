@@ -310,7 +310,7 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
                 </div>
 
                 <Button type="submit" className="w-full" disabled={telegramMutation.isPending}>
-                  {telegramMutation.isPending ? "Сохранение..." : "Сохранить настройки Telegram"}
+                  {telegramMutation.isPending ? "Запуск..." : "ЗАПУСТИТЬ"}
                 </Button>
               </form>
             )}
@@ -367,7 +367,7 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
                 </div>
 
                 <Button type="submit" className="w-full" disabled={vkMutation.isPending}>
-                  {vkMutation.isPending ? "Сохранение..." : "Сохранить настройки VK"}
+                  {vkMutation.isPending ? "Запуск..." : "ЗАПУСТИТЬ"}
                 </Button>
               </form>
             )}
@@ -423,7 +423,7 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
                 </div>
 
                 <Button type="submit" className="w-full" disabled={whatsappMutation.isPending}>
-                  {whatsappMutation.isPending ? "Сохранение..." : "Сохранить настройки WhatsApp"}
+                  {whatsappMutation.isPending ? "Запуск..." : "ЗАПУСТИТЬ"}
                 </Button>
               </form>
             )}
@@ -475,7 +475,7 @@ export function IntegrationModal({ open, onClose, integration }: IntegrationModa
                 </div>
 
                 <Button type="submit" className="w-full" disabled={openaiMutation.isPending}>
-                  {openaiMutation.isPending ? "Сохранение..." : "Сохранить настройки OpenAI"}
+                  {openaiMutation.isPending ? "Запуск..." : "ЗАПУСТИТЬ"}
                 </Button>
               </form>
             )}
