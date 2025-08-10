@@ -2,6 +2,7 @@
 
 # Air Lab Assistant Builder - Mac OS Installer
 # Copyright (c) 2025 Initiology AI Systems
+# Version 2.0 - Professional Edition with Contact Widgets & Multi-language Support
 
 set -e
 
