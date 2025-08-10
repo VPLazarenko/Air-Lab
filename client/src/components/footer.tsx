@@ -103,7 +103,7 @@ export function Footer() {
                 © 2025 <span className="text-white font-medium">Initiology AI Systems</span>. Все права защищены.
               </p>
               <p className="text-gray-500 text-xs mt-1">
-                Air Lab. AI Assistants Laboratory by Initiology AI Systems
+                Air Lab. AI Assistants Laboratory by Initiology AI Systems Lazarenko
               </p>
             </div>
             

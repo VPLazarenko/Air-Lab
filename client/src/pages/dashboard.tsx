@@ -84,9 +84,6 @@ export default function Dashboard() {
     enabled: !!(authUser || user),
   });
 
-  // Filter assistants - show demo assistants only for authenticated users on main page
-  const filteredAssistants = isAuthenticated ? assistants : [];
-
   const { data: integrations = [], isLoading: integrationsLoading } = useQuery({
     queryKey: ["/api/integrations"],
     enabled: isAuthenticated,
@@ -164,7 +161,7 @@ export default function Dashboard() {
               />
               <div>
                 <h1 className="text-lg font-semibold">{t.title}</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">AI Platform by Initiology AI Systems</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t.subtitle}</p>
               </div>
             </div>
             <LanguageSwitcher />
@@ -305,7 +302,7 @@ export default function Dashboard() {
               <div>
                 <h1 className="text-xl lg:text-2xl font-bold mb-1">Air Lab.</h1>
                 <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">
-                  AI Assistants Laboratory by Initiology AI Systems
+                  AI Assistants Laboratory by Initiology AI Systems Lazarenko
                 </p>
               </div>
             </div>
@@ -475,7 +472,7 @@ export default function Dashboard() {
             >
               <Bot className="w-4 h-4" />
               Ассистенты
-              <Badge variant="secondary">{filteredAssistants.length}</Badge>
+              <Badge variant="secondary">{assistants.length}</Badge>
             </Button>
             <Button
               variant={activeTab === 'logs' ? 'default' : 'ghost'}
@@ -503,7 +500,7 @@ export default function Dashboard() {
                 <CardTitle className="flex items-center gap-2">
                   <Bot className="w-5 h-5" />
                   <span>Ваши ассистенты</span>
-                  <Badge variant="secondary">{filteredAssistants.length}</Badge>
+                  <Badge variant="secondary">{assistants.length}</Badge>
                 </CardTitle>
                 <Link href="/playground">
                   <Button className="gap-2 w-full sm:w-auto">
@@ -515,35 +512,23 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              {filteredAssistants.length === 0 ? (
+              {assistants.length === 0 ? (
                 <div className="text-center py-12">
                   <Bot className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-medium mb-2">
-                    {isAuthenticated ? "Нет ассистентов" : "Войдите в систему"}
-                  </h3>
+                  <h3 className="text-lg font-medium mb-2">{t.noAssistants}</h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    {isAuthenticated ? "Создайте своего первого ИИ-ассистента" : "Для просмотра и создания ассистентов необходимо авторизоваться"}
+                    {t.noAssistants}
                   </p>
-                  {isAuthenticated ? (
-                    <Link href="/playground">
-                      <Button className="bg-emerald-600 hover:bg-emerald-700">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Создать ассистента
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button 
-                      onClick={() => setShowAuthModal(true)}
-                      className="bg-emerald-600 hover:bg-emerald-700"
-                    >
-                      <LogIn className="w-4 h-4 mr-2" />
-                      Войти
+                  <Link href="/playground">
+                    <Button className="bg-emerald-600 hover:bg-emerald-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      {t.createAssistant}
                     </Button>
-                  )}
+                  </Link>
                 </div>
               ) : (
                 <div className="space-y-4 w-full">
-                  {filteredAssistants.map((assistant: any) => (
+                  {assistants.map((assistant: any) => (
                     <div key={assistant.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                       <div className="flex items-start sm:items-center gap-4">
                         <div className={`w-10 h-10 ${getAssistantColor(assistant)} rounded-lg flex items-center justify-center flex-shrink-0`}>
