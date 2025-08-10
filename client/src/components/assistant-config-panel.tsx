@@ -379,18 +379,19 @@ export function AssistantConfigPanel({
 
         {/* Instructions */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold">Instructions</h3>
-            <div className="flex gap-2">
+          <div className="mb-3">
+            <h3 className="font-semibold mb-2">Instructions</h3>
+            <div className="flex flex-col lg:flex-row gap-2">
               <Input
                 value={googleDocsUrl}
                 onChange={(e) => setGoogleDocsUrl(e.target.value)}
                 placeholder="Google Docs URL для проверки"
-                className="w-64"
+                className="flex-1"
               />
               <Button
                 size="sm"
                 variant="outline"
+                className="w-full lg:w-auto"
                 onClick={() => {
                   const docsSection = googleDocsUrl ? 
                     `\n4. КОНКРЕТНЫЕ ДОКУМЕНТЫ ДЛЯ ПРОВЕРКИ\n   - Всегда проверять документ: ${googleDocsUrl}\n   - Извлекать и обновлять информацию из указанного источника\n   - Использовать актуальные данные из документа при ответах` 
