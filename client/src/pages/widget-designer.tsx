@@ -638,103 +638,119 @@ export default function WidgetDesigner() {
                           <MessageCircle className="w-6 h-6 text-white" />
                         </div>
                       ) : (
-                        <div className="h-full flex flex-col">
+                        <div className="h-full flex flex-col bg-white rounded-lg shadow-xl overflow-hidden">
                           {/* Header */}
                           <div
-                            className="p-4 flex items-center gap-3"
+                            className="p-4 flex items-center gap-3 text-white"
                             style={{ backgroundColor: config.primaryColor }}
                           >
                             {config.showAvatar && (
-                              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                                <MessageCircle className="w-4 h-4" style={{ color: config.primaryColor }} />
+                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: config.primaryColor }}>
+                                  {(assistant?.name || 'А').charAt(0).toUpperCase()}
+                                </div>
                               </div>
                             )}
-                            <div className="text-white">
-                              <div className="font-semibold">{assistant?.name || 'Ассистент'}</div>
-                              <div className="text-xs opacity-90">Онлайн</div>
+                            <div className="flex-1">
+                              <div className="font-semibold text-lg">{assistant?.name || 'Виртуальный Ассистент'}</div>
+                              <div className="text-sm opacity-90 flex items-center gap-1">
+                                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                                Я могу помочь вам с информационными запросами и заданиями.
+                              </div>
                             </div>
                             {previewMode === 'open' && (
-                              <div className="ml-auto">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setPreviewMode('minimized')}
-                                  className="text-white hover:bg-white/20"
-                                >
-                                  <Minimize2 className="w-4 h-4" />
-                                </Button>
-                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setPreviewMode('minimized')}
+                                className="text-white hover:bg-white/20 p-1"
+                              >
+                                <Minimize2 className="w-4 h-4" />
+                              </Button>
                             )}
                           </div>
 
                           {/* Messages */}
                           <div 
-                            className="flex-1 p-4 overflow-y-auto"
+                            className="flex-1 p-4 overflow-y-auto space-y-4"
                             style={{ backgroundColor: config.backgroundColor }}
                           >
-                            <div
-                              className="p-3 rounded-lg mb-3 max-w-[80%]"
-                              style={{
-                                backgroundColor: '#f3f4f6',
-                                color: config.textColor,
-                                fontSize: config.fontSize,
-                                borderRadius: config.borderRadius / 2,
-                                fontFamily: config.fontFamily
-                              }}
-                            >
-                              {config.welcomeMessage}
+                            {/* Assistant welcome message */}
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: config.primaryColor }}>
+                                {(assistant?.name || 'А').charAt(0).toUpperCase()}
+                              </div>
+                              <div
+                                className="flex-1 p-3 rounded-2xl rounded-tl-sm max-w-[80%]"
+                                style={{
+                                  backgroundColor: '#f8f9fa',
+                                  color: config.textColor,
+                                  fontSize: config.fontSize,
+                                  fontFamily: config.fontFamily
+                                }}
+                              >
+                                <div className="font-medium text-sm mb-1">{assistant?.name || 'Виртуальный Ассистент'}</div>
+                                <div>{config.welcomeMessage}</div>
+                              </div>
                             </div>
                             
-                            <div
-                              className="p-3 rounded-lg mb-3 max-w-[80%] ml-auto"
-                              style={{
-                                backgroundColor: config.primaryColor,
-                                color: 'white',
-                                fontSize: config.fontSize,
-                                borderRadius: config.borderRadius / 2,
-                                fontFamily: config.fontFamily
-                              }}
-                            >
-                              Привет! Как дела?
+                            {/* User message */}
+                            <div className="flex justify-end">
+                              <div
+                                className="p-3 rounded-2xl rounded-tr-sm max-w-[80%] text-white"
+                                style={{
+                                  backgroundColor: config.primaryColor,
+                                  fontSize: config.fontSize,
+                                  fontFamily: config.fontFamily
+                                }}
+                              >
+                                Здравствуйте! 👋 Добро пожаловать в цифровую помощницу! Название команды). Чем я могу вам помочь? Если у вас есть вопросы о наших продуктах, услугах или о чём-то ещё, пожалуйста, сообщите нам!
+                              </div>
                             </div>
                             
-                            <div
-                              className="p-3 rounded-lg max-w-[80%]"
-                              style={{
-                                backgroundColor: '#f3f4f6',
-                                color: config.textColor,
-                                fontSize: config.fontSize,
-                                borderRadius: config.borderRadius / 2,
-                                fontFamily: config.fontFamily
-                              }}
-                            >
-                              Отлично! Чем могу помочь?
+                            {/* Assistant response */}
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: config.primaryColor }}>
+                                {(assistant?.name || 'А').charAt(0).toUpperCase()}
+                              </div>
+                              <div
+                                className="flex-1 p-3 rounded-2xl rounded-tl-sm max-w-[80%]"
+                                style={{
+                                  backgroundColor: '#f8f9fa',
+                                  color: config.textColor,
+                                  fontSize: config.fontSize,
+                                  fontFamily: config.fontFamily
+                                }}
+                              >
+                                <div className="font-medium text-sm mb-1">{assistant?.name || 'Виртуальный Ассистент'}</div>
+                                <div>Привет! 👋 Добро пожаловать в цифровую помощницу! Чем я могу вам помочь? Если у вас есть вопросы о наших продуктах, услугах или о чём-то ещё, пожалуйста, сообщите нам!</div>
+                                <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                                  <span>👍</span>
+                                  <span>👎</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
 
-                          {/* Input */}
-                          <div className="p-4 border-t border-gray-200 flex gap-2">
-                            <input
-                              type="text"
-                              placeholder={config.placeholder}
-                              className="flex-1 p-2 border border-gray-300 rounded"
-                              style={{
-                                fontSize: config.fontSize,
-                                borderRadius: config.borderRadius / 2,
-                                fontFamily: config.fontFamily
-                              }}
-                            />
-                            <button
-                              className="px-4 py-2 text-white rounded"
-                              style={{
-                                backgroundColor: config.primaryColor,
-                                fontSize: config.fontSize,
-                                borderRadius: config.borderRadius / 2,
-                                fontFamily: config.fontFamily
-                              }}
-                            >
-                              {config.buttonText}
-                            </button>
+                          {/* Input Area */}
+                          <div className="p-4 border-t border-gray-200">
+                            <div className="flex gap-2 items-end">
+                              <div className="flex-1 relative">
+                                <input
+                                  type="text"
+                                  placeholder={config.placeholder}
+                                  className="w-full p-3 pr-12 border border-gray-300 rounded-lg resize-none"
+                                  style={{
+                                    fontSize: config.fontSize,
+                                    fontFamily: config.fontFamily
+                                  }}
+                                />
+                                <button className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1">
+                                  📎
+                                </button>
+                              </div>
+                              <div className="text-xs text-gray-400">@ автор: {assistant?.name || 'Ваш'}</div>
+                            </div>
                           </div>
                         </div>
                       )}

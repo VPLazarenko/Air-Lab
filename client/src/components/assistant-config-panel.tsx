@@ -27,8 +27,10 @@ import {
   File,
   Link,
   Globe,
-  RefreshCw
+  RefreshCw,
+  Palette
 } from "lucide-react";
+import { Link as RouterLink } from "wouter";
 
 interface AssistantConfigPanelProps {
   assistant?: Assistant;
@@ -593,6 +595,16 @@ export function AssistantConfigPanel({
                 <Download className="w-4 h-4 mr-2" />
                 Export Configuration
               </Button>
+              
+              <RouterLink href={`/widget-designer/${assistantId}`}>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Palette className="w-4 h-4 mr-2" />
+                  Дизайн виджета
+                </Button>
+              </RouterLink>
             </>
           )}
         </div>
