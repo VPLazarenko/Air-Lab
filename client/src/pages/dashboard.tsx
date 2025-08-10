@@ -25,7 +25,9 @@ import {
   User as UserIcon,
   LogIn,
   LogOut,
-  Crown
+  Crown,
+  Menu,
+  X
 } from "lucide-react";
 
 const DEMO_USER_ID = "84ac8242-6c19-42a0-825b-caa01572e5e6";
@@ -42,6 +44,7 @@ export default function Dashboard() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showIntegrationModal, setShowIntegrationModal] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user: authUser, isAuthenticated, logout } = useAuth();
 
   // Initialize demo user
@@ -117,8 +120,21 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 overflow-hidden max-w-full">
-      {/* Sidebar */}
-      <div className="w-80 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
+      {/* Mobile Menu Button */}
+      <Button
+        className="lg:hidden fixed top-4 left-4 z-50"
+        variant="outline"
+        size="icon"
+        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      >
+        {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+      </Button>
+
+      {/* Sidebar with mobile overlay */}
+      <div className={`
+        ${isMobileMenuOpen ? 'fixed inset-0 z-40 lg:relative' : 'hidden lg:block'}
+        lg:w-80 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden
+      `}>
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3 mb-4">
@@ -236,44 +252,45 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8 overflow-y-auto min-w-0">
+      <div className="flex-1 p-4 lg:p-8 overflow-y-auto min-w-0 pt-16 lg:pt-8">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <h1 className="text-2xl lg:text-3xl font-bold mb-2">Dashboard</h1>
+              <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">
                 Manage your AI assistants and monitor their performance
               </p>
             </div>
             
             {/* Auth Button */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 lg:space-x-4 flex-wrap">
               {isAuthenticated && authUser ? (
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
                   <Link href="/profile">
-                    <Button variant="outline" className="gap-2">
+                    <Button variant="outline" className="gap-2 w-full sm:w-auto">
                       <UserIcon className="w-4 h-4" />
-                      {authUser.username}
+                      <span className="truncate max-w-[100px]">{authUser.username}</span>
                     </Button>
                   </Link>
                   
                   {authUser.role === 'admin' && (
                     <Link href="/admin">
-                      <Button variant="outline" className="gap-2 text-red-600 border-red-200 hover:bg-red-50">
+                      <Button variant="outline" className="gap-2 text-red-600 border-red-200 hover:bg-red-50 w-full sm:w-auto">
                         <Crown className="w-4 h-4" />
-                        Админ-панель
+                        <span className="hidden sm:inline">Админ-панель</span>
+                        <span className="sm:hidden">Админ</span>
                       </Button>
                     </Link>
                   )}
                   
-                  <Button variant="ghost" onClick={logout} className="gap-2">
+                  <Button variant="ghost" onClick={logout} className="gap-2 w-full sm:w-auto">
                     <LogOut className="w-4 h-4" />
-                    Выйти
+                    <span className="hidden sm:inline">Выйти</span>
                   </Button>
                 </div>
               ) : (
-                <Button onClick={() => setShowAuthModal(true)} className="gap-2">
+                <Button onClick={() => setShowAuthModal(true)} className="gap-2 w-full sm:w-auto">
                   <LogIn className="w-4 h-4" />
                   Войти
                 </Button>

@@ -305,52 +305,52 @@ export default function WidgetDesigner() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6">
-          <div className="flex items-center space-x-4">
+        <div className="min-h-[4rem] bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex flex-col lg:flex-row items-start lg:items-center justify-between p-4 lg:px-6 gap-3 lg:gap-0">
+          <div className="flex items-center space-x-2 lg:space-x-4">
             <Link href={`/playground/${assistantId}`}>
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Назад к ассистенту
+              <Button variant="ghost" size="sm" className="p-2 lg:px-3">
+                <ArrowLeft className="w-4 h-4 lg:mr-2" />
+                <span className="hidden lg:inline">Назад к ассистенту</span>
               </Button>
             </Link>
             
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+            <div className="flex items-center space-x-2 lg:space-x-3">
+              <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <Palette className="w-4 h-4 text-white" />
               </div>
-              <div>
-                <h1 className="text-lg font-semibold">Дизайнер виджетов</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="hidden sm:block">
+                <h1 className="text-base lg:text-lg font-semibold">Дизайнер виджетов</h1>
+                <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px] lg:max-w-none">
                   {assistant?.name || 'Новый ассистент'}
                 </p>
               </div>
             </div>
           </div>
           
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 lg:space-x-3">
             <Link href={`/chat/${assistantId}`}>
-              <Button variant="outline" size="sm">
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Открыть чат
+              <Button variant="outline" size="sm" className="hidden sm:flex">
+                <ExternalLink className="w-4 h-4 lg:mr-2" />
+                <span className="hidden lg:inline">Открыть чат</span>
               </Button>
             </Link>
             
             <Button onClick={copyCode} variant="outline" size="sm">
-              <Copy className="w-4 h-4 mr-2" />
-              Копировать код
+              <Copy className="w-4 h-4 lg:mr-2" />
+              <span className="hidden sm:inline">Копировать код</span>
             </Button>
             
             <Button onClick={downloadCode} size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              Скачать HTML
+              <Download className="w-4 h-4 lg:mr-2" />
+              <span className="hidden sm:inline">Скачать HTML</span>
             </Button>
           </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           {/* Settings Panel */}
-          <div className="w-80 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+          <div className="w-full lg:w-80 bg-white dark:bg-slate-800 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700 overflow-y-auto max-h-[40vh] lg:max-h-full">
             <div className="p-6">
               <h2 className="text-lg font-semibold mb-4">Настройки дизайна</h2>
               

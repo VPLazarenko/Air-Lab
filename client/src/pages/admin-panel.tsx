@@ -113,13 +113,13 @@ export default function AdminPanel() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
-      <div className="container mx-auto px-6 py-8">
-        <div className="mb-8">
+      <div className="container mx-auto px-4 lg:px-6 py-6 lg:py-8">
+        <div className="mb-6 lg:mb-8">
           <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-8 h-8 text-red-600" />
-            <h1 className="text-3xl font-bold">Панель администратора</h1>
+            <Shield className="w-6 lg:w-8 h-6 lg:h-8 text-red-600" />
+            <h1 className="text-2xl lg:text-3xl font-bold">Панель администратора</h1>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">
             Управление пользователями и системными настройками
           </p>
         </div>
