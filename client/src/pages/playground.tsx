@@ -1,64 +1,52 @@
-import { useState, useEffect } from "react";
-import { useParams, useLocation } from "wouter";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
-import { openaiClient } from "@/lib/openai-client";
-import type { Assistant, Conversation } from "@/lib/openai-client";
-import { ChatInterface } from "@/components/chat-interface";
-import { AssistantConfigPanel } from "@/components/assistant-config-panel";
-import { SettingsModal } from "@/components/settings-modal";
-import { GoogleDocsIntegration } from "@/components/google-docs-integration";
-import { AuthModal } from "@/components/auth/AuthModal";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Bot, Settings, Moon, Sun, Share, ArrowLeft, Plus, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Link, useParams } from "wouter";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// import { ConversationView } from "@/components/conversation-view";
+import { AssistantConfigPanel } from "@/components/assistant-config-panel";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AuthModal } from "@/components/auth/AuthModal";
 import { useAuth } from "@/hooks/useAuth";
-import { 
-  Bot, 
-  Settings, 
-  Share, 
-  ArrowLeft,
-  Moon,
-  Sun,
-  PanelRightOpen,
-  PanelRightClose
-} from "lucide-react";
-import { Link } from "wouter";
+import { openaiClient } from "@/lib/openai-client";
 
-export default function Playground() {
-  const params = useParams();
-  const [, setLocation] = useLocation();
-  const assistantId = params.assistantId;
-  const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showConfigPanel, setShowConfigPanel] = useState(true);
-  const [showAuthModal, setShowAuthModal] = useState(false);
+interface PlaygroundProps {}
+
+export default function Playground({}: PlaygroundProps) {
+  // All hooks at the top level
+  const { assistantId } = useParams<{ assistantId?: string }>();
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [currentConversation, setCurrentConversation] = useState<any>(null);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('darkMode') === 'true' || 
-             document.documentElement.classList.contains('dark');
+      return localStorage.getItem('darkMode') === 'true';
     }
     return false;
   });
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   
-  // Use actual authentication
+  // Authentication hooks
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  // Get assistant data if editing existing
+  // Query hooks
   const { data: assistant, refetch: refetchAssistant } = useQuery({
     queryKey: ['/api/assistants', assistantId],
     queryFn: () => openaiClient.getAssistant(assistantId!),
     enabled: !!assistantId && isAuthenticated,
   });
 
-  // Get conversations for this assistant
   const { data: conversations = [] } = useQuery({
     queryKey: ['/api/conversations/user', user?.id],
     queryFn: () => openaiClient.getConversationsByUserId(user?.id!),
     enabled: !!user?.id,
   });
 
-  // Create new conversation when assistant is selected
+  // Mutation hooks
   const createConversationMutation = useMutation({
     mutationFn: (data: { assistantId: string; title?: string }) =>
       openaiClient.createConversation({
@@ -72,12 +60,10 @@ export default function Playground() {
     },
   });
 
-  // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: ({ conversationId, message }: { conversationId: string; message: string }) =>
       openaiClient.sendMessage(conversationId, message),
     onSuccess: (data, variables) => {
-      // Update conversation state immediately with new messages
       if (currentConversation && currentConversation.id === variables.conversationId) {
         const updatedConversation = {
           ...currentConversation,
@@ -86,7 +72,6 @@ export default function Playground() {
         setCurrentConversation(updatedConversation);
       }
       
-      // Invalidate queries for fresh data
       queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', user?.id] });
     },
     onError: (error) => {
@@ -98,7 +83,7 @@ export default function Playground() {
     },
   });
 
-  // Redirect to login if not authenticated
+  // Effect hooks
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       setShowAuthModal(true);
@@ -114,28 +99,34 @@ export default function Playground() {
     localStorage.setItem('darkMode', isDark.toString());
   }, [isDark]);
 
+  useEffect(() => {
+    const assistantConversation = conversations.find(c => c.assistantId === assistantId);
+    if (assistantConversation && !currentConversation) {
+      setCurrentConversation(assistantConversation);
+    }
+  }, [conversations, assistantId, currentConversation]);
+
+  // Event handlers
   const toggleDarkMode = () => {
     setIsDark(!isDark);
   };
 
   const handleSendMessage = async (message: string): Promise<void> => {
-    if (!currentConversation) {
-      if (!assistantId) {
-        toast({
-          title: "No assistant selected",
-          description: "Please select or create an assistant first",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (!isAuthenticated || !user?.id) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to send messages.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      // Create new conversation
+    if (!currentConversation && assistantId) {
       const conversation = await createConversationMutation.mutateAsync({
         assistantId,
         title: `Chat with ${assistant?.name || 'Assistant'}`,
       });
       
-      // Send message to new conversation
       await sendMessageMutation.mutateAsync({
         conversationId: conversation.id,
         message,
@@ -143,10 +134,12 @@ export default function Playground() {
       return;
     }
 
-    await sendMessageMutation.mutateAsync({
-      conversationId: currentConversation.id,
-      message,
-    });
+    if (currentConversation) {
+      await sendMessageMutation.mutateAsync({
+        conversationId: currentConversation.id,
+        message,
+      });
+    }
   };
 
   const handleAssistantSave = () => {
@@ -157,7 +150,26 @@ export default function Playground() {
     });
   };
 
-  // Show loading or auth modal for unauthenticated users
+  const handleShare = () => {
+    if (currentConversation) {
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Link copied",
+        description: "Conversation link has been copied to clipboard.",
+      });
+    }
+  };
+
+  const handleNewConversation = () => {
+    if (assistantId && user?.id) {
+      createConversationMutation.mutate({
+        assistantId,
+        title: `New Chat with ${assistant?.name || 'Assistant'}`,
+      });
+    }
+  };
+
+  // Render logic
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
@@ -190,25 +202,6 @@ export default function Playground() {
     );
   }
 
-  const handleShare = () => {
-    if (currentConversation) {
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "Link copied",
-        description: "Conversation link has been copied to clipboard.",
-      });
-    }
-  };
-
-  // Find current conversation for this assistant
-  const assistantConversation = conversations.find(c => c.assistantId === assistantId);
-
-  useEffect(() => {
-    if (assistantConversation && !currentConversation) {
-      setCurrentConversation(assistantConversation);
-    }
-  }, [assistantConversation, currentConversation]);
-
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 overflow-hidden max-w-full">
       {/* Main Content */}
@@ -222,98 +215,86 @@ export default function Playground() {
                 Back
               </Button>
             </Link>
-            
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">
-                  {assistant?.name || 'New Assistant'}
-                </h2>
-                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                  <span>Model:</span>
-                  <span className="font-medium">{assistant?.model || 'GPT-4o'}</span>
-                </div>
-              </div>
-            </div>
+            <h1 className="text-lg font-semibold">
+              {assistant?.name || 'New Assistant'}
+            </h1>
           </div>
           
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleDarkMode}
-            >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
+          <div className="flex items-center space-x-2">
+            {currentConversation && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleNewConversation}
+                  disabled={createConversationMutation.isPending}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Chat
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleShare}>
+                  <Share className="w-4 h-4 mr-2" />
+                  Share
+                </Button>
+              </>
+            )}
             
             <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShare}
-              disabled={!currentConversation}
-            >
-              <Share className="w-4 h-4 mr-2" />
-              Share
-            </Button>
-
-            <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowSettings(true)}
+              onClick={() => setShowConfigPanel(!showConfigPanel)}
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-4 h-4 mr-2" />
+              Configure
+            </Button>
+            
+            <Button variant="ghost" size="sm" onClick={toggleDarkMode}>
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
           </div>
         </div>
 
-        {/* Main Playground Area */}
-        <div className="flex-1 flex overflow-hidden relative">
+        {/* Content Area */}
+        <div className="flex-1 flex overflow-hidden">
           {/* Chat Area */}
-          <div className="flex-1 min-w-0">
-            <ChatInterface
-              conversation={currentConversation}
-              assistant={assistant}
-              onSendMessage={handleSendMessage}
-              isLoading={sendMessageMutation.isPending}
-            />
+          <div className="flex-1 flex flex-col min-w-0">
+            {currentConversation ? (
+              <div className="flex-1 flex flex-col">
+                <div className="flex-1 p-4">
+                  <p>Чат с {assistant?.name || 'Ассистентом'}</p>
+                  {/* TODO: Implement chat interface */}
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center max-w-md">
+                  <Bot className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                  <h2 className="text-xl font-semibold mb-2">
+                    Ready to Chat
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    Start a conversation with your assistant. Configure its behavior using the settings panel.
+                  </p>
+                  {assistantId && (
+                    <Button onClick={handleNewConversation} disabled={createConversationMutation.isPending}>
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Start Conversation
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Panel Toggle Button */}
-          {!showConfigPanel && (
-            <div className="absolute right-4 top-4 z-10">
-              <Button
-                onClick={() => setShowConfigPanel(true)}
-                variant="outline"
-                size="sm"
-                className="bg-white dark:bg-slate-800 border shadow-md"
-              >
-                <PanelRightOpen className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
-
-          {/* Configuration Panel */}
+          {/* Config Panel */}
           {showConfigPanel && (
-            <div className="w-96 flex-shrink-0 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-gray-700 relative">
-              <div className="absolute top-4 left-4 z-10">
-                <Button
-                  onClick={() => setShowConfigPanel(false)}
-                  variant="outline"
-                  size="sm"
-                  className="bg-white dark:bg-slate-800 border shadow-md"
-                >
-                  <PanelRightClose className="w-4 h-4" />
-                </Button>
-              </div>
+            <div className="w-96 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-800 overflow-hidden">
               <AssistantConfigPanel
                 assistant={assistant}
-                assistantId={assistantId}
-                userId={user?.id || ""}
                 onSave={handleAssistantSave}
                 onAssistantCreated={(newAssistant) => {
-                  setLocation(`/playground/${newAssistant.id}`);
+                  // Handle new assistant creation
+                  queryClient.invalidateQueries({ queryKey: ['/api/assistants'] });
                 }}
               />
             </div>
@@ -321,14 +302,6 @@ export default function Playground() {
         </div>
       </div>
 
-      {/* Settings Modal */}
-      <SettingsModal 
-        isOpen={showSettings} 
-        onClose={() => setShowSettings(false)} 
-        user={user}
-      />
-
-      {/* Auth Modal */}
       <AuthModal 
         open={showAuthModal}
         onClose={() => setShowAuthModal(false)}
