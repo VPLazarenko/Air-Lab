@@ -22,6 +22,7 @@ import {
   EyeOff
 } from "lucide-react";
 import type { User } from "@shared/schema";
+import Footer from "@/components/Footer";
 
 export default function AdminPanel() {
   const { user, isAuthenticated, isAdmin } = useAuth();
@@ -314,6 +315,7 @@ export default function AdminPanel() {
           </CardContent>
         </Card>
       </div>
+      <Footer />
     </div>
   );
 }

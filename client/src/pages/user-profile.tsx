@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User, Settings, Crown, Calendar, Bot, LogOut } from "lucide-react";
 import type { Assistant } from "@shared/schema";
+import Footer from "@/components/Footer";
 
 export default function UserProfile() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -215,6 +216,7 @@ export default function UserProfile() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

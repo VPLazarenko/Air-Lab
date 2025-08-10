@@ -26,6 +26,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { useToast } from "@/hooks/use-toast";
 import { DownloadButton } from "@/components/download-button";
 import { ChatLogs } from "@/components/chat-logs";
+import Footer from "@/components/Footer";
 import logoPath from "@assets/лого3_1754808405274.jpg";
 import { 
   Bot, 
@@ -847,6 +848,8 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      <Footer />
     </div>
   );
 }
