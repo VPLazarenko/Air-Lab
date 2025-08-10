@@ -13,6 +13,7 @@ import { IntegrationModal } from "@/components/integrations/IntegrationModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { DownloadButton } from "@/components/download-button";
+import { ChatLogs } from "@/components/chat-logs";
 import logoPath from "@assets/лого3_1754808405274.jpg";
 import { 
   Bot, 
@@ -23,6 +24,7 @@ import {
   GraduationCap, 
   PenTool, 
   BarChart3,
+  FileText,
   Moon,
   Sun,
   User as UserIcon,
@@ -49,6 +51,7 @@ export default function Dashboard() {
   const [showIntegrationModal, setShowIntegrationModal] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'assistants' | 'logs' | 'integrations'>('assistants');
   const { user: authUser, isAuthenticated, logout } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -451,9 +454,39 @@ export default function Dashboard() {
             })()}
           </div>
 
-          {/* Assistants Section */}
-          <Card className="w-full">
-            <CardHeader>
+          {/* Navigation Tabs */}
+          <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+            <Button
+              variant={activeTab === 'assistants' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('assistants')}
+              className="gap-2"
+            >
+              <Bot className="w-4 h-4" />
+              Ассистенты
+              <Badge variant="secondary">{assistants.length}</Badge>
+            </Button>
+            <Button
+              variant={activeTab === 'logs' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('logs')}
+              className="gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              Логи чатов
+            </Button>
+            <Button
+              variant={activeTab === 'integrations' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('integrations')}
+              className="gap-2"
+            >
+              <Settings className="w-4 h-4" />
+              Интеграции
+            </Button>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'assistants' && (
+            <Card className="w-full">
+              <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <CardTitle className="flex items-center gap-2">
                   <Bot className="w-5 h-5" />
@@ -520,7 +553,101 @@ export default function Dashboard() {
                 </div>
               )}
             </CardContent>
-          </Card>
+            </Card>
+          )}
+
+          {/* Chat Logs Tab */}
+          {activeTab === 'logs' && (
+            <ChatLogs userId={authUser?.id} />
+          )}
+
+          {/* Integrations Tab */}
+          {activeTab === 'integrations' && (
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Управление интеграциями
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Настройте интеграции с различными платформами для автоматизации работы ваших ассистентов.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Telegram Integration */}
+                  <div 
+                    className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    onClick={() => handleIntegrationClick('Telegram')}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium">Telegram</h3>
+                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <Badge variant={getIntegrationStatus('telegram') ? "default" : "outline"}>
+                      {getIntegrationStatus('telegram') ? 'Настроено' : 'Настроить'}
+                    </Badge>
+                  </div>
+
+                  {/* VK Integration */}
+                  <div 
+                    className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    onClick={() => handleIntegrationClick('VK')}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium">VKontakte</h3>
+                      <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zM18.636 15.84c.648.648 1.008 1.2 1.008 1.584 0 .744-.624 1.368-1.368 1.368h-2.328c-.48 0-.816-.192-1.056-.432-.192-.192-.36-.36-.528-.528-.528-.528-.888-.888-1.248-.888-.12 0-.216.096-.216.216v1.632c0 .384-.312.696-.696.696h-1.728c-.384 0-.696-.312-.696-.696V13.8c0-.384.312-.696.696-.696h.912c.384 0 .696.312.696.696v.624c.168-.168.36-.36.576-.576.648-.648 1.296-1.296 1.944-1.944.216-.216.432-.432.648-.648.192-.192.432-.288.696-.288h2.328c.744 0 1.368.624 1.368 1.368 0 .384-.36.936-1.008 1.584z"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <Badge variant={getIntegrationStatus('vk') ? "default" : "outline"}>
+                      {getIntegrationStatus('vk') ? 'Настроено' : 'Настроить'}
+                    </Badge>
+                  </div>
+
+                  {/* WhatsApp Integration */}
+                  <div 
+                    className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    onClick={() => handleIntegrationClick('WhatsApp')}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium">WhatsApp</h3>
+                      <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.425 3.488"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <Badge variant={getIntegrationStatus('whatsapp') ? "default" : "outline"}>
+                      {getIntegrationStatus('whatsapp') ? 'Настроено' : 'Настроить'}
+                    </Badge>
+                  </div>
+
+                  {/* OpenAI Integration */}
+                  <div 
+                    className="p-4 border rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    onClick={() => handleIntegrationClick('OpenAI')}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium">OpenAI API</h3>
+                      <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                        <Bot className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                    <Badge variant={getIntegrationStatus('openai') || user?.apiKey ? "default" : "outline"}>
+                      {getIntegrationStatus('openai') || user?.apiKey ? 'Настроено' : 'Настроить'}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 

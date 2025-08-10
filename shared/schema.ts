@@ -106,6 +106,28 @@ export const integrations = pgTable("integrations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const chatLogs = pgTable("chat_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  conversationId: varchar("conversation_id").references(() => conversations.id).notNull(),
+  assistantId: varchar("assistant_id").references(() => assistants.id).notNull(),
+  sessionId: text("session_id"), // Идентификатор сессии чата
+  action: text("action").notNull(), // "message_sent", "message_received", "chat_started", "chat_ended", "pdf_exported"
+  messageId: text("message_id"), // ID сообщения если действие связано с сообщением
+  messageContent: text("message_content"), // Содержимое сообщения
+  messageRole: text("message_role"), // "user" | "assistant" | "system"
+  metadata: json("metadata").$type<{
+    userAgent?: string;
+    ipAddress?: string;
+    model?: string;
+    temperature?: real;
+    tokensUsed?: number;
+    responseTime?: number;
+    error?: string;
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
@@ -162,6 +184,17 @@ export const insertIntegrationSchema = createInsertSchema(integrations).pick({
   name: true,
   isActive: true,
   config: true,
+});
+
+export const insertChatLogSchema = createInsertSchema(chatLogs).pick({
+  conversationId: true,
+  assistantId: true,
+  sessionId: true,
+  action: true,
+  messageId: true,
+  messageContent: true,
+  messageRole: true,
+  metadata: true,
 });
 
 // Схемы валидации для каждого типа интеграции
@@ -224,3 +257,5 @@ export type TelegramIntegration = z.infer<typeof telegramIntegrationSchema>;
 export type VkIntegration = z.infer<typeof vkIntegrationSchema>;
 export type WhatsappIntegration = z.infer<typeof whatsappIntegrationSchema>;
 export type OpenaiIntegration = z.infer<typeof openaiIntegrationSchema>;
+export type InsertChatLog = z.infer<typeof insertChatLogSchema>;
+export type ChatLog = typeof chatLogs.$inferSelect;

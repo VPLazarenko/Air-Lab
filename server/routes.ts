@@ -5,7 +5,7 @@ import { openaiService } from "./openai";
 import { ObjectStorageService } from "./objectStorage";
 import { GoogleDocsService } from "./googleDocs";
 import { AuthService } from "./auth";
-import { insertUserSchema, insertAssistantSchema, insertConversationSchema, insertGoogleDocsDocumentSchema, loginSchema, registerSchema, telegramIntegrationSchema, vkIntegrationSchema, whatsappIntegrationSchema, openaiIntegrationSchema } from "@shared/schema";
+import { insertUserSchema, insertAssistantSchema, insertConversationSchema, insertGoogleDocsDocumentSchema, loginSchema, registerSchema, telegramIntegrationSchema, vkIntegrationSchema, whatsappIntegrationSchema, openaiIntegrationSchema, insertChatLogSchema } from "@shared/schema";
 import { z } from "zod";
 import type { Request, Response, NextFunction } from "express";
 
@@ -486,6 +486,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedMessages = [...(conversation.messages || []), userMessage, assistantMessage];
       await storage.updateConversation(req.params.id, { messages: updatedMessages });
 
+      // Create chat logs
+      const sessionId = `session_${Date.now()}`;
+      const userAgent = req.headers['user-agent'] || '';
+      const ipAddress = req.ip || req.socket.remoteAddress || '';
+
+      try {
+        // Log user message
+        await storage.createChatLog({
+          userId: conversation.userId,
+          conversationId: req.params.id,
+          assistantId: conversation.assistantId,
+          sessionId,
+          action: 'message_sent',
+          messageId: userMessage.id,
+          messageContent: userMessage.content,
+          messageRole: 'user',
+          metadata: {
+            userAgent,
+            ipAddress,
+            model: assistant.model,
+            temperature: assistant.temperature
+          }
+        });
+
+        // Log assistant response
+        await storage.createChatLog({
+          userId: conversation.userId,
+          conversationId: req.params.id,
+          assistantId: conversation.assistantId,
+          sessionId,
+          action: 'message_received',
+          messageId: assistantMessage.id,
+          messageContent: assistantMessage.content,
+          messageRole: 'assistant',
+          metadata: {
+            userAgent,
+            ipAddress,
+            model: assistant.model,
+            temperature: assistant.temperature
+          }
+        });
+      } catch (logError) {
+        console.error("Error creating chat logs:", logError);
+        // Continue without failing the request
+      }
+
       res.json({ userMessage, assistantMessage });
     } catch (error) {
       console.error("Error sending message:", error);
@@ -910,6 +956,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Интеграция удалена" });
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка удаления интеграции' });
+    }
+  });
+
+  // Chat logs routes
+  app.get("/api/chat-logs/user/:userId", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Check if user can access these logs
+      if (req.user.role !== 'admin' && req.user.id !== userId) {
+        return res.status(403).json({ error: "Доступ запрещен" });
+      }
+      
+      const logs = await storage.getChatLogsByUserId(userId);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка получения логов чата' });
+    }
+  });
+
+  app.get("/api/chat-logs/conversation/:conversationId", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { conversationId } = req.params;
+      
+      // Check if user owns this conversation
+      const conversation = await storage.getConversation(conversationId);
+      if (!conversation) {
+        return res.status(404).json({ error: "Разговор не найден" });
+      }
+      
+      if (req.user.role !== 'admin' && req.user.id !== conversation.userId) {
+        return res.status(403).json({ error: "Доступ запрещен" });
+      }
+      
+      const logs = await storage.getChatLogsByConversationId(conversationId);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка получения логов разговора' });
+    }
+  });
+
+  app.post("/api/chat-logs", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const logData = insertChatLogSchema.extend({
+        userId: z.string()
+      }).parse({
+        ...req.body,
+        userId: req.user.id
+      });
+      
+      const log = await storage.createChatLog(logData);
+      res.json(log);
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка создания лога чата' });
     }
   });
 

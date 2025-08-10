@@ -1,7 +1,7 @@
-import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type GoogleDocsDocument, type InsertGoogleDocsDocument, type Session, type InsertSession, type Integration, type InsertIntegration } from "@shared/schema";
+import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type GoogleDocsDocument, type InsertGoogleDocsDocument, type Session, type InsertSession, type Integration, type InsertIntegration, type ChatLog, type InsertChatLog } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { users, assistants, conversations, googleDocsDocuments, sessions, integrations } from "@shared/schema";
+import { users, assistants, conversations, googleDocsDocuments, sessions, integrations, chatLogs } from "@shared/schema";
 import { eq, and, gt } from "drizzle-orm";
 
 export interface IStorage {
@@ -48,6 +48,12 @@ export interface IStorage {
   createIntegration(integration: InsertIntegration & { userId: string }): Promise<Integration>;
   updateIntegration(id: string, updates: Partial<Integration>): Promise<Integration | undefined>;
   deleteIntegration(id: string): Promise<boolean>;
+
+  // Chat Log operations
+  getChatLogsByUserId(userId: string): Promise<ChatLog[]>;
+  getChatLogsByConversationId(conversationId: string): Promise<ChatLog[]>;
+  createChatLog(log: InsertChatLog & { userId: string }): Promise<ChatLog>;
+  deleteChatLogsByConversationId(conversationId: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -322,6 +328,28 @@ export class MemStorage implements IStorage {
   async deleteIntegration(id: string): Promise<boolean> {
     return this.integrations.delete(id);
   }
+
+  // Chat Log operations (stub implementations for memory storage)
+  async getChatLogsByUserId(userId: string): Promise<ChatLog[]> {
+    return [];
+  }
+
+  async getChatLogsByConversationId(conversationId: string): Promise<ChatLog[]> {
+    return [];
+  }
+
+  async createChatLog(logData: InsertChatLog & { userId: string }): Promise<ChatLog> {
+    const id = randomUUID();
+    return {
+      ...logData,
+      id,
+      createdAt: new Date()
+    } as ChatLog;
+  }
+
+  async deleteChatLogsByConversationId(conversationId: string): Promise<boolean> {
+    return true;
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -536,6 +564,28 @@ export class DatabaseStorage implements IStorage {
 
   async deleteIntegration(id: string): Promise<boolean> {
     const result = await db.delete(integrations).where(eq(integrations.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Chat Log operations
+  async getChatLogsByUserId(userId: string): Promise<ChatLog[]> {
+    return await db.select().from(chatLogs).where(eq(chatLogs.userId, userId));
+  }
+
+  async getChatLogsByConversationId(conversationId: string): Promise<ChatLog[]> {
+    return await db.select().from(chatLogs).where(eq(chatLogs.conversationId, conversationId));
+  }
+
+  async createChatLog(logData: InsertChatLog & { userId: string }): Promise<ChatLog> {
+    const [log] = await db
+      .insert(chatLogs)
+      .values(logData)
+      .returning();
+    return log;
+  }
+
+  async deleteChatLogsByConversationId(conversationId: string): Promise<boolean> {
+    const result = await db.delete(chatLogs).where(eq(chatLogs.conversationId, conversationId));
     return result.rowCount > 0;
   }
 }
