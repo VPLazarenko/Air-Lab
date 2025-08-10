@@ -119,7 +119,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 overflow-hidden max-w-full">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 overflow-hidden w-full">
       {/* Mobile Menu Button */}
       <Button
         className="lg:hidden fixed top-4 left-4 z-50"
@@ -252,8 +252,8 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-4 lg:p-8 overflow-y-auto min-w-0 pt-16 lg:pt-8">
-        <div className="max-w-6xl mx-auto">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden pt-16 lg:pt-8">
+        <div className="p-4 lg:p-8 max-w-6xl mx-auto w-full">
           {/* Header */}
           <div className="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
@@ -299,7 +299,7 @@ export default function Dashboard() {
           </div>
 
           {/* Integration Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8 w-full">
             {(() => {
               const telegramIntegration = getIntegrationStatus('telegram');
               return (
@@ -420,18 +420,19 @@ export default function Dashboard() {
           </div>
 
           {/* Assistants Section */}
-          <Card>
+          <Card className="w-full">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <CardTitle className="flex items-center gap-2">
                   <Bot className="w-5 h-5" />
-                  Ваши ассистенты
+                  <span>Ваши ассистенты</span>
                   <Badge variant="secondary">{assistants.length}</Badge>
                 </CardTitle>
                 <Link href="/playground">
-                  <Button className="gap-2">
+                  <Button className="gap-2 w-full sm:w-auto">
                     <Plus className="w-4 h-4" />
-                    Создать ассистента
+                    <span className="hidden sm:inline">Создать ассистента</span>
+                    <span className="sm:hidden">Создать</span>
                   </Button>
                 </Link>
               </div>
@@ -452,19 +453,19 @@ export default function Dashboard() {
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 w-full">
                   {assistants.map((assistant) => (
-                    <div key={assistant.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className={`w-10 h-10 ${getAssistantColor(assistant)} rounded-lg flex items-center justify-center`}>
+                    <div key={assistant.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                      <div className="flex items-start sm:items-center gap-4">
+                        <div className={`w-10 h-10 ${getAssistantColor(assistant)} rounded-lg flex items-center justify-center flex-shrink-0`}>
                           {getAssistantIcon(assistant)}
                         </div>
-                        <div>
-                          <h3 className="font-medium">{assistant.name}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-medium truncate">{assistant.name}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                             {assistant.description || 'No description'}
                           </p>
-                          <div className="flex items-center space-x-2 mt-1">
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
                             <Badge variant="secondary" className="text-xs">
                               {assistant.model}
                             </Badge>
@@ -474,9 +475,9 @@ export default function Dashboard() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center">
                         <Link href={`/playground/${assistant.id}`}>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" className="w-full sm:w-auto">
                             <Play className="w-4 h-4 mr-1" />
                             Open
                           </Button>

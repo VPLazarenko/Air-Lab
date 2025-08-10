@@ -74,6 +74,25 @@
     position: relative;
   }
 
+  /* Prevent horizontal scroll on mobile */
+  #root {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Fix floating layout on mobile */
+  @media (max-width: 768px) {
+    .fixed, .absolute {
+      max-width: 100vw;
+    }
+    
+    * {
+      max-width: 100vw;
+    }
+  }
+
   #root {
     width: 100%;
     max-width: 100vw;
