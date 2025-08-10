@@ -9,7 +9,6 @@ import { ChatInterface } from "@/components/chat-interface";
 import { AssistantConfigPanel } from "@/components/assistant-config-panel";
 import { SettingsModal } from "@/components/settings-modal";
 import { GoogleDocsIntegration } from "@/components/google-docs-integration";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Bot, 
@@ -17,7 +16,9 @@ import {
   Share, 
   ArrowLeft,
   Moon,
-  Sun
+  Sun,
+  PanelRightOpen,
+  PanelRightClose
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -29,6 +30,7 @@ export default function Playground() {
   const assistantId = params.assistantId;
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showConfigPanel, setShowConfigPanel] = useState(true);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('darkMode') === 'true' || 
@@ -170,9 +172,9 @@ export default function Playground() {
   }, [assistantConversation, currentConversation]);
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 overflow-hidden max-w-full">
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 max-w-full">
         {/* Top Bar */}
         <div className="h-16 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6">
           <div className="flex items-center space-x-4">
@@ -229,30 +231,44 @@ export default function Playground() {
         </div>
 
         {/* Main Playground Area */}
-        <div className="flex-1 overflow-hidden">
-          <ResizablePanelGroup
-            direction="horizontal"
-            className="h-full"
-          >
-            {/* Chat Area */}
-            <ResizablePanel defaultSize={75} minSize={50}>
-              <ChatInterface
-                conversation={currentConversation}
-                assistant={assistant}
-                onSendMessage={handleSendMessage}
-                isLoading={sendMessageMutation.isPending}
-              />
-            </ResizablePanel>
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Chat Area */}
+          <div className="flex-1 min-w-0">
+            <ChatInterface
+              conversation={currentConversation}
+              assistant={assistant}
+              onSendMessage={handleSendMessage}
+              isLoading={sendMessageMutation.isPending}
+            />
+          </div>
 
-            <ResizableHandle withHandle />
+          {/* Panel Toggle Button */}
+          {!showConfigPanel && (
+            <div className="absolute right-4 top-4 z-10">
+              <Button
+                onClick={() => setShowConfigPanel(true)}
+                variant="outline"
+                size="sm"
+                className="bg-white dark:bg-slate-800 border shadow-md"
+              >
+                <PanelRightOpen className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
 
-            {/* Configuration Panel */}
-            <ResizablePanel 
-              defaultSize={25} 
-              minSize={15} 
-              maxSize={40}
-              className="bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-gray-700"
-            >
+          {/* Configuration Panel */}
+          {showConfigPanel && (
+            <div className="w-96 flex-shrink-0 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-gray-700 relative">
+              <div className="absolute top-4 left-4 z-10">
+                <Button
+                  onClick={() => setShowConfigPanel(false)}
+                  variant="outline"
+                  size="sm"
+                  className="bg-white dark:bg-slate-800 border shadow-md"
+                >
+                  <PanelRightClose className="w-4 h-4" />
+                </Button>
+              </div>
               <AssistantConfigPanel
                 assistant={assistant}
                 assistantId={assistantId}
@@ -262,8 +278,8 @@ export default function Playground() {
                   setLocation(`/playground/${newAssistant.id}`);
                 }}
               />
-            </ResizablePanel>
-          </ResizablePanelGroup>
+            </div>
+          )}
         </div>
       </div>
 
