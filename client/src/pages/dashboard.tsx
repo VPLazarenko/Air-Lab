@@ -154,7 +154,7 @@ export default function Dashboard() {
             />
             <div>
               <h1 className="text-lg font-semibold">Air Lab. Assistant Builder</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">AI Platform by Initiology</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">AI Platform by Initiology AI Systems</p>
             </div>
           </div>
           
