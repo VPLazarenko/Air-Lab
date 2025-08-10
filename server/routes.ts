@@ -105,15 +105,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             openaiService.setApiKey(apiKey);
             const openaiAssistant = await openaiService.getAssistant(assistant.openaiAssistantId);
             
-            // Get list of file IDs from OpenAI
-            const fileIds = openaiAssistant.file_ids || [];
-            console.log(`Assistant ${assistant.openaiAssistantId} has ${fileIds.length} files in OpenAI`);
+            // Get list of files from OpenAI vector stores
+            const files = await openaiService.getAssistantFiles(assistant.openaiAssistantId);
+            console.log(`Assistant ${assistant.openaiAssistantId} has ${files.length} files in OpenAI`);
             
             // Return assistant with file info
             res.json({
               ...assistant,
-              openaiFileIds: fileIds,
-              openaiFileCount: fileIds.length
+              openaiFileIds: files.map((f: any) => f.file_id || f.id),
+              openaiFileCount: files.length
             });
             return;
           } catch (syncError) {
@@ -185,14 +185,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get current assistant state from OpenAI
       const openaiAssistant = await openaiService.getAssistant(assistant.openaiAssistantId);
-      const currentFileIds = openaiAssistant.file_ids || [];
       
       // Get all Google Docs for this assistant
       const googleDocs = await storage.getGoogleDocsDocumentsByAssistantId(assistant.id);
       const completedDocs = googleDocs.filter(doc => doc.status === 'completed' && doc.content);
       
       // Upload completed docs as files to OpenAI and attach to assistant
-      const newFileIds = [...currentFileIds];
+      let uploadedCount = 0;
+      const fileIds = [];
       
       for (const doc of completedDocs) {
         if (doc.content) {
@@ -203,25 +203,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Upload file to OpenAI
             const openaiFile = await openaiService.uploadFile(buffer, fileName, 'assistants');
+            fileIds.push(openaiFile.id);
             
-            // Add to file list if not already there
-            if (!newFileIds.includes(openaiFile.id)) {
-              newFileIds.push(openaiFile.id);
-              console.log(`Uploaded and will attach file: ${fileName} (${openaiFile.id})`);
-            }
+            uploadedCount++;
+            console.log(`Uploaded file: ${fileName} (${openaiFile.id})`);
           } catch (uploadError) {
             console.error(`Failed to upload document ${doc.title}:`, uploadError);
           }
         }
       }
       
-      // Update assistant with all file IDs
-      if (newFileIds.length !== currentFileIds.length) {
-        await openaiService.updateAssistant(assistant.openaiAssistantId, {
-          file_ids: newFileIds
-        });
-        console.log(`Updated assistant ${assistant.openaiAssistantId} with ${newFileIds.length} files`);
+      // Attach all files to assistant at once
+      if (fileIds.length > 0) {
+        for (const fileId of fileIds) {
+          await openaiService.attachVectorStoreToAssistant(assistant.openaiAssistantId, fileId);
+        }
       }
+      
+      console.log(`Synced ${uploadedCount} files to assistant ${assistant.openaiAssistantId}`);
       
       res.json({
         success: true,
@@ -456,11 +455,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (assistant.openaiAssistantId) {
         try {
           const currentAssistant = await openaiService.getAssistant(assistant.openaiAssistantId);
-          const currentFileIds = currentAssistant.file_ids || [];
           
-          await openaiService.updateAssistant(assistant.openaiAssistantId, {
-            file_ids: [...currentFileIds, openaiFile.id]
-          });
+          // Attach file directly to assistant using tool_resources
+          await openaiService.attachVectorStoreToAssistant(assistant.openaiAssistantId, openaiFile.id);
           
           console.log(`File ${openaiFile.id} attached to assistant ${assistant.openaiAssistantId}`);
         } catch (attachError) {
@@ -658,13 +655,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const openaiFile = await openaiService.uploadFile(buffer, fileName, 'assistants');
           
-          // Attach file to assistant
-          const currentAssistant = await openaiService.getAssistant(assistant.openaiAssistantId);
-          const currentFileIds = currentAssistant.file_ids || [];
-          
-          await openaiService.updateAssistant(assistant.openaiAssistantId, {
-            file_ids: [...currentFileIds, openaiFile.id]
-          });
+          // Attach file directly to assistant using tool_resources
+          await openaiService.attachVectorStoreToAssistant(assistant.openaiAssistantId, openaiFile.id);
           
           // Update document record - file content will be used directly in conversations
           await storage.updateGoogleDocsDocument(documentId, { 

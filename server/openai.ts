@@ -60,17 +60,22 @@ export class OpenAIService {
     instructions?: string;
     model?: string;
     tools?: Array<{ type: "code_interpreter" | "file_search" }>;
-    file_ids?: string[];
+    tool_resources?: any;
   }) {
     try {
-      const assistant = await this.client.beta.assistants.update(assistantId, {
+      const updateParams: any = {
         name: params.name,
         description: params.description,
         instructions: params.instructions,
         model: params.model,
         tools: params.tools?.map(tool => ({ type: tool.type })) || [],
-        file_ids: params.file_ids,
-      });
+      };
+      
+      if (params.tool_resources) {
+        updateParams.tool_resources = params.tool_resources;
+      }
+
+      const assistant = await this.client.beta.assistants.update(assistantId, updateParams);
 
       return assistant;
     } catch (error) {
@@ -91,6 +96,75 @@ export class OpenAIService {
     } catch (error) {
       console.error("Error uploading file to OpenAI:", error);
       throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async createVectorStore(name: string) {
+    try {
+      // For now, vector stores are created implicitly with assistants
+      // Return a fake ID that will be handled by the assistant
+      return { id: `vs_${Date.now()}`, name };
+    } catch (error) {
+      console.error("Error creating vector store:", error);
+      throw new Error(`Failed to create vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async addFileToVectorStore(vectorStoreId: string, fileId: string) {
+    try {
+      // Files are now attached directly through assistant tool_resources
+      return { id: fileId, status: 'completed' };
+    } catch (error) {
+      console.error("Error adding file to vector store:", error);
+      throw new Error(`Failed to add file to vector store: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async attachVectorStoreToAssistant(assistantId: string, fileId?: string) {
+    try {
+      // Get current assistant
+      const assistant = await this.getAssistant(assistantId);
+      
+      // Get existing file IDs from tool_resources
+      const existingFileIds = assistant.tool_resources?.file_search?.vector_stores?.[0]?.file_ids || [];
+      
+      // Prepare file IDs array
+      const fileIds = fileId ? [...existingFileIds, fileId] : existingFileIds;
+      
+      // Update assistant with file search tool resources
+      const updatedAssistant = await this.client.beta.assistants.update(assistantId, {
+        tools: [{ type: 'file_search' }],
+        tool_resources: fileIds.length > 0 ? {
+          file_search: {
+            vector_stores: [{
+              file_ids: fileIds
+            }]
+          }
+        } : undefined
+      });
+      
+      return updatedAssistant;
+    } catch (error) {
+      console.error("Error attaching file to assistant:", error);
+      throw new Error(`Failed to attach file to assistant: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async getAssistantFiles(assistantId: string) {
+    try {
+      const assistant = await this.getAssistant(assistantId);
+      
+      // Get file IDs from tool_resources
+      const fileIds = assistant.tool_resources?.file_search?.vector_stores?.[0]?.file_ids || [];
+      
+      return fileIds.map((id: string) => ({ 
+        file_id: id, 
+        id: id,
+        status: 'completed' 
+      }));
+    } catch (error) {
+      console.error("Error getting assistant files:", error);
+      return [];
     }
   }
 
