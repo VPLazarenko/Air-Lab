@@ -156,7 +156,7 @@ export default function Dashboard() {
                 className="w-10 h-10 rounded-lg object-contain"
               />
               <div>
-                <h1 className="text-lg font-semibold">{t.title}</h1>
+                <h1 className="text-lg font-semibold">Air Lab.</h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{t.subtitle}</p>
               </div>
             </div>
