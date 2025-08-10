@@ -9,6 +9,7 @@ import { ChatInterface } from "@/components/chat-interface";
 import { AssistantConfigPanel } from "@/components/assistant-config-panel";
 import { SettingsModal } from "@/components/settings-modal";
 import { GoogleDocsIntegration } from "@/components/google-docs-integration";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Bot, 
@@ -228,29 +229,41 @@ export default function Playground() {
         </div>
 
         {/* Main Playground Area */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Chat Area */}
-          <div className="flex-1 min-w-0">
-            <ChatInterface
-              conversation={currentConversation}
-              assistant={assistant}
-              onSendMessage={handleSendMessage}
-              isLoading={sendMessageMutation.isPending}
-            />
-          </div>
+        <div className="flex-1 overflow-hidden">
+          <ResizablePanelGroup
+            direction="horizontal"
+            className="h-full"
+          >
+            {/* Chat Area */}
+            <ResizablePanel defaultSize={75} minSize={50}>
+              <ChatInterface
+                conversation={currentConversation}
+                assistant={assistant}
+                onSendMessage={handleSendMessage}
+                isLoading={sendMessageMutation.isPending}
+              />
+            </ResizablePanel>
 
-          {/* Configuration Panel */}
-          <div className="w-80 flex-shrink-0 bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-gray-700 overflow-hidden">
-            <AssistantConfigPanel
-              assistant={assistant}
-              assistantId={assistantId}
-              userId={DEMO_USER_ID}
-              onSave={handleAssistantSave}
-              onAssistantCreated={(newAssistant) => {
-                setLocation(`/playground/${newAssistant.id}`);
-              }}
-            />
-          </div>
+            <ResizableHandle withHandle />
+
+            {/* Configuration Panel */}
+            <ResizablePanel 
+              defaultSize={25} 
+              minSize={15} 
+              maxSize={40}
+              className="bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-gray-700"
+            >
+              <AssistantConfigPanel
+                assistant={assistant}
+                assistantId={assistantId}
+                userId={DEMO_USER_ID}
+                onSave={handleAssistantSave}
+                onAssistantCreated={(newAssistant) => {
+                  setLocation(`/playground/${newAssistant.id}`);
+                }}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </div>
       </div>
 
