@@ -207,24 +207,25 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 overflow-hidden w-full">
-      {/* Mobile Menu Button */}
-      <Button
-        className="lg:hidden fixed top-4 left-4 z-50"
-        variant="outline"
-        size="icon"
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-      >
-        {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-      </Button>
-      {/* Sidebar with mobile overlay */}
-      <div className={`
-        ${isMobileMenuOpen ? 'fixed inset-0 z-40 lg:relative' : 'hidden lg:block'}
-        lg:w-80 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden
-      `}>
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 flex flex-col">
+      <div className="flex h-screen overflow-hidden w-full">
+        {/* Mobile Menu Button */}
+        <Button
+          className="lg:hidden fixed top-4 left-4 z-50"
+          variant="outline"
+          size="icon"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+        </Button>
+        {/* Sidebar with mobile overlay */}
+        <div className={`
+          ${isMobileMenuOpen ? 'fixed inset-0 z-40 lg:relative' : 'hidden lg:block'}
+          lg:w-80 flex-shrink-0 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden
+        `}>
+          {/* Header */}
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <img 
                 src="/assets/logo.jpg"
@@ -848,6 +849,7 @@ export default function Dashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
       
       <Footer />
     </div>

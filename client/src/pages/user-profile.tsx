@@ -44,8 +44,8 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
-      <div className="container mx-auto px-4 lg:px-6 py-6 lg:py-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 flex flex-col">
+      <div className="container mx-auto px-4 lg:px-6 py-6 lg:py-8 flex-1">
         <div className="mb-6 lg:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold">Профиль пользователя</h1>

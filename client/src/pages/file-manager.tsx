@@ -108,23 +108,24 @@ export default function FileManager() {
   };
 
   return (
-    <div className="flex-1 p-8 overflow-y-auto bg-slate-50 dark:bg-slate-900">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">File Manager</h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Manage uploaded files and Google Docs integrated with your assistants
-              </p>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
+      <div className="flex-1 p-8 overflow-y-auto">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">File Manager</h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Manage uploaded files and Google Docs integrated with your assistants
+                </p>
+              </div>
+              <Button onClick={handleRefresh} variant="outline">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
             </div>
-            <Button onClick={handleRefresh} variant="outline">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
           </div>
-        </div>
 
         {/* Search and Filter */}
         <Card className="mb-6">
@@ -258,6 +259,7 @@ export default function FileManager() {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
       <Footer />
     </div>
