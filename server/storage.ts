@@ -63,6 +63,7 @@ export class MemStorage implements IStorage {
   private googleDocsDocuments: Map<string, GoogleDocsDocument>;
   private sessions: Map<string, Session>;
   private integrations: Map<string, Integration>;
+  private chatLogs: Map<string, ChatLog>;
 
   constructor() {
     this.users = new Map();
@@ -71,6 +72,7 @@ export class MemStorage implements IStorage {
     this.googleDocsDocuments = new Map();
     this.sessions = new Map();
     this.integrations = new Map();
+    this.chatLogs = new Map();
   }
 
   // User operations
@@ -195,6 +197,33 @@ export class MemStorage implements IStorage {
   }
 
   async deleteAssistant(id: string): Promise<boolean> {
+    // Delete all related data
+    
+    // 1. Find and delete conversations related to this assistant
+    const relatedConversations = Array.from(this.conversations.values())
+      .filter(conv => conv.assistantId === id);
+    
+    for (const conversation of relatedConversations) {
+      // Delete chat logs for this conversation
+      const relatedChatLogs = Array.from(this.chatLogs.values())
+        .filter(log => log.conversationId === conversation.id);
+      
+      for (const log of relatedChatLogs) {
+        this.chatLogs.delete(log.id);
+      }
+      
+      this.conversations.delete(conversation.id);
+    }
+    
+    // 2. Delete Google Docs documents related to this assistant
+    const relatedDocs = Array.from(this.googleDocsDocuments.values())
+      .filter(doc => doc.assistantId === id);
+    
+    for (const doc of relatedDocs) {
+      this.googleDocsDocuments.delete(doc.id);
+    }
+    
+    // 3. Finally, delete the assistant itself
     return this.assistants.delete(id);
   }
 
@@ -450,8 +479,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteAssistant(id: string): Promise<boolean> {
-    const result = await db.delete(assistants).where(eq(assistants.id, id));
-    return result.rowCount > 0;
+    try {
+      // Delete all related data in the correct order (due to foreign key constraints)
+      
+      // 1. Delete chat logs for conversations related to this assistant
+      const assistantConversations = await db.select({ id: conversations.id }).from(conversations).where(eq(conversations.assistantId, id));
+      for (const conversation of assistantConversations) {
+        await db.delete(chatLogs).where(eq(chatLogs.conversationId, conversation.id));
+      }
+      
+      // 2. Delete conversations related to this assistant
+      await db.delete(conversations).where(eq(conversations.assistantId, id));
+      
+      // 3. Delete Google Docs documents related to this assistant
+      await db.delete(googleDocsDocuments).where(eq(googleDocsDocuments.assistantId, id));
+      
+      // 4. Finally, delete the assistant itself
+      const result = await db.delete(assistants).where(eq(assistants.id, id));
+      
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting assistant and related data:', error);
+      return false;
+    }
   }
 
   // Conversation operations

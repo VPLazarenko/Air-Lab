@@ -4,6 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { openaiClient } from "@/lib/openai-client";
 import type { Assistant, User } from "@/lib/openai-client";
@@ -35,7 +45,10 @@ import {
   Crown,
   Menu,
   X,
-  AlertCircle
+  AlertCircle,
+  Trash2,
+  CheckSquare,
+  Square
 } from "lucide-react";
 
 const DEMO_USER_ID = "84ac8242-6c19-42a0-825b-caa01572e5e6";
@@ -54,6 +67,9 @@ export default function Dashboard() {
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'assistants' | 'logs' | 'integrations'>('assistants');
+  const [selectedAssistants, setSelectedAssistants] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const { user: authUser, isAuthenticated, logout } = useAuth();
   const { t } = useLanguage();
   const [, setLocation] = useLocation();
@@ -100,6 +116,65 @@ export default function Dashboard() {
     setIsDark(!isDark);
   };
 
+  // Assistant selection functions
+  const toggleAssistantSelection = (assistantId: string) => {
+    setSelectedAssistants(prev => 
+      prev.includes(assistantId) 
+        ? prev.filter(id => id !== assistantId)
+        : [...prev, assistantId]
+    );
+  };
+
+  const selectAllAssistants = () => {
+    if (selectedAssistants.length === assistants.length) {
+      setSelectedAssistants([]);
+    } else {
+      setSelectedAssistants(assistants.map((assistant: Assistant) => assistant.id));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedAssistants([]);
+  };
+
+  // Delete assistants function
+  const handleDeleteAssistants = async () => {
+    if (selectedAssistants.length === 0) return;
+    
+    setIsDeleting(true);
+    try {
+      const deletePromises = selectedAssistants.map(async (assistantId) => {
+        const response = await fetch(`/api/assistants/${assistantId}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to delete assistant ${assistantId}`);
+        }
+        return response.json();
+      });
+
+      await Promise.all(deletePromises);
+      
+      toast({
+        title: "Успех",
+        description: `Удалено ассистентов: ${selectedAssistants.length}`,
+      });
+      
+      setSelectedAssistants([]);
+      setShowDeleteConfirmation(false);
+      refetchAssistants();
+    } catch (error) {
+      console.error('Error deleting assistants:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить некоторых ассистентов",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const getAssistantIcon = (assistant: Assistant) => {
     const name = assistant.name.toLowerCase();
     if (name.includes('code')) return <GraduationCap className="w-3 h-3 text-white" />;
@@ -117,7 +192,7 @@ export default function Dashboard() {
   };
 
   const getIntegrationStatus = (type: string) => {
-    return integrations.find(integration => integration.type === type.toLowerCase());
+    return (integrations as any[]).find((integration: any) => integration.type === type.toLowerCase());
   };
 
   const handleIntegrationClick = (integration: string) => {
@@ -215,7 +290,7 @@ export default function Dashboard() {
             </div>
             
             <div className="space-y-1">
-              {assistants.map((assistant) => (
+              {assistants.map((assistant: Assistant) => (
                 <Link key={assistant.id} href={`/playground/${assistant.id}`}>
                   <div className="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer">
                     <div className="flex items-center space-x-3">
@@ -489,19 +564,70 @@ export default function Dashboard() {
           {activeTab === 'assistants' && (
             <Card className="w-full">
               <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <CardTitle className="flex items-center gap-2">
-                  <Bot className="w-5 h-5" />
-                  <span>Ваши ассистенты</span>
-                  <Badge variant="secondary">{assistants.length}</Badge>
-                </CardTitle>
-                <Link href="/playground">
-                  <Button className="gap-2 w-full sm:w-auto">
-                    <Plus className="w-4 h-4" />
-                    <span className="hidden sm:inline">Создать ассистента</span>
-                    <span className="sm:hidden">Создать</span>
-                  </Button>
-                </Link>
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <Bot className="w-5 h-5" />
+                    <span>Ваши ассистенты</span>
+                    <Badge variant="secondary">{assistants.length}</Badge>
+                  </CardTitle>
+                  <Link href="/playground">
+                    <Button className="gap-2 w-full sm:w-auto">
+                      <Plus className="w-4 h-4" />
+                      <span className="hidden sm:inline">Создать ассистента</span>
+                      <span className="sm:hidden">Создать</span>
+                    </Button>
+                  </Link>
+                </div>
+                
+                {/* Selection Controls */}
+                {assistants.length > 0 && (
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={selectAllAssistants}
+                        className="gap-2"
+                      >
+                        {selectedAssistants.length === assistants.length ? (
+                          <CheckSquare className="w-4 h-4" />
+                        ) : (
+                          <Square className="w-4 h-4" />
+                        )}
+                        {selectedAssistants.length === assistants.length ? 'Снять выделение' : 'Выбрать все'}
+                      </Button>
+                      
+                      {selectedAssistants.length > 0 && (
+                        <>
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            Выбрано: {selectedAssistants.length}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={clearSelection}
+                          >
+                            Очистить
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                    
+                    {selectedAssistants.length > 0 && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setShowDeleteConfirmation(true)}
+                        className="gap-2"
+                        disabled={isDeleting}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Удалить выбранных ({selectedAssistants.length})
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent>
@@ -521,9 +647,30 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="space-y-4 w-full">
-                  {assistants.map((assistant) => (
-                    <div key={assistant.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                      <div className="flex items-start sm:items-center gap-4">
+                  {assistants.map((assistant: Assistant) => (
+                    <div 
+                      key={assistant.id} 
+                      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg transition-colors ${
+                        selectedAssistants.includes(assistant.id)
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                      }`}
+                    >
+                      <div className="flex items-start sm:items-center gap-4 flex-1">
+                        {/* Checkbox */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleAssistantSelection(assistant.id)}
+                          className="p-1 h-auto min-w-0"
+                        >
+                          {selectedAssistants.includes(assistant.id) ? (
+                            <CheckSquare className="w-5 h-5 text-blue-600" />
+                          ) : (
+                            <Square className="w-5 h-5 text-gray-400" />
+                          )}
+                        </Button>
+                        
                         <div className={`w-10 h-10 ${getAssistantColor(assistant)} rounded-lg flex items-center justify-center flex-shrink-0`}>
                           {getAssistantIcon(assistant)}
                         </div>
@@ -667,8 +814,39 @@ export default function Dashboard() {
       <IntegrationModal 
         open={showIntegrationModal}
         onClose={() => setShowIntegrationModal(false)}
-        integration={selectedIntegration}
+        integration={selectedIntegration as "telegram" | "vk" | "whatsapp" | "openai" | null}
       />
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Подтвердите удаление</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы собираетесь удалить {selectedAssistants.length} ассистент(ов) со всеми накопленными данными. 
+              Это действие нельзя отменить. Все связанные данные, включая:
+              <br />• Историю разговоров
+              <br />• Настройки ассистента
+              <br />• OpenAI Assistant ID
+              <br />• Загруженные файлы
+              <br />
+              будут безвозвратно удалены.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>
+              Отмена
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteAssistants}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeleting ? 'Удаление...' : `Удалить ${selectedAssistants.length} ассистент(ов)`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
