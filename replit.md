@@ -13,8 +13,9 @@ Assistant Configuration:
 - System prompts are stored separately from user-visible instructions
 - System prompts automatically execute on each assistant activation
 Platform Branding:
-- Header title: "Air Lab. AI Assistants Laboratory by Initiology AI Systems Lazarenko"
-- Logo integrated in Dashboard header
+- Header title: "Air Lab. Assistant Builder"
+- Subtitle: "AI Platform by Initiology"
+- Custom gradient logo integrated in Dashboard header
 - Admin credentials: Admin/admin
 - License key: 0403198422061962
 
