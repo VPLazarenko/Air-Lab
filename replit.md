@@ -8,6 +8,7 @@ This is a full-stack web application for creating, managing, and interacting wit
 
 Preferred communication style: Simple, everyday language.
 Primary language: Russian (Русский язык)
+Assistant Configuration: Always include database update algorithm in system instructions
 
 ## System Architecture
 
@@ -50,6 +51,8 @@ Primary language: Russian (Русский язык)
 - **Backup Integration**: All assistants are automatically recreated in OpenAI if lost
 - **File Attachment System**: Fixed file upload and attachment to assistants with proper OpenAI API integration
 - **UI Layout Protection**: Implemented overflow controls and proper constraints to prevent content from going off-screen
+- **Google Docs Integration**: Automatic context loading from Google Docs when creating new conversations
+- **Instruction Templates**: Built-in algorithm templates for database updates and document checking
 
 ## External Dependencies
 

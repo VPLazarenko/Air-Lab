@@ -372,13 +372,47 @@ export function AssistantConfigPanel({
 
         {/* Instructions */}
         <div>
-          <h3 className="font-semibold mb-3">Instructions</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold">Instructions</h3>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const defaultInstructions = `АЛГОРИТМ ДЕЙСТВИЙ ПРИ АКТИВАЦИИ:
+
+1. ОБНОВЛЕНИЕ БАЗЫ ДАННЫХ
+   - При каждой активации проверять актуальность данных в базе знаний
+   - Обращаться к Google Docs документам, добавленным в базу знаний
+   - Синхронизировать информацию из всех подключенных источников
+
+2. ПРОВЕРКА КОНКРЕТНЫХ ИСТОЧНИКОВ
+   - Проверять документы по указанным ссылкам на Google Docs
+   - Извлекать и анализировать актуальную информацию
+   - Обновлять контекст на основе полученных данных
+
+3. РАБОТА С ПОЛЬЗОВАТЕЛЕМ
+   - Использовать обновленную информацию для ответов
+   - Ссылаться на конкретные источники при необходимости
+   - Предоставлять точную и актуальную информацию
+
+${config.instructions ? '\n' + config.instructions : ''}`;
+                updateConfig('instructions', defaultInstructions);
+                toast({
+                  title: "Шаблон добавлен",
+                  description: "Алгоритм обновления базы данных добавлен в инструкции",
+                });
+              }}
+            >
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Добавить алгоритм обновления
+            </Button>
+          </div>
           <Textarea
             value={config.instructions}
             onChange={(e) => updateConfig('instructions', e.target.value)}
             placeholder="Enter system instructions for your assistant..."
-            rows={6}
-            className="text-sm"
+            rows={8}
+            className="text-sm font-mono"
           />
         </div>
 
