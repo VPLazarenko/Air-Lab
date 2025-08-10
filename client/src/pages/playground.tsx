@@ -10,6 +10,7 @@ import { AssistantConfigPanel } from "@/components/assistant-config-panel";
 import { SettingsModal } from "@/components/settings-modal";
 import { GoogleDocsIntegration } from "@/components/google-docs-integration";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Bot, 
   Settings, 
@@ -39,11 +40,13 @@ export default function Playground() {
     return false;
   });
   const { toast } = useToast();
+  const { user: authUser, isAuthenticated } = useAuth();
 
-  // Get user data
+  // Get user data - use authenticated user or demo user
+  const userId = authUser?.id || DEMO_USER_ID;
   const { data: user } = useQuery({
-    queryKey: ['/api/users', DEMO_USER_ID],
-    queryFn: () => openaiClient.getUser(DEMO_USER_ID),
+    queryKey: ['/api/users', userId],
+    queryFn: () => openaiClient.getUser(userId),
   });
 
   // Get assistant data if editing existing
@@ -55,8 +58,8 @@ export default function Playground() {
 
   // Get conversations for this assistant
   const { data: conversations = [] } = useQuery({
-    queryKey: ['/api/conversations/user', DEMO_USER_ID],
-    queryFn: () => openaiClient.getConversationsByUserId(DEMO_USER_ID),
+    queryKey: ['/api/conversations/user', userId],
+    queryFn: () => openaiClient.getConversationsByUserId(userId),
     enabled: !!user,
   });
 
@@ -77,13 +80,13 @@ export default function Playground() {
   const createConversationMutation = useMutation({
     mutationFn: (data: { assistantId: string; title?: string }) =>
       openaiClient.createConversation({
-        userId: DEMO_USER_ID,
+        userId: userId,
         assistantId: data.assistantId,
         title: data.title,
       }),
     onSuccess: (conversation) => {
       setCurrentConversation(conversation);
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', userId] });
     },
   });
 
@@ -275,7 +278,7 @@ export default function Playground() {
               <AssistantConfigPanel
                 assistant={assistant}
                 assistantId={assistantId}
-                userId={DEMO_USER_ID}
+                userId={userId}
                 onSave={handleAssistantSave}
                 onAssistantCreated={(newAssistant) => {
                   setLocation(`/playground/${newAssistant.id}`);

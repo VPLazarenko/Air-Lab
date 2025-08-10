@@ -71,9 +71,9 @@ export default function Dashboard() {
   });
 
   const { data: assistants = [], refetch: refetchAssistants } = useQuery({
-    queryKey: ['/api/assistants/user', DEMO_USER_ID],
-    queryFn: () => openaiClient.getAssistantsByUserId(DEMO_USER_ID),
-    enabled: !!user,
+    queryKey: ['/api/assistants/user', authUser?.id || DEMO_USER_ID],
+    queryFn: () => openaiClient.getAssistantsByUserId(authUser?.id || DEMO_USER_ID),
+    enabled: !!(authUser || user),
   });
 
   const { data: integrations = [], isLoading: integrationsLoading } = useQuery({
