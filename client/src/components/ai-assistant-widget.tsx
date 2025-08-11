@@ -18,7 +18,7 @@ interface AIAssistantWidgetProps {
   className?: string;
 }
 
-export function AIAssistantWidget({ className = "" }: AIAssistantWidgetProps) {
+function AIAssistantWidgetContent({ user }: { user: any }) {
   const [isMinimized, setIsMinimized] = useState(true);
   const [showMessage, setShowMessage] = useState(false);
   const [typingText, setTypingText] = useState('');
@@ -27,7 +27,6 @@ export function AIAssistantWidget({ className = "" }: AIAssistantWidgetProps) {
   const [inputMessage, setInputMessage] = useState('');
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [widgetAssistantId, setWidgetAssistantId] = useState<string | null>(null);
-  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const fullMessage = "Привет, я AI Ассистент платформы Air Lab. Меня можно настроить под ваши нужды и потребности ваших клиентов. Это лучшее предложение на рынке";
@@ -113,11 +112,6 @@ ${platformDocs}
       }).catch(console.error);
     }
   }, [user?.id, widgetAssistantId, conversationId]);
-
-  // Don't show widget if user is not authenticated
-  if (!user?.id) {
-    return null;
-  }
 
   useEffect(() => {
     // Auto-expand after 1 minute
@@ -388,4 +382,15 @@ ${platformDocs}
       )}
     </div>
   );
+}
+
+export function AIAssistantWidget({ className = "" }: AIAssistantWidgetProps) {
+  const { user } = useAuth();
+  
+  // Don't render widget if user is not authenticated
+  if (!user?.id) {
+    return null;
+  }
+
+  return <AIAssistantWidgetContent user={user} />;
 }
