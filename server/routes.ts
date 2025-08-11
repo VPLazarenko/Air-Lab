@@ -84,7 +84,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/me", authenticateUser, async (req: AuthenticatedRequest, res) => {
-    res.json(req.user);
+    try {
+      // Получаем актуальную информацию пользователя из базы данных
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ error: "Пользователь не найден" });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error("Error getting user info:", error);
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка получения информации пользователя' });
+    }
   });
 
   // Admin routes

@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { useState } from "react";
 export default function UserProfile() {
   const { user, logout, isAuthenticated } = useAuth();
   const [showTariffForm, setShowTariffForm] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: assistants = [], isLoading: assistantsLoading } = useQuery<Assistant[]>({
     queryKey: ["/api/assistants/my"],
@@ -49,11 +50,15 @@ export default function UserProfile() {
 
   const getPlanBadge = (plan: string | null | undefined) => {
     switch (plan) {
+      case 'basic':
+        return <Badge className="bg-green-500 hover:bg-green-600 text-white">Basic</Badge>;
       case 'pro':
-        return <Badge variant="default">Pro</Badge>;
-      case 'enterprise':
-        return <Badge className="bg-purple-500 hover:bg-purple-600">Enterprise</Badge>;
+        return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Pro</Badge>;
+      case 'premium':
+        return <Badge className="bg-purple-500 hover:bg-purple-600 text-white">Premium</Badge>;
       case 'free':
+      case null:
+      case undefined:
       default:
         return <Badge variant="outline">Бесплатный</Badge>;
     }
@@ -304,7 +309,8 @@ export default function UserProfile() {
           onClose={() => setShowTariffForm(false)}
           onSuccess={() => {
             setShowTariffForm(false);
-            window.location.reload(); // Обновляем страницу для отображения изменений
+            // Обновляем кеш пользователя вместо перезагрузки страницы
+            queryClient.invalidateQueries({ queryKey: ['auth', 'user'] });
           }}
         />
       )}
