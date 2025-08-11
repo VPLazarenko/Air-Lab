@@ -251,7 +251,7 @@ export default function Dashboard() {
               />
               <div>
                 <h1 className="text-lg font-semibold">Air Lab.</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{t.subtitle}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">AI Assistants Platform</p>
               </div>
             </div>
             <LanguageSwitcher />
