@@ -20,7 +20,6 @@ import type { Assistant, User } from "@/lib/openai-client";
 import { SettingsModal } from "@/components/settings-modal";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { IntegrationModal } from "@/components/integrations/IntegrationModal";
-import { AIAssistantWidget } from "@/components/ai-assistant-widget";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -853,9 +852,6 @@ export default function Dashboard() {
       </div>
       
       <Footer />
-      
-      {/* AI Assistant Widget */}
-      <AIAssistantWidget />
     </div>
   );
 }
