@@ -8,9 +8,7 @@ import { openaiClient } from "@/lib/openai-client";
 import type { Assistant, Conversation } from "@/lib/openai-client";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Bot } from "lucide-react";
-
-
-const DEMO_USER_ID = "84ac8242-6c19-42a0-825b-caa01572e5e6";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Chat() {
   const params = useParams();
@@ -18,6 +16,10 @@ export default function Chat() {
   const [message, setMessage] = useState("");
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const { toast } = useToast();
+  const { user: authUser, isAuthenticated } = useAuth();
+
+  // Get user ID from authenticated user or fallback to first available user
+  const userId = authUser?.id || "ae9bd35c-ee10-4319-8237-49f1d4e2dd03";
 
   const { data: assistant } = useQuery({
     queryKey: ['/api/assistants', assistantId],
@@ -26,21 +28,21 @@ export default function Chat() {
   });
 
   const { data: conversations = [] } = useQuery({
-    queryKey: ['/api/conversations/user', DEMO_USER_ID],
-    queryFn: () => openaiClient.getConversationsByUserId(DEMO_USER_ID),
+    queryKey: ['/api/conversations/user', userId],
+    queryFn: () => openaiClient.getConversationsByUserId(userId),
   });
 
   // Create new conversation when assistant is selected
   const createConversationMutation = useMutation({
     mutationFn: (data: { assistantId: string; title?: string }) =>
       openaiClient.createConversation({
-        userId: DEMO_USER_ID,
+        userId: userId,
         assistantId: data.assistantId,
         title: data.title,
       }),
     onSuccess: (conversation) => {
       setCurrentConversation(conversation);
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', userId] });
     },
   });
 
@@ -56,7 +58,7 @@ export default function Chat() {
         };
         setCurrentConversation(updatedConversation);
       }
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', DEMO_USER_ID] });
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations/user', userId] });
     },
     onError: (error) => {
       toast({
