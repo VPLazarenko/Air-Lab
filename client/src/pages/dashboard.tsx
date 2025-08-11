@@ -17,6 +17,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { openaiClient } from "@/lib/openai-client";
 import type { Assistant, User } from "@/lib/openai-client";
+import type { Plan, Announcement } from "@shared/schema";
 import { SettingsModal } from "@/components/settings-modal";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { IntegrationModal } from "@/components/integrations/IntegrationModal";
@@ -39,6 +40,9 @@ import {
   PenTool, 
   BarChart3,
   FileText,
+  Bell,
+  CreditCard,
+  Info,
   Moon,
   Sun,
   User as UserIcon,
@@ -68,7 +72,7 @@ export default function Dashboard() {
   const [showIntegrationModal, setShowIntegrationModal] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'assistants' | 'logs' | 'integrations'>('assistants');
+  const [activeTab, setActiveTab] = useState<'assistants' | 'logs' | 'integrations' | 'plans' | 'news'>('assistants');
   const [selectedAssistants, setSelectedAssistants] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -102,6 +106,15 @@ export default function Dashboard() {
 
   const { data: integrations = [], isLoading: integrationsLoading } = useQuery({
     queryKey: ["/api/integrations"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: plans = [], isLoading: plansLoading } = useQuery({
+    queryKey: ["/api/plans"],
+  });
+
+  const { data: announcements = [], isLoading: announcementsLoading } = useQuery({
+    queryKey: ["/api/announcements"],
     enabled: isAuthenticated,
   });
 
@@ -445,6 +458,24 @@ export default function Dashboard() {
               <Settings className="w-4 h-4" />
               Интеграции
             </Button>
+            <Button
+              variant={activeTab === 'plans' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('plans')}
+              className="gap-2"
+            >
+              <CreditCard className="w-4 h-4" />
+              Тарифы
+              <Badge variant="secondary">{plans.length}</Badge>
+            </Button>
+            <Button
+              variant={activeTab === 'news' ? 'default' : 'ghost'}
+              onClick={() => setActiveTab('news')}
+              className="gap-2"
+            >
+              <Bell className="w-4 h-4" />
+              Новости
+              {announcements.length > 0 && <Badge variant="secondary">{announcements.length}</Badge>}
+            </Button>
           </div>
 
           {/* Tab Content */}
@@ -681,6 +712,155 @@ export default function Dashboard() {
                     </Badge>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Plans Tab */}
+          {activeTab === 'plans' && (
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="w-5 h-5" />
+                  Тарифные планы
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {plansLoading ? (
+                  <div className="text-center py-8">Загрузка тарифов...</div>
+                ) : plans.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <CreditCard className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Тарифные планы пока недоступны</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {plans.map((plan: Plan) => (
+                      <div key={plan.id} className="p-6 border rounded-lg hover:shadow-lg transition-shadow">
+                        <div className="text-center mb-4">
+                          <h3 className="text-xl font-bold">{plan.displayName}</h3>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{plan.description}</p>
+                          <div className="text-3xl font-bold text-emerald-600">
+                            {plan.price === 0 ? 'Бесплатно' : `${plan.price} ${plan.currency}`}
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            {plan.billingPeriod === 'monthly' ? 'в месяц' : 
+                             plan.billingPeriod === 'yearly' ? 'в год' : 
+                             plan.billingPeriod === 'lifetime' ? 'навсегда' : plan.billingPeriod}
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-3 mb-6">
+                          {plan.features.maxAssistants && (
+                            <div className="flex items-center gap-2">
+                              <Bot className="w-4 h-4 text-emerald-500" />
+                              <span className="text-sm">До {plan.features.maxAssistants} ассистентов</span>
+                            </div>
+                          )}
+                          {plan.features.maxConversations && (
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-emerald-500" />
+                              <span className="text-sm">До {plan.features.maxConversations} диалогов</span>
+                            </div>
+                          )}
+                          {plan.features.apiAccess && (
+                            <div className="flex items-center gap-2">
+                              <Settings className="w-4 h-4 text-emerald-500" />
+                              <span className="text-sm">API доступ</span>
+                            </div>
+                          )}
+                          {plan.features.prioritySupport && (
+                            <div className="flex items-center gap-2">
+                              <AlertCircle className="w-4 h-4 text-emerald-500" />
+                              <span className="text-sm">Приоритетная поддержка</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {plan.paymentLink ? (
+                          <Button asChild className="w-full">
+                            <a href={plan.paymentLink} target="_blank" rel="noopener noreferrer">
+                              Выбрать план
+                            </a>
+                          </Button>
+                        ) : (
+                          <Button className="w-full" disabled>
+                            {authUser?.plan === plan.name ? 'Текущий план' : 'Скоро доступно'}
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* News Tab */}
+          {activeTab === 'news' && (
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="w-5 h-5" />
+                  Новости и объявления
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {announcementsLoading ? (
+                  <div className="text-center py-8">Загрузка новостей...</div>
+                ) : announcements.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <Bell className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Пока нет новых объявлений</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {announcements.map((announcement: Announcement) => (
+                      <div key={announcement.id} className="p-4 border rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-full ${
+                            announcement.type === 'success' ? 'bg-green-100 text-green-600' :
+                            announcement.type === 'warning' ? 'bg-yellow-100 text-yellow-600' :
+                            announcement.type === 'error' ? 'bg-red-100 text-red-600' :
+                            'bg-blue-100 text-blue-600'
+                          }`}>
+                            <Info className="w-4 h-4" />
+                          </div>
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-medium">{announcement.title}</h3>
+                              {announcement.isPinned && (
+                                <Badge variant="outline" className="text-xs">Закреплено</Badge>
+                              )}
+                              <Badge variant={
+                                announcement.priority === 'urgent' ? 'destructive' :
+                                announcement.priority === 'high' ? 'default' :
+                                'secondary'
+                              } className="text-xs">
+                                {announcement.priority === 'urgent' ? 'Срочно' :
+                                 announcement.priority === 'high' ? 'Важно' :
+                                 announcement.priority === 'normal' ? 'Обычное' : 'Низкий'}
+                              </Badge>
+                            </div>
+                            
+                            <p className="text-gray-600 dark:text-gray-400 mb-2">{announcement.content}</p>
+                            
+                            <div className="text-xs text-gray-500">
+                              {announcement.publishedAt ? 
+                                new Date(announcement.publishedAt).toLocaleDateString('ru-RU') :
+                                new Date(announcement.createdAt).toLocaleDateString('ru-RU')
+                              }
+                              {announcement.expiresAt && (
+                                <span> • Действительно до: {new Date(announcement.expiresAt).toLocaleDateString('ru-RU')}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

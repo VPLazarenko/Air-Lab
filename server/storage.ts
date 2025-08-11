@@ -719,13 +719,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAnnouncementsForUser(userId: string, userRole: string): Promise<Announcement[]> {
-    // Get announcements targeted to this user specifically, their role, or all users
-    return await db.select().from(announcements)
-      .where(and(
-        eq(announcements.isActive, true),
-        gt(announcements.expiresAt, new Date())
-      ))
+    const currentDate = new Date();
+    
+    // Get all active announcements (without expiry filter for now)
+    const allAnnouncements = await db.select().from(announcements)
+      .where(eq(announcements.isActive, true))
       .orderBy(desc(announcements.isPinned), desc(announcements.createdAt));
+    
+    // Filter announcements based on targeting and expiry
+    const filteredAnnouncements = allAnnouncements.filter(announcement => {
+      // Check if announcement is expired (if expiresAt is set)
+      if (announcement.expiresAt && announcement.expiresAt <= currentDate) {
+        return false;
+      }
+      
+      // Check targeting
+      switch (announcement.targetUsers) {
+        case 'all':
+          return true;
+          
+        case 'specific':
+          return announcement.targetUserIds?.includes(userId) || false;
+          
+        case 'role-based':
+          return announcement.targetRoles?.includes(userRole) || false;
+          
+        default:
+          return true; // Default to showing all if not specified
+      }
+    });
+    
+    return filteredAnnouncements;
   }
 
   async createAnnouncement(announcementData: InsertAnnouncement & { createdBy: string }): Promise<Announcement> {
