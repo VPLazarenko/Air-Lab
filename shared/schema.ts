@@ -181,6 +181,70 @@ export const userAnnouncements = pgTable("user_announcements", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// AI Photo Editor схемы
+export const photoEditorSessions = pgTable("photo_editor_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  title: text("title"),
+  description: text("description"),
+  settings: json("settings").$type<{
+    model?: string; // gpt-4o для работы с изображениями
+    quality?: string; // standard, hd
+    style?: string; // vivid, natural
+    size?: string; // 1024x1024, 1792x1024, 1024x1792
+    responseFormat?: string; // url, b64_json
+  }>().default({
+    model: "gpt-4o",
+    quality: "standard",
+    style: "vivid", 
+    size: "1024x1024",
+    responseFormat: "url"
+  }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const photoEditorImages = pgTable("photo_editor_images", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").references(() => photoEditorSessions.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(), // original, edited, generated
+  url: text("url").notNull(),
+  objectPath: text("object_path"), // путь в object storage
+  filename: text("filename"),
+  mimeType: text("mime_type"),
+  size: real("size"), // размер файла в байтах
+  width: real("width"),
+  height: real("height"),
+  prompt: text("prompt"), // промпт для генерации/редактирования
+  editInstructions: text("edit_instructions"), // инструкции редактирования
+  metadata: json("metadata").$type<{
+    aiModel?: string;
+    processingTime?: number;
+    quality?: string;
+    style?: string;
+    revisedPrompt?: string; // пересмотренный промпт от AI
+  }>().default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const photoEditorChats = pgTable("photo_editor_chats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").references(() => photoEditorSessions.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  messages: json("messages").$type<Array<{
+    id: string;
+    role: "user" | "assistant" | "system";
+    content: string;
+    imageUrl?: string;
+    editedImageUrl?: string;
+    timestamp: string;
+  }>>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   email: true,
@@ -284,6 +348,53 @@ export const insertUserAnnouncementSchema = createInsertSchema(userAnnouncements
   readAt: true,
 });
 
+// Схемы валидации для AI Photo Editor
+export const insertPhotoEditorSessionSchema = createInsertSchema(photoEditorSessions).pick({
+  title: true,
+  description: true,
+  settings: true,
+  isActive: true,
+});
+
+export const insertPhotoEditorImageSchema = createInsertSchema(photoEditorImages).pick({
+  sessionId: true,
+  type: true,
+  url: true,
+  objectPath: true,
+  filename: true,
+  mimeType: true,
+  size: true,
+  width: true,
+  height: true,
+  prompt: true,
+  editInstructions: true,
+  metadata: true,
+});
+
+export const insertPhotoEditorChatSchema = createInsertSchema(photoEditorChats).pick({
+  sessionId: true,
+  messages: true,
+});
+
+export const photoEditorSettingsSchema = z.object({
+  model: z.string().default("gpt-4o"),
+  quality: z.enum(["standard", "hd"]).default("standard"),
+  style: z.enum(["vivid", "natural"]).default("vivid"),
+  size: z.enum(["1024x1024", "1792x1024", "1024x1792"]).default("1024x1024"),
+  responseFormat: z.enum(["url", "b64_json"]).default("url"),
+});
+
+export const photoEditRequestSchema = z.object({
+  imageUrl: z.string().url("Некорректный URL изображения"),
+  editInstructions: z.string().min(1, "Введите инструкции для редактирования"),
+  settings: photoEditorSettingsSchema.optional(),
+});
+
+export const imageGenerationRequestSchema = z.object({
+  prompt: z.string().min(1, "Введите описание для генерации изображения"),
+  settings: photoEditorSettingsSchema.optional(),
+});
+
 // Схемы валидации для каждого типа интеграции
 export const telegramIntegrationSchema = z.object({
   type: z.literal("telegram"),
@@ -352,3 +463,14 @@ export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type Announcement = typeof announcements.$inferSelect;
 export type InsertUserAnnouncement = z.infer<typeof insertUserAnnouncementSchema>;
 export type UserAnnouncement = typeof userAnnouncements.$inferSelect;
+
+// AI Photo Editor типы
+export type PhotoEditorSession = typeof photoEditorSessions.$inferSelect;
+export type InsertPhotoEditorSession = z.infer<typeof insertPhotoEditorSessionSchema>;
+export type PhotoEditorImage = typeof photoEditorImages.$inferSelect;
+export type InsertPhotoEditorImage = z.infer<typeof insertPhotoEditorImageSchema>;
+export type PhotoEditorChat = typeof photoEditorChats.$inferSelect;
+export type InsertPhotoEditorChat = z.infer<typeof insertPhotoEditorChatSchema>;
+export type PhotoEditorSettings = z.infer<typeof photoEditorSettingsSchema>;
+export type PhotoEditRequest = z.infer<typeof photoEditRequestSchema>;
+export type ImageGenerationRequest = z.infer<typeof imageGenerationRequestSchema>;

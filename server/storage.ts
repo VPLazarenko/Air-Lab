@@ -1,7 +1,7 @@
-import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type GoogleDocsDocument, type InsertGoogleDocsDocument, type Session, type InsertSession, type Integration, type InsertIntegration, type ChatLog, type InsertChatLog, type Plan, type InsertPlan, type Announcement, type InsertAnnouncement, type UserAnnouncement, type InsertUserAnnouncement } from "@shared/schema";
+import { type User, type InsertUser, type Assistant, type InsertAssistant, type Conversation, type InsertConversation, type GoogleDocsDocument, type InsertGoogleDocsDocument, type Session, type InsertSession, type Integration, type InsertIntegration, type ChatLog, type InsertChatLog, type Plan, type InsertPlan, type Announcement, type InsertAnnouncement, type UserAnnouncement, type InsertUserAnnouncement, type PhotoEditorSession, type InsertPhotoEditorSession, type PhotoEditorImage, type InsertPhotoEditorImage, type PhotoEditorChat, type InsertPhotoEditorChat } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
-import { users, assistants, conversations, googleDocsDocuments, sessions, integrations, chatLogs, plans, announcements, userAnnouncements } from "@shared/schema";
+import { users, assistants, conversations, googleDocsDocuments, sessions, integrations, chatLogs, plans, announcements, userAnnouncements, photoEditorSessions, photoEditorImages, photoEditorChats } from "@shared/schema";
 import { eq, and, gt, desc, asc } from "drizzle-orm";
 
 export interface IStorage {
@@ -77,6 +77,25 @@ export interface IStorage {
   getUserAnnouncements(userId: string): Promise<UserAnnouncement[]>;
   createUserAnnouncement(userAnnouncement: InsertUserAnnouncement): Promise<UserAnnouncement>;
   markAnnouncementAsRead(userId: string, announcementId: string): Promise<boolean>;
+
+  // Photo Editor operations
+  getPhotoEditorSession(id: string): Promise<PhotoEditorSession | undefined>;
+  getPhotoEditorSessionsByUserId(userId: string): Promise<PhotoEditorSession[]>;
+  createPhotoEditorSession(session: InsertPhotoEditorSession & { userId: string }): Promise<PhotoEditorSession>;
+  updatePhotoEditorSession(id: string, updates: Partial<PhotoEditorSession>): Promise<PhotoEditorSession | undefined>;
+  deletePhotoEditorSession(id: string): Promise<boolean>;
+
+  getPhotoEditorImage(id: string): Promise<PhotoEditorImage | undefined>;
+  getPhotoEditorImagesBySessionId(sessionId: string): Promise<PhotoEditorImage[]>;
+  createPhotoEditorImage(image: InsertPhotoEditorImage & { userId: string }): Promise<PhotoEditorImage>;
+  updatePhotoEditorImage(id: string, updates: Partial<PhotoEditorImage>): Promise<PhotoEditorImage | undefined>;
+  deletePhotoEditorImage(id: string): Promise<boolean>;
+
+  getPhotoEditorChat(id: string): Promise<PhotoEditorChat | undefined>;
+  getPhotoEditorChatBySessionId(sessionId: string): Promise<PhotoEditorChat | undefined>;
+  createPhotoEditorChat(chat: InsertPhotoEditorChat & { userId: string }): Promise<PhotoEditorChat>;
+  updatePhotoEditorChat(id: string, updates: Partial<PhotoEditorChat>): Promise<PhotoEditorChat | undefined>;
+  deletePhotoEditorChat(id: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -801,6 +820,110 @@ export class DatabaseStorage implements IStorage {
       });
       return true;
     }
+  }
+
+  // Photo Editor Session operations
+  async getPhotoEditorSession(id: string): Promise<PhotoEditorSession | undefined> {
+    const [session] = await db.select().from(photoEditorSessions).where(eq(photoEditorSessions.id, id));
+    return session || undefined;
+  }
+
+  async getPhotoEditorSessionsByUserId(userId: string): Promise<PhotoEditorSession[]> {
+    return await db.select().from(photoEditorSessions)
+      .where(eq(photoEditorSessions.userId, userId))
+      .orderBy(desc(photoEditorSessions.createdAt));
+  }
+
+  async createPhotoEditorSession(sessionData: InsertPhotoEditorSession & { userId: string }): Promise<PhotoEditorSession> {
+    const id = randomUUID();
+    const [session] = await db
+      .insert(photoEditorSessions)
+      .values({ ...sessionData, id })
+      .returning();
+    return session;
+  }
+
+  async updatePhotoEditorSession(id: string, updates: Partial<PhotoEditorSession>): Promise<PhotoEditorSession | undefined> {
+    const [session] = await db
+      .update(photoEditorSessions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(photoEditorSessions.id, id))
+      .returning();
+    return session || undefined;
+  }
+
+  async deletePhotoEditorSession(id: string): Promise<boolean> {
+    const result = await db.delete(photoEditorSessions).where(eq(photoEditorSessions.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Photo Editor Image operations
+  async getPhotoEditorImage(id: string): Promise<PhotoEditorImage | undefined> {
+    const [image] = await db.select().from(photoEditorImages).where(eq(photoEditorImages.id, id));
+    return image || undefined;
+  }
+
+  async getPhotoEditorImagesBySessionId(sessionId: string): Promise<PhotoEditorImage[]> {
+    return await db.select().from(photoEditorImages)
+      .where(eq(photoEditorImages.sessionId, sessionId))
+      .orderBy(desc(photoEditorImages.createdAt));
+  }
+
+  async createPhotoEditorImage(imageData: InsertPhotoEditorImage & { userId: string }): Promise<PhotoEditorImage> {
+    const id = randomUUID();
+    const [image] = await db
+      .insert(photoEditorImages)
+      .values({ ...imageData, id })
+      .returning();
+    return image;
+  }
+
+  async updatePhotoEditorImage(id: string, updates: Partial<PhotoEditorImage>): Promise<PhotoEditorImage | undefined> {
+    const [image] = await db
+      .update(photoEditorImages)
+      .set(updates)
+      .where(eq(photoEditorImages.id, id))
+      .returning();
+    return image || undefined;
+  }
+
+  async deletePhotoEditorImage(id: string): Promise<boolean> {
+    const result = await db.delete(photoEditorImages).where(eq(photoEditorImages.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Photo Editor Chat operations
+  async getPhotoEditorChat(id: string): Promise<PhotoEditorChat | undefined> {
+    const [chat] = await db.select().from(photoEditorChats).where(eq(photoEditorChats.id, id));
+    return chat || undefined;
+  }
+
+  async getPhotoEditorChatBySessionId(sessionId: string): Promise<PhotoEditorChat | undefined> {
+    const [chat] = await db.select().from(photoEditorChats).where(eq(photoEditorChats.sessionId, sessionId));
+    return chat || undefined;
+  }
+
+  async createPhotoEditorChat(chatData: InsertPhotoEditorChat & { userId: string }): Promise<PhotoEditorChat> {
+    const id = randomUUID();
+    const [chat] = await db
+      .insert(photoEditorChats)
+      .values({ ...chatData, id })
+      .returning();
+    return chat;
+  }
+
+  async updatePhotoEditorChat(id: string, updates: Partial<PhotoEditorChat>): Promise<PhotoEditorChat | undefined> {
+    const [chat] = await db
+      .update(photoEditorChats)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(photoEditorChats.id, id))
+      .returning();
+    return chat || undefined;
+  }
+
+  async deletePhotoEditorChat(id: string): Promise<boolean> {
+    const result = await db.delete(photoEditorChats).where(eq(photoEditorChats.id, id));
+    return result.rowCount > 0;
   }
 }
 

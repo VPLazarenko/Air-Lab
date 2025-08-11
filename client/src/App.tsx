@@ -9,6 +9,7 @@ import Playground from "@/pages/playground.tsx";
 import FileManager from "@/pages/file-manager.tsx";
 import WidgetDesigner from "@/pages/widget-designer.tsx";
 import Chat from "@/pages/chat.tsx";
+import PhotoEditor from "@/pages/PhotoEditor.tsx";
 import UserProfile from "@/pages/user-profile.tsx";
 import AdminPanel from "@/pages/admin-panel.tsx";
 import PlatformDescription from "@/pages/platform-description.tsx";
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/playground/:assistantId" component={Playground} />
       <Route path="/widget-designer/:assistantId" component={WidgetDesigner} />
       <Route path="/chat/:assistantId" component={Chat} />
+      <Route path="/photo-editor" component={PhotoEditor} />
       <Route path="/files" component={FileManager} />
       <Route path="/profile" component={UserProfile} />
       <Route path="/admin" component={AdminPanel} />
