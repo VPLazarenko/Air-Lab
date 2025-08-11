@@ -9,6 +9,7 @@ import { ChatInterface } from "@/components/chat-interface";
 import { AssistantConfigPanel } from "@/components/assistant-config-panel";
 import { SettingsModal } from "@/components/settings-modal";
 import { GoogleDocsIntegration } from "@/components/google-docs-integration";
+import { TutorialOverlay } from "@/components/tutorial-overlay";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { 
@@ -20,7 +21,8 @@ import {
   Sun,
   PanelRightOpen,
   PanelRightClose,
-  Download
+  Download,
+  HelpCircle
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -33,6 +35,7 @@ export default function Playground() {
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showConfigPanel, setShowConfigPanel] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(false);
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('darkMode') === 'true' || 
@@ -48,6 +51,12 @@ export default function Playground() {
   const { data: user } = useQuery({
     queryKey: ['/api/users', userId],
     queryFn: () => openaiClient.getUser(userId),
+  });
+
+  // Get user's assistants to check if they're new
+  const { data: userAssistants = [] } = useQuery({
+    queryKey: ['/api/assistants/user', userId],
+    enabled: !!userId,
   });
 
   // Get assistant data if editing existing
@@ -285,6 +294,22 @@ export default function Playground() {
     }
   }, [assistantConversation, currentConversation]);
 
+  // Auto-show tutorial for new users (no assistants and no assistant being edited)
+  useEffect(() => {
+    const hasShownTutorial = localStorage.getItem('assistant-tutorial-shown');
+    const isNewUser = userAssistants.length === 0 && !assistantId;
+    
+    if (isNewUser && !hasShownTutorial && !showTutorial) {
+      // Show tutorial after a small delay to let the UI load
+      const timer = setTimeout(() => {
+        setShowTutorial(true);
+        localStorage.setItem('assistant-tutorial-shown', 'true');
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [userAssistants, assistantId, showTutorial]);
+
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 overflow-hidden max-w-full">
       {/* Main Content */}
@@ -323,6 +348,16 @@ export default function Playground() {
               className="p-2"
             >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTutorial(true)}
+              className="bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300"
+            >
+              <HelpCircle className="w-4 h-4 lg:mr-2" />
+              <span className="hidden lg:inline">Инструкция</span>
             </Button>
             
             <Button
@@ -417,6 +452,18 @@ export default function Playground() {
         isOpen={showSettings} 
         onClose={() => setShowSettings(false)} 
         user={user}
+      />
+
+      {/* Tutorial Overlay */}
+      <TutorialOverlay
+        isVisible={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        onComplete={() => {
+          toast({
+            title: "Руководство завершено!",
+            description: "Теперь вы знаете как создавать ассистентов. Удачи!",
+          });
+        }}
       />
     </div>
   );

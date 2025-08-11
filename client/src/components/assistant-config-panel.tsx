@@ -432,7 +432,7 @@ export function AssistantConfigPanel({
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 assistant-config-panel" data-tutorial="assistant-config">
         {/* Quick Actions Panel */}
         <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 border">
           <h3 className="font-semibold mb-3 text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wide">
@@ -547,7 +547,7 @@ export function AssistantConfigPanel({
                 id="name"
                 value={config.name}
                 onChange={(e) => updateConfig('name', e.target.value)}
-                placeholder="Enter assistant name"
+                placeholder="Введите название ассистента"
               />
             </div>
             <div>
@@ -556,7 +556,7 @@ export function AssistantConfigPanel({
                 id="description"
                 value={config.description}
                 onChange={(e) => updateConfig('description', e.target.value)}
-                placeholder="Describe your assistant"
+                placeholder="Опишите вашего ассистента"
                 rows={2}
               />
             </div>
@@ -569,7 +569,7 @@ export function AssistantConfigPanel({
           <div className="space-y-3">
             <div>
               <Label htmlFor="model">Model</Label>
-              <Select value={config.model} onValueChange={(value) => updateConfig('model', value)}>
+              <Select value={config.model} onValueChange={(value) => updateConfig('model', value)} data-tutorial="model-select">
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -663,14 +663,14 @@ export function AssistantConfigPanel({
           <Textarea
             value={config.instructions}
             onChange={(e) => updateConfig('instructions', e.target.value)}
-            placeholder="Enter system instructions for your assistant..."
+            placeholder="Введите инструкции для ассистента..."
             rows={8}
             className="text-sm font-mono"
           />
         </div>
 
         {/* Tools */}
-        <div>
+        <div data-tutorial="tools-section">
           <h3 className="font-semibold mb-3">Tools</h3>
           <div className="space-y-2">
             {config.tools.map((tool) => (
@@ -795,9 +795,10 @@ export function AssistantConfigPanel({
             onClick={handleSave}
             disabled={createAssistantMutation.isPending || updateAssistantMutation.isPending}
             className="w-full bg-emerald-600 hover:bg-emerald-700"
+            data-tutorial="save-button"
           >
             <Save className="w-4 h-4 mr-2" />
-            {assistantId ? 'Save Assistant' : 'Create Assistant'}
+            {assistantId ? 'Сохранить ассистента' : 'Создать ассистента'}
           </Button>
           
           {assistantId && (
