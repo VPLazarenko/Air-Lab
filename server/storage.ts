@@ -77,6 +77,10 @@ export interface IStorage {
   getUserAnnouncements(userId: string): Promise<UserAnnouncement[]>;
   createUserAnnouncement(userAnnouncement: InsertUserAnnouncement): Promise<UserAnnouncement>;
   markAnnouncementAsRead(userId: string, announcementId: string): Promise<boolean>;
+
+  // Plan Activation operations
+  activatePlan(userId: string, planName: string): Promise<User>;
+  checkAccountStatus(userId: string): Promise<{ isActive: boolean; shouldFreeze: boolean; message?: string }>;
 }
 
 export class MemStorage implements IStorage {
@@ -825,6 +829,70 @@ export class DatabaseStorage implements IStorage {
       });
       return true;
     }
+  }
+
+  // Plan Activation operations
+  async activatePlan(userId: string, planName: string): Promise<User> {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+
+    const [user] = await db
+      .update(users)
+      .set({
+        plan: planName,
+        planActivatedAt: now,
+        planExpiresAt: expiresAt,
+        isAccountFrozen: false,
+        updatedAt: now
+      })
+      .where(eq(users.id, userId))
+      .returning();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return user;
+  }
+
+  async checkAccountStatus(userId: string): Promise<{ isActive: boolean; shouldFreeze: boolean; message?: string }> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    
+    if (!user) {
+      return { isActive: false, shouldFreeze: false, message: "User not found" };
+    }
+
+    // If account is already frozen
+    if (user.isAccountFrozen) {
+      return { isActive: false, shouldFreeze: false, message: "Account is frozen" };
+    }
+
+    // If user has a paid plan and it's still active
+    if (user.plan !== 'free' && user.planExpiresAt && user.planExpiresAt > new Date()) {
+      return { isActive: true, shouldFreeze: false };
+    }
+
+    // Check if account should be frozen (3 days since registration without plan activation)
+    const daysSinceRegistration = Math.floor((Date.now() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    const shouldFreeze = daysSinceRegistration >= 3 && user.plan === 'free';
+
+    if (shouldFreeze) {
+      // Freeze the account
+      await db
+        .update(users)
+        .set({ isAccountFrozen: true, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+
+      return { isActive: false, shouldFreeze: true, message: "Account has been frozen due to inactivity" };
+    }
+
+    // Account is active but may need attention
+    const daysUntilFreeze = Math.max(0, 3 - daysSinceRegistration);
+    return { 
+      isActive: true, 
+      shouldFreeze: false, 
+      message: daysUntilFreeze > 0 ? `Account will be frozen in ${daysUntilFreeze} days` : undefined
+    };
   }
 }
 

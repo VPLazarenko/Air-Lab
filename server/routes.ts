@@ -1138,6 +1138,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Plan activation route
+  app.post("/api/activate-plan", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const { activationCode } = req.body;
+      
+      if (!activationCode || typeof activationCode !== 'string') {
+        return res.status(400).json({ error: "Код активации обязателен" });
+      }
+
+      // Секретные коды активации
+      const ACTIVATION_CODES = {
+        '1962': 'basic',
+        '1963': 'pro', 
+        '1964': 'premium'
+      };
+
+      const planName = ACTIVATION_CODES[activationCode as keyof typeof ACTIVATION_CODES];
+      
+      if (!planName) {
+        return res.status(400).json({ error: "Неверный код активации" });
+      }
+
+      // Проверяем текущий статус аккаунта
+      const accountStatus = await storage.checkAccountStatus(req.user.id);
+      
+      // Активируем план
+      const updatedUser = await storage.activatePlan(req.user.id, planName);
+      
+      res.json({ 
+        message: `Тариф ${planName.toUpperCase()} активирован на 1 месяц`,
+        plan: planName,
+        expiresAt: updatedUser.planExpiresAt,
+        wasUnfrozen: accountStatus.isActive === false
+      });
+    } catch (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : 'Ошибка активации тарифа' });
+    }
+  });
+
+  // Account status check route
+  app.get("/api/account-status", authenticateUser, async (req: AuthenticatedRequest, res) => {
+    try {
+      const status = await storage.checkAccountStatus(req.user.id);
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Ошибка проверки статуса аккаунта' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

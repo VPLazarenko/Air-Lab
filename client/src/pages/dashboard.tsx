@@ -29,6 +29,7 @@ import { DownloadButton } from "@/components/download-button";
 import { ChatLogs } from "@/components/chat-logs";
 import Footer from "@/components/Footer";
 import VideoBackground from "@/components/video-background";
+import { TariffActivationForm } from "@/components/tariff-activation-form";
 import logoPath from "@assets/лого3_1754808405274.jpg";
 import { 
   Bot, 
@@ -52,6 +53,7 @@ import {
   Menu,
   X,
   AlertCircle,
+  Lock,
   Trash2,
   CheckSquare,
   Square
@@ -72,7 +74,8 @@ export default function Dashboard() {
   const [showIntegrationModal, setShowIntegrationModal] = useState(false);
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'assistants' | 'logs' | 'integrations' | 'plans' | 'news'>('assistants');
+  const [activeTab, setActiveTab] = useState<'assistants' | 'logs' | 'integrations' | 'plans' | 'news' | 'activation'>('assistants');
+  const [showActivationForm, setShowActivationForm] = useState(false);
   const [selectedAssistants, setSelectedAssistants] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -109,11 +112,11 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
-  const { data: plans = [], isLoading: plansLoading } = useQuery({
+  const { data: plans = [], isLoading: plansLoading } = useQuery<Plan[]>({
     queryKey: ["/api/plans"],
   });
 
-  const { data: announcements = [], isLoading: announcementsLoading } = useQuery({
+  const { data: announcements = [], isLoading: announcementsLoading } = useQuery<Announcement[]>({
     queryKey: ["/api/announcements"],
     enabled: isAuthenticated,
   });
@@ -387,7 +390,8 @@ export default function Dashboard() {
               />
               <div>
                 <h1 className="text-xl lg:text-2xl font-bold mb-1">Air Lab.</h1>
-                <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">AI Assistants Laboratory by Initiology AI Systems</p>
+                <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">AI Assistants Laboratory 
+                 Initiology AI Systems</p>
               </div>
             </div>
             
@@ -410,6 +414,23 @@ export default function Dashboard() {
                         <span className="sm:hidden">{t.admin}</span>
                       </Button>
                     </Link>
+                  )}
+                  
+                  {/* Tariff Activation Button */}
+                  {(authUser?.plan === 'free' || authUser?.isAccountFrozen) && (
+                    <Button 
+                      variant={authUser?.isAccountFrozen ? "destructive" : "outline"}
+                      onClick={() => setShowActivationForm(true)} 
+                      className="gap-2 w-full sm:w-auto"
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span className="hidden sm:inline">
+                        {authUser?.isAccountFrozen ? 'Разморозить аккаунт' : 'Активировать тариф'}
+                      </span>
+                      <span className="sm:hidden">
+                        {authUser?.isAccountFrozen ? 'Разморозить' : 'Активировать'}
+                      </span>
+                    </Button>
                   )}
                   
                   <Button variant="ghost" onClick={logout} className="gap-2 w-full sm:w-auto">
@@ -481,6 +502,17 @@ export default function Dashboard() {
           {/* Tab Content */}
           {activeTab === 'assistants' && (
             <Card className="w-full">
+              {authUser?.isAccountFrozen && (
+                <div className="p-4 bg-red-50 border-l-4 border-red-400 mb-4">
+                  <div className="flex items-center">
+                    <Lock className="w-5 h-5 text-red-500 mr-2" />
+                    <div>
+                      <h3 className="text-sm font-medium text-red-800">Аккаунт заморожен</h3>
+                      <p className="text-sm text-red-700">Активируйте любой тарифный план для разморозки аккаунта и доступа к ассистентам.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
               <CardHeader>
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -490,7 +522,10 @@ export default function Dashboard() {
                     <Badge variant="secondary">{assistants.length}</Badge>
                   </CardTitle>
                   <Link href="/playground">
-                    <Button className="gap-2 w-full sm:w-auto">
+                    <Button 
+                      className="gap-2 w-full sm:w-auto"
+                      disabled={authUser?.isAccountFrozen === true}
+                    >
                       <Plus className="w-4 h-4" />
                       <span className="hidden sm:inline">Создать ассистента</span>
                       <span className="sm:hidden">Создать</span>
@@ -751,25 +786,25 @@ export default function Dashboard() {
                         </div>
                         
                         <div className="space-y-3 mb-6">
-                          {plan.features.maxAssistants && (
+                          {plan.features?.maxAssistants && (
                             <div className="flex items-center gap-2">
                               <Bot className="w-4 h-4 text-emerald-500" />
                               <span className="text-sm">До {plan.features.maxAssistants} ассистентов</span>
                             </div>
                           )}
-                          {plan.features.maxConversations && (
+                          {plan.features?.maxConversations && (
                             <div className="flex items-center gap-2">
                               <FileText className="w-4 h-4 text-emerald-500" />
                               <span className="text-sm">До {plan.features.maxConversations} диалогов</span>
                             </div>
                           )}
-                          {plan.features.apiAccess && (
+                          {plan.features?.apiAccess && (
                             <div className="flex items-center gap-2">
                               <Settings className="w-4 h-4 text-emerald-500" />
                               <span className="text-sm">API доступ</span>
                             </div>
                           )}
-                          {plan.features.prioritySupport && (
+                          {plan.features?.prioritySupport && (
                             <div className="flex items-center gap-2">
                               <AlertCircle className="w-4 h-4 text-emerald-500" />
                               <span className="text-sm">Приоритетная поддержка</span>
@@ -884,6 +919,16 @@ export default function Dashboard() {
         integration={selectedIntegration as "telegram" | "vk" | "whatsapp" | "openai" | null}
       />
       
+      {/* Tariff Activation Modal */}
+      {showActivationForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <TariffActivationForm 
+            user={authUser}
+            onClose={() => setShowActivationForm(false)}
+          />
+        </div>
+      )}
+      
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
         <AlertDialogContent>
@@ -915,7 +960,6 @@ export default function Dashboard() {
         </AlertDialogContent>
       </AlertDialog>
       </div>
-      
       <Footer />
     </div>
   );

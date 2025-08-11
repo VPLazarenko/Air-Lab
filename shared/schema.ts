@@ -11,7 +11,10 @@ export const users = pgTable("users", {
   apiKey: text("api_key"),
   role: text("role").notNull().default("user"), // user, admin
   isActive: boolean("is_active").default(true),
-  plan: text("plan").default("free"), // free, pro, enterprise
+  plan: text("plan").default("free"), // free, basic, pro, premium
+  planActivatedAt: timestamp("plan_activated_at"),
+  planExpiresAt: timestamp("plan_expires_at"),
+  isAccountFrozen: boolean("is_account_frozen").default(false),
   settings: json("settings").$type<{
     defaultModel?: string;
     autoSave?: boolean;
