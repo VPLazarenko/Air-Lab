@@ -8,7 +8,7 @@ import { openaiClient } from "@/lib/openai-client";
 import type { Assistant, Conversation } from "@/lib/openai-client";
 import { useToast } from "@/hooks/use-toast";
 import { Send, Bot } from "lucide-react";
-import Footer from "@/components/Footer";
+
 
 const DEMO_USER_ID = "84ac8242-6c19-42a0-825b-caa01572e5e6";
 
@@ -198,7 +198,6 @@ export default function Chat() {
           </Button>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }

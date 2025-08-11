@@ -28,7 +28,7 @@ import {
   Minimize2,
   ExternalLink
 } from "lucide-react";
-import Footer from "@/components/Footer";
+
 
 interface WidgetConfig {
   primaryColor: string;
@@ -763,7 +763,6 @@ export default function WidgetDesigner() {
           </div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 }
