@@ -4,12 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User, Settings, Crown, Calendar, Bot, LogOut } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { User, Settings, Crown, Calendar, Bot, LogOut, AlertTriangle, Clock, CreditCard } from "lucide-react";
 import type { Assistant } from "@shared/schema";
 import Footer from "@/components/Footer";
+import { TariffActivationForm } from "@/components/tariff-activation-form";
+import { useState } from "react";
 
 export default function UserProfile() {
   const { user, logout, isAuthenticated } = useAuth();
+  const [showTariffForm, setShowTariffForm] = useState(false);
 
   const { data: assistants = [], isLoading: assistantsLoading } = useQuery<Assistant[]>({
     queryKey: ["/api/assistants/my"],
@@ -19,6 +23,18 @@ export default function UserProfile() {
   if (!isAuthenticated || !user) {
     return null;
   }
+
+  // Вычисляем количество дней с регистрации
+  const registrationDate = new Date(user.createdAt);
+  const currentDate = new Date();
+  const daysSinceRegistration = Math.floor(
+    (currentDate.getTime() - registrationDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  
+  // Проверяем нужно ли показать уведомление об активации
+  const needsActivation = !user.plan || user.plan === 'free' || user.plan === null;
+  const daysRemaining = Math.max(0, 3 - daysSinceRegistration);
+  const showActivationWarning = needsActivation && daysSinceRegistration < 3;
 
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -62,6 +78,70 @@ export default function UserProfile() {
             Выйти
           </Button>
         </div>
+
+        {/* Предупреждение об активации тарифа */}
+        {showActivationWarning && (
+          <Alert className="mb-6 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <AlertDescription className="text-amber-800 dark:text-amber-200">
+              <div className="flex items-start gap-3">
+                <Clock className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold mb-2">
+                    Требуется активация тарифного плана
+                  </p>
+                  <p className="text-sm mb-3">
+                    У вас осталось {daysRemaining} {daysRemaining === 1 ? 'день' : 'дня'} для выбора и активации тарифного плана. 
+                    После истечения этого срока ваш аккаунт будет заморожен до активации тарифа.
+                  </p>
+                  <p className="text-xs font-medium mb-3">
+                    ⚠️ Заморозка аккаунта означает блокировку доступа ко всем функциям платформы, включая ваших ассистентов.
+                  </p>
+                  <Button 
+                    onClick={() => setShowTariffForm(true)}
+                    className="bg-amber-600 hover:bg-amber-700 text-white text-sm"
+                    size="sm"
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Активировать тариф
+                  </Button>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Уведомление о замороженном аккаунте */}
+        {!user.isActive && (
+          <Alert className="mb-6 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
+            <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <AlertDescription className="text-red-800 dark:text-red-200">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold mb-2">
+                    Аккаунт заморожен
+                  </p>
+                  <p className="text-sm mb-3">
+                    Ваш аккаунт заморожен из-за отсутствия активного тарифного плана. 
+                    Активируйте любой тариф для разморозки аккаунта и восстановления доступа к функциям платформы.
+                  </p>
+                  <p className="text-xs font-medium mb-3">
+                    🔒 Пока аккаунт заморожен, доступ к ассистентам и другим функциям ограничен.
+                  </p>
+                  <Button 
+                    onClick={() => setShowTariffForm(true)}
+                    className="bg-red-600 hover:bg-red-700 text-white text-sm"
+                    size="sm"
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Разморозить аккаунт
+                  </Button>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* User Information */}
@@ -216,6 +296,19 @@ export default function UserProfile() {
           </div>
         </div>
       </div>
+      
+      {/* Форма активации тарифа */}
+      {showTariffForm && (
+        <TariffActivationForm 
+          isOpen={showTariffForm}
+          onClose={() => setShowTariffForm(false)}
+          onSuccess={() => {
+            setShowTariffForm(false);
+            window.location.reload(); // Обновляем страницу для отображения изменений
+          }}
+        />
+      )}
+      
       <Footer />
     </div>
   );
