@@ -1138,7 +1138,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Plan activation route
+  // Plan activation routes
+  app.get("/api/activate-plan", (req, res) => {
+    res.json({ message: "Endpoint для активации тарифов. Используйте POST запрос с кодом активации." });
+  });
+
   app.post("/api/activate-plan", authenticateUser, async (req: AuthenticatedRequest, res) => {
     try {
       const { activationCode } = req.body;
