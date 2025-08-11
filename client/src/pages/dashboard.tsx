@@ -27,7 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DownloadButton } from "@/components/download-button";
 import { ChatLogs } from "@/components/chat-logs";
 import Footer from "@/components/Footer";
-import ChatAnimation3D from "@/components/3d-chat-animation";
+import VideoBackground from "@/components/video-background";
 import logoPath from "@assets/лого3_1754808405274.jpg";
 import { 
   Bot, 
@@ -413,9 +413,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* 3D Chat Animation */}
-          <div className="mb-8 w-full">
-            <ChatAnimation3D />
+          {/* Video Background */}
+          <div className="mb-8 w-full h-96">
+            <VideoBackground />
           </div>
 
           {/* Navigation Tabs */}
