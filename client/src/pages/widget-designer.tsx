@@ -46,6 +46,7 @@ interface WidgetConfig {
   placeholder: string;
   buttonText: string;
   theme: 'light' | 'dark' | 'auto';
+  avatarUrl?: string;
 }
 
 const defaultConfig: WidgetConfig = {
@@ -63,7 +64,8 @@ const defaultConfig: WidgetConfig = {
   welcomeMessage: 'Привет! Как дела? Чем могу помочь?',
   placeholder: 'Введите ваше сообщение...',
   buttonText: 'Отправить',
-  theme: 'light'
+  theme: 'light',
+  avatarUrl: ''
 };
 
 export default function WidgetDesigner() {
@@ -146,6 +148,37 @@ export default function WidgetDesigner() {
             gap: 10px;
         }
         
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        
+        .avatar-initial {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: ${config.primaryColor};
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
         .chat-messages {
             flex: 1;
             padding: 15px;
@@ -212,10 +245,13 @@ export default function WidgetDesigner() {
         
         <div class="chat-window" id="chatWindow">
             <div class="chat-header">
-                ${config.showAvatar ? '<div style="width: 32px; height: 32px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><svg width="16" height="16" fill="' + config.primaryColor + '" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10h8V12c0-5.52-4.48-10-10-10z"/></svg></div>' : ''}
+                ${config.showAvatar ? (config.avatarUrl ? 
+                    '<div class="avatar"><img src="' + config.avatarUrl + '" alt="Avatar" /></div>' : 
+                    '<div class="avatar"><div class="avatar-initial">' + (assistant?.name || 'А').charAt(0).toUpperCase() + '</div></div>'
+                ) : ''}
                 <div>
                     <div style="font-weight: 600;">${assistant?.name || 'Ассистент'}</div>
-                    <div style="font-size: 12px; opacity: 0.9;">Онлайн</div>
+                    <div style="font-size: 12px; opacity: 0.9;">В сети</div>
                 </div>
             </div>
             
@@ -543,6 +579,19 @@ export default function WidgetDesigner() {
                         onChange={(e) => updateConfig('buttonText', e.target.value)}
                       />
                     </div>
+                    
+                    <div>
+                      <Label htmlFor="avatarUrl">URL аватарки</Label>
+                      <Input
+                        id="avatarUrl"
+                        value={config.avatarUrl || ''}
+                        onChange={(e) => updateConfig('avatarUrl', e.target.value)}
+                        placeholder="https://example.com/avatar.jpg"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Введите URL изображения или оставьте пустым для использования первой буквы имени
+                      </p>
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>
@@ -646,17 +695,25 @@ export default function WidgetDesigner() {
                             style={{ backgroundColor: config.primaryColor }}
                           >
                             {config.showAvatar && (
-                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: config.primaryColor }}>
-                                  {(assistant?.name || 'А').charAt(0).toUpperCase()}
-                                </div>
+                              <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden">
+                                {config.avatarUrl ? (
+                                  <img 
+                                    src={config.avatarUrl} 
+                                    alt="Avatar" 
+                                    className="w-full h-full object-cover rounded-full"
+                                  />
+                                ) : (
+                                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: config.primaryColor }}>
+                                    {(assistant?.name || 'А').charAt(0).toUpperCase()}
+                                  </div>
+                                )}
                               </div>
                             )}
                             <div className="flex-1">
                               <div className="font-semibold text-lg">{assistant?.name || 'Виртуальный Ассистент'}</div>
                               <div className="text-sm opacity-90 flex items-center gap-1">
                                 <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                                Я могу помочь вам с информационными запросами и заданиями.
+                                В сети
                               </div>
                             </div>
                             {previewMode === 'open' && (
@@ -678,8 +735,18 @@ export default function WidgetDesigner() {
                           >
                             {/* Assistant welcome message */}
                             <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: config.primaryColor }}>
-                                {(assistant?.name || 'А').charAt(0).toUpperCase()}
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden" style={{ backgroundColor: config.primaryColor }}>
+                                {config.avatarUrl ? (
+                                  <img 
+                                    src={config.avatarUrl} 
+                                    alt="Avatar" 
+                                    className="w-full h-full object-cover rounded-full"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+                                    {(assistant?.name || 'А').charAt(0).toUpperCase()}
+                                  </div>
+                                )}
                               </div>
                               <div
                                 className="flex-1 p-3 rounded-2xl rounded-tl-sm max-w-[80%]"
@@ -711,8 +778,18 @@ export default function WidgetDesigner() {
                             
                             {/* Assistant response */}
                             <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: config.primaryColor }}>
-                                {(assistant?.name || 'А').charAt(0).toUpperCase()}
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden" style={{ backgroundColor: config.primaryColor }}>
+                                {config.avatarUrl ? (
+                                  <img 
+                                    src={config.avatarUrl} 
+                                    alt="Avatar" 
+                                    className="w-full h-full object-cover rounded-full"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-white text-sm font-bold">
+                                    {(assistant?.name || 'А').charAt(0).toUpperCase()}
+                                  </div>
+                                )}
                               </div>
                               <div
                                 className="flex-1 p-3 rounded-2xl rounded-tl-sm max-w-[80%]"
