@@ -9,9 +9,24 @@ async function throwIfResNotOk(res: Response) {
 
 export async function apiRequest(
   url: string,
-  options?: RequestInit
+  methodOrOptions?: string | RequestInit,
+  body?: any
 ): Promise<any> {
   const token = localStorage.getItem('authToken');
+  let options: RequestInit;
+
+  // Handle overloaded parameters
+  if (typeof methodOrOptions === 'string') {
+    // Called as apiRequest(url, method, body)
+    options = {
+      method: methodOrOptions,
+      body: body ? JSON.stringify(body) : undefined,
+    };
+  } else {
+    // Called as apiRequest(url, options)
+    options = methodOrOptions || {};
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...options?.headers,

@@ -17,18 +17,27 @@ interface AuthenticatedRequest extends Request {
 const authenticateUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   
+  console.log(`🔐 Проверка авторизации для ${req.method} ${req.path}`);
+  console.log(`🎫 Токен получен: ${token ? 'да' : 'нет'}`);
+  
   if (!token) {
+    console.log('❌ Токен не предоставлен');
     return res.status(401).json({ error: 'Токен авторизации не предоставлен' });
   }
 
   try {
     const user = await AuthService.authenticate(token);
+    console.log(`👤 Пользователь найден: ${user ? user.username : 'нет'}`);
+    
     if (!user) {
+      console.log('❌ Недействительный токен');
       return res.status(401).json({ error: 'Недействительный токен' });
     }
     req.user = user;
+    console.log(`✅ Авторизация успешна для пользователя ${user.username}`);
     next();
   } catch (error) {
+    console.error('❌ Ошибка при авторизации:', error);
     res.status(401).json({ error: 'Ошибка авторизации' });
   }
 };
