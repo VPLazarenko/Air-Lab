@@ -240,7 +240,7 @@ export default function ChatAnimation3D() {
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-200 mb-2 opacity-20">
-            AI Lab
+            AIR LAB
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-400 opacity-20">
             Интерактивные ассистенты
