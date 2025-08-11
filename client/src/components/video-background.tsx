@@ -5,7 +5,7 @@ export default function VideoBackground() {
     <div className="relative w-full h-full overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800">
       {/* Kinescope embed iframe */}
       <iframe
-        src="https://kinescope.io/embed/sxpt2B4A82AZKtwf8Q8ehc?autoplay=1&muted=1&loop=1&controls=0"
+        src="https://kinescope.io/embed/eGQLV4p1AumD574qHeBuKq?autoplay=1&muted=1&loop=1&controls=0"
         className="w-full h-full"
         frameBorder="0"
         allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
